@@ -1,0 +1,26 @@
+[build-system]
+requires = [
+  "setuptools>=61.0.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-flakefighter"
+description = "Pytest plugin implementing flaky test failure detection and classification."
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "TestFLARE Team" },
+]
+maintainers = [
+    { name = "TestFLARE Team" },
+]
+license = {file = "LICENSE"}
+dependencies = [
+    "pytest>=6.2.0",
+]
+[project.urls]
+Repository = "https://github.com/test-flare/pytest-flakefighter"
+[project.entry-points.pytest11]
+flakefighter = "pytest_flakefighter.plugin"

@@ -1,10 +1,7 @@
 # pytest-flakefighter
 
 [![PyPI version](https://img.shields.io/pypi/v/pytest-flakefighter.svg)](https://pypi.org/project/pytest-flakefighter)
-
 [![Python versions](https://img.shields.io/pypi/pyversions/pytest-flakefighter.svg)](https://pypi.org/project/pytest-flakefighter)
-
-[![See Build Status on GitHub Actions](https://github.com/test-flare/pytest-flakefighter/actions/workflows/main.yml/badge.svg)](https://github.com/test-flare/pytest-flakefighter/actions/workflows/main.yml)
 
 Pytest plugin implementing flaky test failure detection and
 classification.

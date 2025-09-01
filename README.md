@@ -35,7 +35,7 @@ pip install pytest-flakefighter
 ## Contributing
 
 Contributions are very welcome.
-Tests can be run with [tox](https://tox.readthedocs.io/en/latest/), please ensure the coverage at least stays the same before you submit a pull request.
+Tests can be run with [pytest](https://pytest.readthedocs.io/en/latest/), please ensure the coverage at least stays the same before you submit a pull request.
 
 ## Issues
 

@@ -23,7 +23,7 @@ class FlakeFighter:
         :param report: Pytest report for a test case.
         """
         if report.when == "setup":
-            # self.cov.erase()
+            self.cov.erase()
             self.cov.start()
         if report.when == "call" and report.failed:
             self.cov.stop()

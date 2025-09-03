@@ -33,7 +33,8 @@ class FlakeFighter:
             self.cov.stop()
             line_coverage = self.cov.get_data()
             self.failed_reports[report] = {
-                filename: line_coverage.lines(filename) for filename in line_coverage.measured_files()
+                filename: line_coverage.lines(filename)
+                for filename in line_coverage.measured_files()
             }
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
@@ -59,7 +60,10 @@ class FlakeFighter:
         real_faults = []
         for report, line_coverage in self.failed_reports.items():
             for file_path, lines in line_coverage.items():
-                if any(self.line_modified_by_latest_commit(file_path, line) for line in lines):
+                if any(
+                    self.line_modified_by_latest_commit(file_path, line)
+                    for line in lines
+                ):
                     real_faults.append(report.nodeid)
         print()
         print("Real faults", real_faults)
@@ -68,12 +72,22 @@ class FlakeFighter:
 def pytest_addoption(parser):
     group = parser.getgroup("flakefighter")
     group.addoption(
-        "--commit", action="store", dest="commit_hash", default=None, help="The commit hash to compare against."
+        "--commit",
+        action="store",
+        dest="commit_hash",
+        default=None,
+        help="The commit hash to compare against.",
     )
     group.addoption(
-        "--repo", action="store", dest="repo_path", default=None, help="The commit hash to compare against."
+        "--repo",
+        action="store",
+        dest="repo_path",
+        default=None,
+        help="The commit hash to compare against.",
     )
 
 
 def pytest_configure(config):
-    config.pluginmanager.register(FlakeFighter(config.option.repo_path, config.option.commit_hash))
+    config.pluginmanager.register(
+        FlakeFighter(config.option.repo_path, config.option.commit_hash)
+    )

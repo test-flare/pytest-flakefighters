@@ -11,6 +11,7 @@ class FlakeFighter:
     def __init__(self, commit: str = None):
         self.failed_reports = {}
         self.cov = coverage.Coverage()
+        print("COMMIT", commit)
         if commit is not None:
             self.commit = commit
         else:
@@ -63,5 +64,12 @@ class FlakeFighter:
         print("Real faults", real_faults)
 
 
+def pytest_addoption(parser):
+    group = parser.getgroup("flakefighter")
+    group.addoption(
+        "--commit", action="store", dest="commit_hash", default=None, help="The commit hash to compare against."
+    )
+
+
 def pytest_configure(config):
-    config.pluginmanager.register(FlakeFighter())
+    config.pluginmanager.register(FlakeFighter(config.option.commit_hash))

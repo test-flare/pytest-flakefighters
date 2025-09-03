@@ -21,6 +21,10 @@ dependencies = [
     "pytest>=6.2.0",
     "coverage>=7.10.6",
 ]
+[project.optional-dependencies]
+dev = [
+  "tox"
+]
 [project.urls]
 Repository = "https://github.com/test-flare/pytest-flakefighter"
 [project.entry-points.pytest11]

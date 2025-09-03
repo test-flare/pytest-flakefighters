@@ -2,20 +2,23 @@
 This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
 """
 
-import subprocess
 import pytest
 import coverage
+import git
 
 
 class FlakeFighter:
-    def __init__(self, commit: str = None):
+    def __init__(self, repo_root: str = None, commit: str = None):
         self.failed_reports = {}
         self.cov = coverage.Coverage()
-        print("COMMIT", commit)
+        self.repo = git.Repo(repo_root if repo_root is not None else ".")
         if commit is not None:
             self.commit = commit
         else:
-            self.commit = subprocess.check_output("git rev-parse HEAD", shell=True).decode("utf-8").strip()
+            self.commit = self.repo.head.commit.hexsha
+        for commit in self.repo.iter_commits(max_count=10):
+            print("HASH", commit.hexsha, commit.summary)
+        print("COMMIT", self.commit)
 
     def pytest_runtest_logreport(self, report: pytest.TestReport):
         """
@@ -41,12 +44,10 @@ class FlakeFighter:
         :param line_number: The line number to check.
         """
         try:
-            output = subprocess.check_output(
-                f"git log -L {line_number},{line_number}:{file_path}", shell=True, stderr=subprocess.DEVNULL
-            ).decode("utf-8")
+            output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
             if f"commit {self.commit}" in output:
                 return True
-        except subprocess.CalledProcessError:
+        except git.exc.GitCommandError:
             return False
         return False
 
@@ -69,7 +70,10 @@ def pytest_addoption(parser):
     group.addoption(
         "--commit", action="store", dest="commit_hash", default=None, help="The commit hash to compare against."
     )
+    group.addoption(
+        "--repo", action="store", dest="repo_path", default=None, help="The commit hash to compare against."
+    )
 
 
 def pytest_configure(config):
-    config.pluginmanager.register(FlakeFighter(config.option.commit_hash))
+    config.pluginmanager.register(FlakeFighter(config.option.repo_path, config.option.commit_hash))

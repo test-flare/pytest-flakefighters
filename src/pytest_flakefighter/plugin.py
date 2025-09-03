@@ -8,6 +8,10 @@ import git
 
 
 class FlakeFighter:
+    """
+    Flakefighter plugin class implements the DeFlaker algorithm.
+    """
+
     def __init__(self, repo_root: str = None, commit: str = None):
         self.failed_reports = {}
         self.cov = coverage.Coverage()
@@ -16,9 +20,6 @@ class FlakeFighter:
             self.commit = commit
         else:
             self.commit = self.repo.head.commit.hexsha
-        for commit in self.repo.iter_commits(max_count=10):
-            print("HASH", commit.hexsha, commit.summary)
-        print("COMMIT", self.commit)
 
     def pytest_runtest_logreport(self, report: pytest.TestReport):
         """
@@ -33,8 +34,7 @@ class FlakeFighter:
             self.cov.stop()
             line_coverage = self.cov.get_data()
             self.failed_reports[report] = {
-                filename: line_coverage.lines(filename)
-                for filename in line_coverage.measured_files()
+                filename: line_coverage.lines(filename) for filename in line_coverage.measured_files()
             }
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
@@ -60,16 +60,17 @@ class FlakeFighter:
         real_faults = []
         for report, line_coverage in self.failed_reports.items():
             for file_path, lines in line_coverage.items():
-                if any(
-                    self.line_modified_by_latest_commit(file_path, line)
-                    for line in lines
-                ):
+                if any(self.line_modified_by_latest_commit(file_path, line) for line in lines):
                     real_faults.append(report.nodeid)
         print()
         print("Real faults", real_faults)
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser):
+    """
+    Add extra pytest options.
+    :param parser: The argument parser.
+    """
     group = parser.getgroup("flakefighter")
     group.addoption(
         "--commit",
@@ -87,7 +88,9 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
-    config.pluginmanager.register(
-        FlakeFighter(config.option.repo_path, config.option.commit_hash)
-    )
+def pytest_configure(config: pytest.Config):
+    """
+    Initialise the FlakeFighter class.
+    :param config: The config options.
+    """
+    config.pluginmanager.register(FlakeFighter(config.option.repo_path, config.option.commit_hash))

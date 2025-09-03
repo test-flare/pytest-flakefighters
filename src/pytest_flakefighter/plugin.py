@@ -1,4 +1,7 @@
-import os
+"""
+This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
+"""
+
 import subprocess
 import pytest
 import coverage
@@ -29,7 +32,13 @@ class FlakeFighter:
                 filename: line_coverage.lines(filename) for filename in line_coverage.measured_files()
             }
 
-    def line_modified_by_latest_commit(self, file_path, line_number):
+    def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
+        """
+        Returns true if the given line in the file has been modified by the present commit.
+
+        :param file_path: The file to check.
+        :param line_number: The line number to check.
+        """
         try:
             output = subprocess.check_output(
                 f"git log -L {line_number},{line_number}:{file_path}", shell=True, stderr=subprocess.DEVNULL
@@ -51,7 +60,7 @@ class FlakeFighter:
                 if any(self.line_modified_by_latest_commit(file_path, line) for line in lines):
                     real_faults.append(report.nodeid)
         print()
-        print(real_faults)
+        print("Real faults", real_faults)
 
 
 def pytest_configure(config):

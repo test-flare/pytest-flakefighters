@@ -19,6 +19,7 @@ maintainers = [
 license = {file = "LICENSE"}
 dependencies = [
     "pytest>=6.2.0",
+    "coverage>=7.10.6",
 ]
 [project.urls]
 Repository = "https://github.com/test-flare/pytest-flakefighter"

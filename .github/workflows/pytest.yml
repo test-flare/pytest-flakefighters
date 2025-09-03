@@ -1,29 +1,42 @@
-name: Run python tests
+name: Continuous Integration Tests (pytest)
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+    if: github.event.pull_request.draft == false # Filter out draft PRs
+    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          - python-version: ['3.11', '3.12', '3.13']
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install tox
-        run: pip install tox
-
-      - name: Test
-        run: tox -e py
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+          python --version
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -e .[test]
+          pip install pytest pytest-cov
+    - name: Test with pytest
+      run: |
+        pytest --cov=causal_testing --cov-report=xml
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v5
+      with:
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}

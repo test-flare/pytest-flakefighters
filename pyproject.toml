@@ -20,6 +20,7 @@ license = {file = "LICENSE"}
 dependencies = [
     "pytest>=6.2.0",
     "coverage>=7.10.6",
+    "GitPython==3.1.45"
 ]
 [project.urls]
 Repository = "https://github.com/test-flare/pytest-flakefighter"

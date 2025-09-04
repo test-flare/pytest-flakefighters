@@ -20,10 +20,10 @@ This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [C
 
 ## Installation
 
-You can install \"pytest-flakefighter\" via [pip](https://pypi.org/project/pip/) from [PyPI](https://pypi.org/project):
-```
-pip install pytest-flakefighter
-```
+You can install \"pytest-flakefighter\" by cloning this repo and running `pip install .` from the root directory.
+If you intend to develop the plugin, run `pip install -e .[dev]` instead.
+
+We eventually intend to distribute our tool on PyPI.
 
 ## Usage
 

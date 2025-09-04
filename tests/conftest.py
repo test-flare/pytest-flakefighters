@@ -2,10 +2,11 @@
 Define fixtures and plugins.
 """
 
-import shutil
-import pytest
 import os
+import shutil
+
 import git
+import pytest
 
 # pylint:disable=C0103
 pytest_plugins = "pytester"

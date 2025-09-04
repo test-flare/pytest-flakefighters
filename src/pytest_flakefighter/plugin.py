@@ -2,9 +2,9 @@
 This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
 """
 
-import pytest
 import coverage
 import git
+import pytest
 
 
 class FlakeFighter:

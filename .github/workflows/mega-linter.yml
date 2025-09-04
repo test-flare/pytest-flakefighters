@@ -10,24 +10,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  megalinter:
     name: MegaLinter
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: MegaLinter
+        uses: oxsecurity/megalinter/flavors/python@v8
         id: ml
-        uses: oxsecurity/megalinter/flavors/python@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For detailed check status
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Archive production artifacts
-        if: ${{ success() }} || ${{ failure() }}
+        if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
           name: MegaLinter reports
+          include-hidden-files: "true"
           path: |
             megalinter-reports
             mega-linter.log

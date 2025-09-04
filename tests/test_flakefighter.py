@@ -1,30 +1,40 @@
-import git
-import shutil
+"""
+Test DeFlaker algorithm.
+"""
+
 import os
+import shutil
 import pytest
+import git
 
 
-@pytest.fixture(scope="session")
-def git_repo(tmpdir_factory):
+@pytest.fixture(scope="session", name="git_repo")
+def fixture_git_repo(tmpdir_factory):
+    """
+    Fixture for a minimal git repo with a commit history of broken tests.
+    """
     repo_root = tmpdir_factory.mktemp("repo")
     repo = git.Repo.init(repo_root)
     shutil.copy("tests/resources/triangle.txt", os.path.join(repo_root, "triangle.py"))
-    shutil.copy(
-        "tests/resources/test_triangle.txt", os.path.join(repo_root, "test_triangle.py")
-    )
+    shutil.copy("tests/resources/test_triangle.txt", os.path.join(repo_root, "test_triangle.py"))
     repo.index.add(["triangle.py", "test_triangle.py"])
     repo.index.commit("Initial commit of test file.")
-    shutil.copy(
-        "tests/resources/triangle_failure.txt", os.path.join(repo_root, "triangle.py")
-    )
+    shutil.copy("tests/resources/triangle_failure.txt", os.path.join(repo_root, "triangle.py"))
     repo.index.add(["triangle.py", "test_triangle.py"])
     repo.index.commit("Broke the tests.")
     return repo_root
 
 
 def test_files_exist(git_repo):
-    assert os.path.exists(os.path.join(git_repo, "triangle.py"))
-    assert os.path.exists(os.path.join(git_repo, "test_triangle.py"))
+    """
+    Test that the necessary fixture files have actually heen created.
+    """
+    assert os.path.exists(
+        os.path.join(git_repo, "triangle.py")
+    ), f"Fixture file {os.path.join(git_repo, 'triangle.py')} not present."
+    assert os.path.exists(
+        os.path.join(git_repo, "test_triangle.py")
+    ), f"Fixture file {os.path.join(git_repo, 'test_triangle.py')} not present."
 
 
 def test_bar_fixture(pytester, git_repo):
@@ -40,6 +50,7 @@ def test_bar_fixture(pytester, git_repo):
 
     result.stdout.fnmatch_lines(
         [
-            "Real faults ['repo0/test_triangle.py::test_eqiulateral', 'repo0/test_triangle.py::test_isosceles', 'repo0/test_triangle.py::test_scalene']"
+            "Real faults ['repo0/test_triangle.py::test_eqiulateral', 'repo0/test_triangle.py::test_isosceles', "
+            "'repo0/test_triangle.py::test_scalene']"
         ]
     )

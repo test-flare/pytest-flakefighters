@@ -20,8 +20,9 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-    "pylint",
     "black",
+    "pylint",
+    "pre_commit",
     "sphinx-autoapi",
     "sphinx_rtd_theme",
 ]

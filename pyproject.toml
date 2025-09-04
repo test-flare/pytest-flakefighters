@@ -6,22 +6,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-flakefighter"
+authors = [{ name = "TestFLARE Team" },]
 description = "Pytest plugin implementing flaky test failure detection and classification."
-version = "0.0.1"
 readme = "README.md"
-requires-python = ">=3.8"
-authors = [
-    { name = "TestFLARE Team" },
-]
-maintainers = [
-    { name = "TestFLARE Team" },
-]
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 dependencies = [
     "pytest>=6.2.0",
     "coverage>=7.10.6",
     "GitPython==3.1.45"
 ]
+dynamic = ["version"]
+
 [project.optional-dependencies]
 dev = [
     "pylint",

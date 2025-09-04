@@ -6,22 +6,31 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-flakefighter"
+authors = [{ name = "TestFLARE Team" },]
 description = "Pytest plugin implementing flaky test failure detection and classification."
-version = "0.0.1"
 readme = "README.md"
-requires-python = ">=3.8"
-authors = [
-    { name = "TestFLARE Team" },
-]
-maintainers = [
-    { name = "TestFLARE Team" },
-]
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 dependencies = [
     "pytest>=6.2.0",
     "coverage>=7.10.6",
+    "GitPython==3.1.45"
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "pylint",
+    "pre_commit",
+    "sphinx-autoapi",
+    "sphinx_rtd_theme",
 ]
 [project.urls]
 Repository = "https://github.com/test-flare/pytest-flakefighter"
 [project.entry-points.pytest11]
 flakefighter = "pytest_flakefighter.plugin"
+[tool.black]
+# https://github.com/psf/black
+line-length = 120
+target-version = ["py310"]

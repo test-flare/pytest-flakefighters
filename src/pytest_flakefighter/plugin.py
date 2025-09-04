@@ -2,19 +2,24 @@
 This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
 """
 
-import subprocess
-import pytest
 import coverage
+import git
+import pytest
 
 
 class FlakeFighter:
-    def __init__(self, commit: str = None):
+    """
+    Flakefighter plugin class implements the DeFlaker algorithm.
+    """
+
+    def __init__(self, repo_root: str = None, commit: str = None):
         self.failed_reports = {}
         self.cov = coverage.Coverage()
+        self.repo = git.Repo(repo_root if repo_root is not None else ".")
         if commit is not None:
             self.commit = commit
         else:
-            self.commit = subprocess.check_output("git rev-parse HEAD", shell=True).decode("utf-8").strip()
+            self.commit = self.repo.head.commit.hexsha
 
     def pytest_runtest_logreport(self, report: pytest.TestReport):
         """
@@ -40,12 +45,10 @@ class FlakeFighter:
         :param line_number: The line number to check.
         """
         try:
-            output = subprocess.check_output(
-                f"git log -L {line_number},{line_number}:{file_path}", shell=True, stderr=subprocess.DEVNULL
-            ).decode("utf-8")
+            output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
             if f"commit {self.commit}" in output:
                 return True
-        except subprocess.CalledProcessError:
+        except git.exc.GitCommandError:
             return False
         return False
 
@@ -63,5 +66,31 @@ class FlakeFighter:
         print("Real faults", real_faults)
 
 
-def pytest_configure(config):
-    config.pluginmanager.register(FlakeFighter())
+def pytest_addoption(parser: pytest.Parser):
+    """
+    Add extra pytest options.
+    :param parser: The argument parser.
+    """
+    group = parser.getgroup("flakefighter")
+    group.addoption(
+        "--commit",
+        action="store",
+        dest="commit_hash",
+        default=None,
+        help="The commit hash to compare against.",
+    )
+    group.addoption(
+        "--repo",
+        action="store",
+        dest="repo_path",
+        default=None,
+        help="The commit hash to compare against.",
+    )
+
+
+def pytest_configure(config: pytest.Config):
+    """
+    Initialise the FlakeFighter class.
+    :param config: The config options.
+    """
+    config.pluginmanager.register(FlakeFighter(config.option.repo_path, config.option.commit_hash))

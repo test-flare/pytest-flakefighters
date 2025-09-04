@@ -1,0 +1,37 @@
+name: Continuous Integration Tests (pytest)
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+jobs:
+  build:
+    if: github.event.pull_request.draft == false # Filter out draft PRs
+    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+          python --version
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -e .[test]
+          pip install pytest pytest-cov
+    - name: Test with pytest
+      run: |
+        pytest -p no:flakefighter --cov=pytest_flakefighter --cov-report=xml

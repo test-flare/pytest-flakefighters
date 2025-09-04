@@ -12,11 +12,8 @@ This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [C
 
 ## Features
 
--   TODO
+-   Implements the [DeFlaker algorithm](https://deflaker.com/) for pytest
 
-## Requirements
-
--   TODO
 
 ## Installation
 
@@ -27,7 +24,14 @@ pip install pytest-flakefighter
 
 ## Usage
 
--   TODO
+FlakeFighter is intended to run on git repositories that have test suites runnable with `pytest`.
+Once you have installed FlakeFighter, you can run it from the root directory of your repo simply by running `pytest` in your usual way.
+If you need to call `pytest` from outside your repo, you can pass in the path to your repo as an additional parameter, `pytest --repo=path/to-repo`.
+
+By default, the DeFlaker algorithm will compare the most recent commit to the previous commit.
+This is to allow it to work with Continuous Integration actions.
+However, if you would like to run it with a historical commit, you can include this as an extra argument `pytest --commit=<commit_hash>`.
+We do not currently support comparison with uncommitted code.
 
 ## Contributing
 

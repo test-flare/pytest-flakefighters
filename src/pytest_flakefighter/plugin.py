@@ -15,7 +15,9 @@ class FlakeFighter:
     def __init__(self, repo_root: str = None, commit: str = None):
         self.failed_reports = {}
         self.cov = coverage.Coverage()
+        self.cov.start()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
+        self.real_faults = []
         if commit is not None:
             self.commit = commit
         else:
@@ -28,14 +30,18 @@ class FlakeFighter:
         :param report: Pytest report for a test case.
         """
         if report.when == "setup":
-            self.cov.erase()
-            self.cov.start()
+            self.cov.switch_context(report.nodeid)
         if report.when == "call" and report.failed:
-            self.cov.stop()
             line_coverage = self.cov.get_data()
-            self.failed_reports[report] = {
-                filename: line_coverage.lines(filename) for filename in line_coverage.measured_files()
-            }
+
+            self.failed_reports[report] = {}
+            for filename in line_coverage.measured_files():
+                lines_by_context = line_coverage.contexts_by_lineno(filename)
+                if any(
+                    report.nodeid in contexts and self.line_modified_by_latest_commit(filename, line)
+                    for line, contexts in lines_by_context.items()
+                ):
+                    self.real_faults.append(report.nodeid)
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
         """
@@ -57,13 +63,8 @@ class FlakeFighter:
         Called after the entire test session finishes.
         Accesses the global list of failed reports.
         """
-        real_faults = []
-        for report, line_coverage in self.failed_reports.items():
-            for file_path, lines in line_coverage.items():
-                if any(self.line_modified_by_latest_commit(file_path, line) for line in lines):
-                    real_faults.append(report.nodeid)
         print()
-        print("Real faults", real_faults)
+        print("Real faults", self.real_faults)
 
 
 def pytest_addoption(parser: pytest.Parser):

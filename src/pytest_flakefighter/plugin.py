@@ -13,7 +13,6 @@ class FlakeFighter:
     """
 
     def __init__(self, repo_root: str = None, commit: str = None):
-        self.failed_reports = {}
         self.cov = coverage.Coverage()
         self.cov.start()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
@@ -33,8 +32,6 @@ class FlakeFighter:
             self.cov.switch_context(report.nodeid)
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
-
-            self.failed_reports[report] = {}
             for filename in line_coverage.measured_files():
                 lines_by_context = line_coverage.contexts_by_lineno(filename)
                 if any(

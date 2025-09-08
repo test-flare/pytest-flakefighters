@@ -5,32 +5,46 @@ Test DeFlaker algorithm.
 import os
 
 
-def test_files_exist(git_repo):
+def test_files_exist(triangle_repo):
     """
     Test that the necessary fixture files have actually heen created.
     """
     assert os.path.exists(
-        os.path.join(git_repo, "triangle.py")
-    ), f"Fixture file {os.path.join(git_repo, 'triangle.py')} not present."
+        os.path.join(triangle_repo, "triangle.py")
+    ), f"Fixture file {os.path.join(triangle_repo, 'triangle.py')} not present."
     assert os.path.exists(
-        os.path.join(git_repo, "test_triangle.py")
-    ), f"Fixture file {os.path.join(git_repo, 'test_triangle.py')} not present."
+        os.path.join(triangle_repo, "test_triangle.py")
+    ), f"Fixture file {os.path.join(triangle_repo, 'test_triangle.py')} not present."
 
 
-def test_bar_fixture(pytester, git_repo):
+def test_real_failures(pytester, triangle_repo):
     """Make sure that pytest accepts our fixture."""
 
     # run pytest with the following cmd args
     result = pytester.runpytest(
-        os.path.join(git_repo, "test_triangle.py"),
-        f"--repo={git_repo}",
+        os.path.join(triangle_repo, "test_triangle.py"),
+        f"--repo={triangle_repo}",
     )
 
     assert result.ret == 1, "Expected tests to fail"
 
     result.stdout.fnmatch_lines(
         [
-            "Real faults ['repo0/test_triangle.py::test_eqiulateral', 'repo0/test_triangle.py::test_isosceles', "
-            "'repo0/test_triangle.py::test_scalene']"
+            "Real faults ['triangle_repo0/test_triangle.py::test_eqiulateral', 'triangle_repo0/test_triangle.py::test_isosceles', "
+            "'triangle_repo0/test_triangle.py::test_scalene']"
         ]
     )
+
+
+def test_deflaker_example(pytester, deflaker_repo):
+    """Make sure that pytest accepts our fixture."""
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        os.path.join(deflaker_repo, "app.py"),
+        f"--repo={deflaker_repo}",
+    )
+
+    assert result.ret == 1, "Expected tests to fail"
+
+    result.stdout.fnmatch_lines(["Real faults ['deflaker_repo0/app.py::test_app']"])

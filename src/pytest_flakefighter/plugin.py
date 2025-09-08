@@ -16,7 +16,6 @@ class FlakeFighter:
         self.cov = coverage.Coverage()
         self.cov.start()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
-        self.real_faults = []
         if commit is not None:
             self.commit = commit
         else:
@@ -30,15 +29,19 @@ class FlakeFighter:
         """
         if report.when == "setup":
             self.cov.switch_context(report.nodeid)
+            report.flaky = True
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
-            for filename in line_coverage.measured_files():
-                lines_by_context = line_coverage.contexts_by_lineno(filename)
-                if any(
-                    report.nodeid in contexts and self.line_modified_by_latest_commit(filename, line)
-                    for line, contexts in lines_by_context.items()
-                ):
-                    self.real_faults.append(report.nodeid)
+            if not any(
+                report.nodeid in contexts and self.line_modified_by_latest_commit(filename, line)
+                for filename in line_coverage.measured_files()
+                for line, contexts in line_coverage.contexts_by_lineno(filename).items()
+            ):
+                report.flaky = True
+
+    def pytest_report_teststatus(self, report):
+        if hasattr(report, "flaky") and report.flaky:
+            return "flaky", "F", ("FLAKY", {"yellow": True})
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
         """
@@ -54,14 +57,6 @@ class FlakeFighter:
         except git.exc.GitCommandError:
             return False
         return False
-
-    def pytest_sessionfinish(self):
-        """
-        Called after the entire test session finishes.
-        Accesses the global list of failed reports.
-        """
-        print()
-        print("Real faults", self.real_faults)
 
 
 def pytest_addoption(parser: pytest.Parser):

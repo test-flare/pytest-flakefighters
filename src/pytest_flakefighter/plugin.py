@@ -29,16 +29,14 @@ class FlakeFighter:
         """
         if report.when == "setup":
             self.cov.switch_context(report.nodeid)
-            report.flaky = True
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
             line_coverage.set_query_context(report.nodeid)
-            if not any(
+            report.flaky = not any(
                 self.line_modified_by_latest_commit(filename, line)
                 for filename in line_coverage.measured_files()
                 for line in line_coverage.lines(filename)
-            ):
-                report.flaky = True
+            )
 
     def pytest_report_teststatus(self, report):
         if hasattr(report, "flaky") and report.flaky:

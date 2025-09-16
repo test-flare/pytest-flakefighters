@@ -28,7 +28,7 @@ jobs:
           pip install -e .
           pip install -e .[test]
     - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      uses: mxschmitt/action-tmate@v3
     - name: Test with pytest
       run: |
         pytest -p no:flakefighter --runpytest=subprocess

@@ -23,7 +23,9 @@ class FlakeFighter:
         else:
             self.commit = self.repo.head.commit.hexsha
         root = self.repo.git.rev_parse("--show-toplevel")
-        self.lines_changed = {os.path.join(root, file): {} for file in self.repo.commit(self.commit).stats.files}
+        self.lines_changed = {
+            os.path.abspath(os.path.join(root, file)): {} for file in self.repo.commit(self.commit).stats.files
+        }
 
     def pytest_report_teststatus(self, report: pytest.TestReport):
         """
@@ -55,10 +57,6 @@ class FlakeFighter:
         if line_number in self.lines_changed[file_path]:
             return self.lines_changed[file_path][line_number]
         output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
-        print("GIT LOG")
-        print(output)
-        print("=" * 20)
-        assert False
         self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
         return self.lines_changed[file_path][line_number]
 

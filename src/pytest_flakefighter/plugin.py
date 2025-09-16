@@ -21,11 +21,11 @@ class FlakeFighter:
         else:
             self.commit = self.repo.head.commit.hexsha
 
-    def pytest_runtest_logreport(self, report: pytest.TestReport):
+    def pytest_report_teststatus(self, report: pytest.TestReport):
         """
-        Stores the failed reports in a global list.
+        Classify tests as flaky failures if they did not execute any changed code.
 
-        :param report: Pytest report for a test case.
+        :param report: The pytest report object.
         """
         if report.when == "setup":
             self.cov.switch_context(report.nodeid)
@@ -37,10 +37,8 @@ class FlakeFighter:
                 for filename in line_coverage.measured_files()
                 for line in line_coverage.lines(filename)
             )
-
-    def pytest_report_teststatus(self, report):
-        if hasattr(report, "flaky") and report.flaky:
-            return "flaky", "F", ("FLAKY", {"yellow": True})
+        if report.failed and report.flaky:
+            return report.outcome, "F", ("FLAKY", {"yellow": True})
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
         """

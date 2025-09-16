@@ -32,10 +32,11 @@ class FlakeFighter:
             report.flaky = True
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
+            line_coverage.set_query_context(report.nodeid)
             if not any(
-                report.nodeid in contexts and self.line_modified_by_latest_commit(filename, line)
+                self.line_modified_by_latest_commit(filename, line)
                 for filename in line_coverage.measured_files()
-                for line, contexts in line_coverage.contexts_by_lineno(filename).items()
+                for line in line_coverage.lines(filename)
             ):
                 report.flaky = True
 

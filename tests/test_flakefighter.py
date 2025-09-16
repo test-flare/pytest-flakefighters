@@ -23,8 +23,7 @@ def test_real_failures(pytester, triangle_repo):
     # run pytest with the following cmd args
     result = pytester.runpytest(os.path.join(triangle_repo, "triangle.py"), f"--repo={triangle_repo}")
 
-    assert result.ret == 1, "Expected tests to fail"
-
+    result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
             "FAILED ../triangle_repo0/triangle.py::test_eqiulateral*",

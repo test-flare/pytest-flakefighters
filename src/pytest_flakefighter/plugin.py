@@ -39,6 +39,7 @@ class FlakeFighter:
             )
         if report.failed and report.flaky:
             return report.outcome, "F", ("FLAKY", {"yellow": True})
+        return None
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
         """

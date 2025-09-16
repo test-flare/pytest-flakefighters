@@ -54,13 +54,9 @@ class FlakeFighter:
         """
         if line_number in self.lines_changed[file_path]:
             return self.lines_changed[file_path][line_number]
-        try:
-            output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
-            self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
-            return self.lines_changed[file_path][line_number]
-        except git.exc.GitCommandError:
-            return False
-        return False
+        output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
+        self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
+        return self.lines_changed[file_path][line_number]
 
 
 def pytest_addoption(parser: pytest.Parser):

@@ -21,9 +21,7 @@ def test_real_failures(pytester, triangle_repo):
     """Make sure that pytest accepts our fixture."""
 
     # run pytest with the following cmd args
-    result = pytester.runpytest(os.path.join(triangle_repo, "triangle.py"), f"--repo={triangle_repo}")
-
-    print(result.readouterr())
+    result = pytester.runpytest(os.path.join(triangle_repo, "triangle.py"), f"--repo={triangle_repo}", "-s")
 
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(

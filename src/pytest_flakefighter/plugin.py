@@ -55,6 +55,7 @@ class FlakeFighter:
         if line_number in self.lines_changed[file_path]:
             return self.lines_changed[file_path][line_number]
         output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
+        print(output)
         self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
         return self.lines_changed[file_path][line_number]
 

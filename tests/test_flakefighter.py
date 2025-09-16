@@ -26,9 +26,9 @@ def test_real_failures(pytester, triangle_repo):
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
-            "FAILED ../triangle_repo0/triangle.py::test_eqiulateral*",
-            "FAILED ../triangle_repo0/triangle.py::test_isosceles*",
-            "FAILED ../triangle_repo0/triangle.py::test_scalene*",
+            f"FAILED {os.path.join('..','triangle_repo0', 'triangle.py')}::test_eqiulateral*",
+            f"FAILED {os.path.join('..','triangle_repo0', 'triangle.py')}::test_isosceles*",
+            f"FAILED {os.path.join('..','triangle_repo0', 'triangle.py')}::test_scalene*",
         ]
     )
 

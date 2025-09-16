@@ -5,7 +5,7 @@ Test DeFlaker algorithm.
 import os
 
 
-def test_files_exist(triangle_repo):
+def test_files_exist(triangle_repo, deflaker_repo):
     """
     Test that the necessary fixture files have actually heen created.
     """
@@ -13,8 +13,8 @@ def test_files_exist(triangle_repo):
         os.path.join(triangle_repo, "triangle.py")
     ), f"Fixture file {os.path.join(triangle_repo, 'triangle.py')} not present."
     assert os.path.exists(
-        os.path.join(triangle_repo, "test_triangle.py")
-    ), f"Fixture file {os.path.join(triangle_repo, 'test_triangle.py')} not present."
+        os.path.join(deflaker_repo, "app.py")
+    ), f"Fixture file {os.path.join(deflaker_repo, 'app.py')} not present."
 
 
 def test_real_failures(pytester, triangle_repo):
@@ -22,7 +22,7 @@ def test_real_failures(pytester, triangle_repo):
 
     # run pytest with the following cmd args
     result = pytester.runpytest(
-        os.path.join(triangle_repo, "test_triangle.py"),
+        os.path.join(triangle_repo, "triangle.py"),
         f"--repo={triangle_repo}",
     )
 
@@ -30,9 +30,9 @@ def test_real_failures(pytester, triangle_repo):
 
     result.stdout.fnmatch_lines(
         [
-            "FAILED ../triangle_repo0/test_triangle.py::test_eqiulateral*",
-            "FAILED ../triangle_repo0/test_triangle.py::test_isosceles*",
-            "FAILED ../triangle_repo0/test_triangle.py::test_scalene*",
+            "FAILED ../triangle_repo0/triangle.py::test_eqiulateral*",
+            "FAILED ../triangle_repo0/triangle.py::test_isosceles*",
+            "FAILED ../triangle_repo0/triangle.py::test_scalene*",
         ]
     )
 

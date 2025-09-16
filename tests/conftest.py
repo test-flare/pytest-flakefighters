@@ -19,13 +19,12 @@ def fixture_triangle_repo(tmpdir_factory):
     """
     repo_root = tmpdir_factory.mktemp("triangle_repo")
     repo = git.Repo.init(repo_root)
-    shutil.copy(os.path.join("tests", "resources", "triangle.txt"), os.path.join(repo_root, "triangle.py"))
-    shutil.copy(os.path.join("tests", "resources", "test_triangle.txt"), os.path.join(repo_root, "test_triangle.py"))
-    repo.index.add(["triangle.py", "test_triangle.py"])
+    shutil.copy(os.path.join("tests", "resources", "triangle_example.txt"), os.path.join(repo_root, "triangle.py"))
+    repo.index.add(["triangle.py"])
     repo.index.commit("Initial commit of test file.")
 
-    shutil.copy(os.path.join("tests", "resources", "triangle_failure.txt"), os.path.join(repo_root, "triangle.py"))
-    repo.index.add(["triangle.py", "test_triangle.py"])
+    shutil.copy(os.path.join("tests", "resources", "triangle_broken.txt"), os.path.join(repo_root, "triangle.py"))
+    repo.index.add(["triangle.py"])
     repo.index.commit("Broke the tests.")
     return repo_root
 

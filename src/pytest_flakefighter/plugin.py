@@ -2,6 +2,8 @@
 This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
 """
 
+import os
+
 import coverage
 import git
 import pytest
@@ -20,6 +22,8 @@ class FlakeFighter:
             self.commit = commit
         else:
             self.commit = self.repo.head.commit.hexsha
+        root = self.repo.git.rev_parse("--show-toplevel")
+        self.lines_changed = {os.path.join(root, file): {} for file in self.repo.commit(self.commit).stats.files}
 
     def pytest_report_teststatus(self, report: pytest.TestReport):
         """
@@ -32,13 +36,13 @@ class FlakeFighter:
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
             line_coverage.set_query_context(report.nodeid)
-            report.flaky = not any(
-                self.line_modified_by_latest_commit(filename, line)
-                for filename in line_coverage.measured_files()
-                for line in line_coverage.lines(filename)
-            )
-        if report.failed and report.flaky:
-            return report.outcome, "F", ("FLAKY", {"yellow": True})
+            if not any(
+                self.line_modified_by_latest_commit(file_path, line_number)
+                for file_path in line_coverage.measured_files()
+                for line_number in line_coverage.lines(file_path)
+                if file_path in self.lines_changed
+            ):
+                return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
@@ -48,10 +52,12 @@ class FlakeFighter:
         :param file_path: The file to check.
         :param line_number: The line number to check.
         """
+        if line_number in self.lines_changed[file_path]:
+            return self.lines_changed[file_path][line_number]
         try:
             output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
-            if f"commit {self.commit}" in output:
-                return True
+            self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
+            return self.lines_changed[file_path][line_number]
         except git.exc.GitCommandError:
             return False
         return False

@@ -28,4 +28,4 @@ jobs:
           pip install -e .[test]
     - name: Test with pytest
       run: |
-        pytest -p no:flakefighter
+        pytest -p no:flakefighter --runpytest=subprocess

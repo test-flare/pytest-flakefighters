@@ -58,6 +58,7 @@ class FlakeFighter:
         print("GIT LOG")
         print(output)
         print("=" * 20)
+        assert False
         self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
         return self.lines_changed[file_path][line_number]
 

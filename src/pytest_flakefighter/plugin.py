@@ -16,7 +16,6 @@ class FlakeFighter:
 
     def __init__(self, repo_root: str = None, commit: str = None):
         self.cov = coverage.Coverage()
-        self.cov.start()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         if commit is not None:
             self.commit = commit
@@ -27,24 +26,32 @@ class FlakeFighter:
             os.path.abspath(os.path.join(root, file)): {} for file in self.repo.commit(self.commit).stats.files
         }
 
-    def pytest_report_teststatus(self, report: pytest.TestReport):
-        """
-        Classify tests as flaky failures if they did not execute any changed code.
+    @pytest.hookimpl(hookwrapper=True)
+    def pytest_runtest_protocol(self, item, nextitem):
+        self.cov.start()
+        self.cov.switch_context(item.nodeid)
+        yield
+        self.cov.stop()
 
-        :param report: The pytest report object.
-        """
-        if report.when == "setup":
-            self.cov.switch_context(report.nodeid)
+    @pytest.hookimpl(hookwrapper=True)
+    def pytest_runtest_makereport(self, item, call):
+        outcome = yield
+        report = outcome.get_result()
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
-            line_coverage.set_query_context(report.nodeid)
+            line_coverage.set_query_context(item.nodeid)
             if not any(
                 self.line_modified_by_latest_commit(file_path, line_number)
                 for file_path in line_coverage.measured_files()
                 for line_number in line_coverage.lines(file_path)
                 if file_path in self.lines_changed
             ):
-                return report.outcome, "F", ("FLAKY", {"yellow": True})
+                report.flaky = True
+        return report
+
+    def pytest_report_teststatus(self, report, config):
+        if getattr(report, "flaky", False):
+            return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:

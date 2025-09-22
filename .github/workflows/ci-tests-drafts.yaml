@@ -26,6 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
           pip install -e .[test]
+          pip install pytest pytest-cov
     - name: Test with pytest
       run: |
         pytest -p no:flakefighter --runpytest=subprocess --cov=causal_testing --cov-report=xml

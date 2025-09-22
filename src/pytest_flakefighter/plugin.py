@@ -27,14 +27,31 @@ class FlakeFighter:
         }
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_protocol(self, item, nextitem):
+    def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item):  # pylint: disable=unused-argument
+        """
+        Perform the runtest protocol for a single test item.
+
+        :param item: Test item for which the runtest protocol is performed.
+        :param nextitem: The scheduled-to-be-next test item (or None if this is the end my friend).
+        """
         self.cov.start()
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_makereport(self, item, call):
+    def pytest_runtest_makereport(
+        self, item: pytest.Item, call: pytest.CallInfo[None]  # pylint: disable=unused-argument
+    ) -> pytest.TestReport:
+        """
+        Called to create a :class:`~pytest.TestReport` for each of
+        the setup, call and teardown runtest phases of a test item.
+
+        :param item: The item.
+        :param call: The :class:`~pytest.CallInfo` for the phase.
+
+        :return: The modified test report.
+        """
         outcome = yield
         report = outcome.get_result()
         if report.when == "call" and report.failed:
@@ -49,7 +66,15 @@ class FlakeFighter:
                 report.flaky = True
         return report
 
-    def pytest_report_teststatus(self, report, config):
+    def pytest_report_teststatus(
+        self, report: pytest.TestReport, config: pytest.Config  # pylint: disable=unused-argument
+    ) -> tuple[str, str, str]:
+        """
+        Return result-category, shortletter and verbose word for status reporting.
+        :param report: The report object whose status is to be returned.
+        :param config: The pytest config object.
+        :returns: The test status.
+        """
         if getattr(report, "flaky", False):
             return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None

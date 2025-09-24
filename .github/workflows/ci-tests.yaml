@@ -31,6 +31,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
           pip install -e .[test]
+          pip install pytest pytest-cov
     - name: Test with pytest
       run: |
-        pytest -p no:flakefighter --runpytest=subprocess
+        pytest -p no:flakefighter --runpytest=subprocess --cov=src --cov-report=xml
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v5
+      with:
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}

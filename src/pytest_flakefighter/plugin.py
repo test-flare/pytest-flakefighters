@@ -16,7 +16,6 @@ class FlakeFighter:
 
     def __init__(self, repo_root: str = None, commit: str = None):
         self.cov = coverage.Coverage()
-        self.cov.start()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         if commit is not None:
             self.commit = commit
@@ -26,6 +25,12 @@ class FlakeFighter:
         self.lines_changed = {
             os.path.abspath(os.path.join(root, file)): {} for file in self.repo.commit(self.commit).stats.files
         }
+
+    def pytest_sessionstart(self, session: pytest.Session):
+        self.cov.start()
+
+    def pytest_collection_finish(self, session: pytest.Session):
+        self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item):  # pylint: disable=unused-argument
@@ -90,10 +95,6 @@ class FlakeFighter:
         output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
         self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
         return self.lines_changed[file_path][line_number]
-
-    def pytest_sessionfinish(self, session, exitstatus):  # pylint: disable=unused-argument
-        self.cov.stop()
-        self.cov.save()
 
 
 def pytest_addoption(parser: pytest.Parser):

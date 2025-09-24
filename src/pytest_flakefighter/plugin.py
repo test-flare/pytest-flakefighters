@@ -50,7 +50,7 @@ class FlakeFighter:
         :param item: The item.
         """
         self.cov.start()
-        # Thse lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
+        # These lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()

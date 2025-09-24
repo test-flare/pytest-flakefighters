@@ -33,6 +33,22 @@ def test_real_failures(pytester, triangle_repo):
     )
 
 
+def test_flaky_failures(pytester, flaky_triangle_repo):
+    """Make sure that pytest accepts our fixture."""
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(os.path.join(flaky_triangle_repo, "triangle.py"), f"--repo={flaky_triangle_repo}", "-s")
+
+    result.assert_outcomes(failed=3)
+    result.stdout.fnmatch_lines(
+        [
+            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_eqiulateral*",
+            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_isosceles*",
+            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_scalene*",
+        ]
+    )
+
+
 def test_deflaker_example(pytester, deflaker_repo):
     """Make sure that pytest accepts our fixture."""
 

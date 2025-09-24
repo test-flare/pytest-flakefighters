@@ -38,6 +38,7 @@ class FlakeFighter:
         Stop the coverage measurement after tests are collected.
         :param session: The session.
         """
+        # This line cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
@@ -49,6 +50,7 @@ class FlakeFighter:
         :param item: The item.
         """
         self.cov.start()
+        # Thse lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()
@@ -69,7 +71,6 @@ class FlakeFighter:
         report = outcome.get_result()
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
-            # reporter = coverage.report.JSONReport(self.cov, self.cov.config)
             if not any(
                 self.line_modified_by_latest_commit(file_path, line_number)
                 for file_path in line_coverage.measured_files()

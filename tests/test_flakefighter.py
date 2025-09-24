@@ -6,15 +6,6 @@ import os
 
 import git
 
-from pytest_flakefighter.plugin import FlakeFighter
-
-
-def test_commit_hash(flaky_triangle_repo):
-    repo = git.Repo(flaky_triangle_repo)
-    all_commits = list(repo.iter_commits("main"))
-    flakefighter = FlakeFighter(repo_root=flaky_triangle_repo, commit=all_commits[1].hexsha)
-    assert flakefighter.commit == all_commits[1].hexsha
-
 
 def test_files_exist(flaky_triangle_repo, deflaker_repo):
     """

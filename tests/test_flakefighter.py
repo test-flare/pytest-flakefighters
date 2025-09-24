@@ -4,37 +4,54 @@ Test DeFlaker algorithm.
 
 import os
 
+import git
 
-def test_files_exist(triangle_repo, deflaker_repo):
+from pytest_flakefighter.plugin import FlakeFighter
+
+
+def test_commit_hash(flaky_triangle_repo):
+    repo = git.Repo(flaky_triangle_repo)
+    all_commits = list(repo.iter_commits("main"))
+    flakefighter = FlakeFighter(repo_root=flaky_triangle_repo, commit=all_commits[1].hexsha)
+    assert flakefighter.commit == all_commits[1].hexsha
+
+
+def test_files_exist(flaky_triangle_repo, deflaker_repo):
     """
     Test that the necessary fixture files have actually heen created.
     """
     assert os.path.exists(
-        os.path.join(triangle_repo, "triangle.py")
-    ), f"Fixture file {os.path.join(triangle_repo, 'triangle.py')} not present."
+        os.path.join(flaky_triangle_repo, "triangle.py")
+    ), f"Fixture file {os.path.join(flaky_triangle_repo, 'triangle.py')} not present."
     assert os.path.exists(
         os.path.join(deflaker_repo, "app.py")
     ), f"Fixture file {os.path.join(deflaker_repo, 'app.py')} not present."
 
 
-def test_real_failures(pytester, triangle_repo):
-    """Make sure that pytest accepts our fixture."""
+def test_real_failures(pytester, flaky_triangle_repo):
+    """Make sure that genuine failures are labelled as such."""
+    repo = git.Repo(flaky_triangle_repo)
+    commits = [commit.hexsha for commit in repo.iter_commits("main")]
 
-    # run pytest with the following cmd args
-    result = pytester.runpytest(os.path.join(triangle_repo, "triangle.py"), f"--repo={triangle_repo}", "-s")
+    result = pytester.runpytest(
+        os.path.join(flaky_triangle_repo, "triangle.py"),
+        f"--repo={flaky_triangle_repo}",
+        f"--commit={commits[1]}",
+        "-s",
+    )
 
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
-            f"FAILED {os.path.join('..','triangle_repo0', 'triangle.py')}::test_eqiulateral*",
-            f"FAILED {os.path.join('..','triangle_repo0', 'triangle.py')}::test_isosceles*",
-            f"FAILED {os.path.join('..','triangle_repo0', 'triangle.py')}::test_scalene*",
+            f"FAILED {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_eqiulateral*",
+            f"FAILED {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_isosceles*",
+            f"FAILED {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_scalene*",
         ]
     )
 
 
 def test_flaky_failures(pytester, flaky_triangle_repo):
-    """Make sure that pytest accepts our fixture."""
+    """Make sure that flaky failures are labelled as such"""
 
     # run pytest with the following cmd args
     result = pytester.runpytest(os.path.join(flaky_triangle_repo, "triangle.py"), f"--repo={flaky_triangle_repo}", "-s")

@@ -16,6 +16,7 @@ class FlakeFighter:
 
     def __init__(self, repo_root: str = None, commit: str = None):
         self.cov = coverage.Coverage()
+        self.cov.start()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         if commit is not None:
             self.commit = commit
@@ -34,10 +35,8 @@ class FlakeFighter:
         :param item: Test item for which the runtest protocol is performed.
         :param nextitem: The scheduled-to-be-next test item (or None if this is the end my friend).
         """
-        self.cov.start()
         self.cov.switch_context(item.nodeid)
         yield
-        self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(
@@ -56,7 +55,7 @@ class FlakeFighter:
         report = outcome.get_result()
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
-            line_coverage.set_query_context(item.nodeid)
+            # reporter = coverage.report.JSONReport(self.cov, self.cov.config)
             if not any(
                 self.line_modified_by_latest_commit(file_path, line_number)
                 for file_path in line_coverage.measured_files()
@@ -91,6 +90,10 @@ class FlakeFighter:
         output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
         self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
         return self.lines_changed[file_path][line_number]
+
+    def pytest_sessionfinish(self, session, exitstatus):  # pylint: disable=unused-argument
+        self.cov.stop()
+        self.cov.save()
 
 
 def pytest_addoption(parser: pytest.Parser):

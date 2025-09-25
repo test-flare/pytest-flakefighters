@@ -25,6 +25,7 @@ class FlakeFighter:
         self.lines_changed = {
             os.path.abspath(os.path.join(root, file)): {} for file in self.repo.commit(self.commit).stats.files
         }
+        self.genuine_failure_observed = False
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item):  # pylint: disable=unused-argument
@@ -64,6 +65,8 @@ class FlakeFighter:
                 if file_path in self.lines_changed
             ):
                 report.flaky = True
+            else:
+                self.genunine_failures_observed = True
         return report
 
     def pytest_report_teststatus(
@@ -77,6 +80,7 @@ class FlakeFighter:
         """
         if getattr(report, "flaky", False):
             return report.outcome, "F", ("FLAKY", {"yellow": True})
+        self.genuine_failure_observed = True
         return None
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
@@ -91,6 +95,18 @@ class FlakeFighter:
         output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
         self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
         return self.lines_changed[file_path][line_number]
+
+    def pytest_sessionfinish(
+        self,
+        session: pytest.Session,
+        exitstatus: pytest.ExitCode,  # pylint: disable=unused-argument
+    ) -> None:
+        """Called after whole test run finished, right before returning the exit status to the system.
+        :param session: The pytest session object.
+        :param exitstatus: The status which pytest will return to the system.
+        """
+        if session.config.option.suppress_flaky and not self.genuine_failure_observed:
+            session.exitstatus = pytest.ExitCode.OK
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -112,6 +128,13 @@ def pytest_addoption(parser: pytest.Parser):
         dest="repo_path",
         default=None,
         help="The commit hash to compare against.",
+    )
+    group.addoption(
+        "--suppress-flaky-failures-exit-code",
+        action="store_true",
+        dest="suppress_flaky",
+        default=False,
+        help="Return OK exit code if the only failures are flaky failures.",
     )
 
 

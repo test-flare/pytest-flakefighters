@@ -27,15 +27,31 @@ class FlakeFighter:
         }
         self.genuine_failure_observed = False
 
-    @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item):  # pylint: disable=unused-argument
+    def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
-        Perform the runtest protocol for a single test item.
-
-        :param item: Test item for which the runtest protocol is performed.
-        :param nextitem: The scheduled-to-be-next test item (or None if this is the end my friend).
+        Start the coverage measurement before tests are collected so we measure class and method definitions as covered.
+        :param session: The session.
         """
         self.cov.start()
+
+    def pytest_collection_finish(self, session: pytest.Session):  # pylint: disable=unused-argument
+        """
+        Stop the coverage measurement after tests are collected.
+        :param session: The session.
+        """
+        # This line cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
+        self.cov.stop()
+
+    @pytest.hookimpl(hookwrapper=True)
+    def pytest_runtest_call(self, item: pytest.Item):
+        """
+        Start the coverage measurement and label the coverage for the current test, run the test,
+        then stop coverage measurement.
+
+        :param item: The item.
+        """
+        self.cov.start()
+        # These lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()
@@ -45,8 +61,7 @@ class FlakeFighter:
         self, item: pytest.Item, call: pytest.CallInfo[None]  # pylint: disable=unused-argument
     ) -> pytest.TestReport:
         """
-        Called to create a :class:`~pytest.TestReport` for each of
-        the setup, call and teardown runtest phases of a test item.
+        Classify failed tests as flaky if they don't cover any changed code.
 
         :param item: The item.
         :param call: The :class:`~pytest.CallInfo` for the phase.
@@ -57,7 +72,6 @@ class FlakeFighter:
         report = outcome.get_result()
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
-            line_coverage.set_query_context(item.nodeid)
             if not any(
                 self.line_modified_by_latest_commit(file_path, line_number)
                 for file_path in line_coverage.measured_files()
@@ -73,7 +87,7 @@ class FlakeFighter:
         self, report: pytest.TestReport, config: pytest.Config  # pylint: disable=unused-argument
     ) -> tuple[str, str, str]:
         """
-        Return result-category, shortletter and verbose word for status reporting.
+        Report flaky failures as such.
         :param report: The report object whose status is to be returned.
         :param config: The pytest config object.
         :returns: The test status.

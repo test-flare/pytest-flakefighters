@@ -12,13 +12,13 @@ import pytest
 pytest_plugins = "pytester"
 
 
-@pytest.fixture(scope="session", name="triangle_repo")
-def fixture_triangle_repo(tmpdir_factory):
+@pytest.fixture(scope="session", name="flaky_triangle_repo")
+def fixture_flaky_triangle_repo(tmpdir_factory):
     """
-    Fixture for a minimal git repo with a commit history of broken tests.
+    Fixture for a minimal git repo with a commit history to hide failing tests.
     """
-    repo_root = tmpdir_factory.mktemp("triangle_repo")
-    repo = git.Repo.init(repo_root)
+    repo_root = tmpdir_factory.mktemp("flaky_triangle_repo")
+    repo = git.Repo.init(repo_root, initial_branch="main")
     shutil.copy(os.path.join("tests", "resources", "triangle_example.txt"), os.path.join(repo_root, "triangle.py"))
     repo.index.add(["triangle.py"])
     repo.index.commit("Initial commit of test file.")
@@ -26,6 +26,8 @@ def fixture_triangle_repo(tmpdir_factory):
     shutil.copy(os.path.join("tests", "resources", "triangle_broken.txt"), os.path.join(repo_root, "triangle.py"))
     repo.index.add(["triangle.py"])
     repo.index.commit("Broke the tests.")
+
+    repo.index.commit("This is an empty commit")
     return repo_root
 
 
@@ -35,7 +37,7 @@ def fixture_deflaker_repo(tmpdir_factory):
     Fixture for a minimal git repo with a commit history of broken tests.
     """
     repo_root = tmpdir_factory.mktemp("deflaker_repo")
-    repo = git.Repo.init(repo_root)
+    repo = git.Repo.init(repo_root, initial_branch="main")
     shutil.copy(os.path.join("tests", "resources", "deflaker_example.txt"), os.path.join(repo_root, "app.py"))
     repo.index.add(["app.py"])
     repo.index.commit("Initial commit of test file.")

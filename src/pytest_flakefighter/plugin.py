@@ -80,7 +80,7 @@ class FlakeFighter:
             ):
                 report.flaky = True
             else:
-                self.genunine_failures_observed = True
+                self.genuine_failure_observed = True
         return report
 
     def pytest_report_teststatus(
@@ -94,7 +94,6 @@ class FlakeFighter:
         """
         if getattr(report, "flaky", False):
             return report.outcome, "F", ("FLAKY", {"yellow": True})
-        self.genuine_failure_observed = True
         return None
 
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
@@ -119,6 +118,7 @@ class FlakeFighter:
         :param session: The pytest session object.
         :param exitstatus: The status which pytest will return to the system.
         """
+        print("\nSTATUS", session.config.option.suppress_flaky, not self.genuine_failure_observed)
         if session.config.option.suppress_flaky and not self.genuine_failure_observed:
             session.exitstatus = pytest.ExitCode.OK
 

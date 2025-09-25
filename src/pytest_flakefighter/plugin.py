@@ -38,7 +38,7 @@ class FlakeFighter:
         Stop the coverage measurement after tests are collected.
         :param session: The session.
         """
-        # This line cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
+        # Line cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
@@ -50,7 +50,7 @@ class FlakeFighter:
         :param item: The item.
         """
         self.cov.start()
-        # These lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
+        # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()

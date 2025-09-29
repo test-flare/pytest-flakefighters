@@ -71,13 +71,14 @@ class FlakeFighter:
         report = outcome.get_result()
         if report.when == "call" and report.failed:
             line_coverage = self.cov.get_data()
-            if not any(
+            flaky = not any(
                 self.line_modified_by_latest_commit(file_path, line_number)
                 for file_path in line_coverage.measured_files()
                 for line_number in line_coverage.lines(file_path)
                 if file_path in self.lines_changed
-            ):
-                report.flaky = True
+            )
+            report.flaky = flaky
+            item.user_properties.append(("flaky", flaky))
         return report
 
     def pytest_report_teststatus(

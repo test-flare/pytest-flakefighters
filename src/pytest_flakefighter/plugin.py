@@ -119,7 +119,7 @@ class FlakeFighter:
         :param exitstatus: The status which pytest will return to the system.
         """
         print("\nSTATUS", session.config.option.suppress_flaky, not self.genuine_failure_observed)
-        if session.config.option.suppress_flaky and not self.genuine_failure_observed:
+        if session.config.option.suppress_flaky and session.exitstatus == pytest.ExitCode.TESTS_FAILED and not self.genuine_failure_observed:
             session.exitstatus = pytest.ExitCode.OK
 
 

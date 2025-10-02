@@ -28,7 +28,7 @@ def test_real_failures(pytester, flaky_triangle_repo):
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo, "triangle.py"),
         f"--repo={flaky_triangle_repo}",
-        f"--commit={commits[1]}",
+        f"--target-commit={commits[1]}",
         "-s",
     )
 
@@ -46,12 +46,7 @@ def test_real_failures(pytester, flaky_triangle_repo):
 def test_flaky_failures(pytester, flaky_triangle_repo):
     """Make sure that flaky failures are labelled as such"""
 
-    # run pytest with the following cmd args
-    result = pytester.runpytest(
-        os.path.join(flaky_triangle_repo, "triangle.py"),
-        f"--repo={flaky_triangle_repo}",
-        "-s",
-    )
+    result = pytester.runpytest(os.path.join(flaky_triangle_repo, "triangle.py"), f"--repo={flaky_triangle_repo}", "-s")
 
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(

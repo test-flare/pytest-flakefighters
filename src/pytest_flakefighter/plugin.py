@@ -49,6 +49,7 @@ class FlakeFighter:
         patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
         for patch in patches:
             if patch.target_file == patch.source_file:
+                print(root, patch.source_file)
                 abspath = os.path.join(root, patch.source_file)
                 self.lines_changed[abspath] = []
                 for hunk in patch:

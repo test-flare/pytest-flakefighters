@@ -4,6 +4,9 @@ Test DeFlaker algorithm.
 
 import os
 
+import git
+from pytest import ExitCode
+
 
 def repo_name(repo):
     return os.path.basename(repo.working_dir)
@@ -54,6 +57,7 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
             f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
         ]
     )
+    assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
 
 
 def test_flaky_failures(pytester, flaky_triangle_repo):
@@ -76,6 +80,29 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
             f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
         ]
     )
+    assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
+
+
+def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
+    """Make sure that flaky failures are labelled as such"""
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        os.path.join(flaky_triangle_repo, "triangle.py"),
+        f"--repo={flaky_triangle_repo}",
+        "--suppress-flaky-failures-exit-code",
+        "-s",
+    )
+
+    result.assert_outcomes(failed=3)
+    result.stdout.fnmatch_lines(
+        [
+            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_eqiulateral*",
+            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_isosceles*",
+            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_scalene*",
+        ]
+    )
+    assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."
 
 
 def test_deflaker_example(pytester, deflaker_repo):

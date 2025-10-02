@@ -23,6 +23,7 @@ class FlakeFighter:
     ):
         self.cov = coverage.Coverage()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
+        self.genuine_failure_observed = False
         self.lines_changed = {}
         if target_commit is None and not self.repo.is_dirty():
             # No uncommitted changes, so use most recent commit
@@ -109,6 +110,7 @@ class FlakeFighter:
             )
             report.flaky = flaky
             item.user_properties.append(("flaky", flaky))
+            self.genuine_failure_observed = not flaky
         return report
 
     def pytest_report_teststatus(
@@ -134,6 +136,22 @@ class FlakeFighter:
         if line_number in self.lines_changed[file_path]:
             return self.lines_changed[file_path][line_number]
         return True
+
+    def pytest_sessionfinish(
+        self,
+        session: pytest.Session,
+        exitstatus: pytest.ExitCode,  # pylint: disable=unused-argument
+    ) -> None:
+        """Called after whole test run finished, right before returning the exit status to the system.
+        :param session: The pytest session object.
+        :param exitstatus: The status which pytest will return to the system.
+        """
+        if (
+            session.config.option.suppress_flaky
+            and session.exitstatus == pytest.ExitCode.TESTS_FAILED
+            and not self.genuine_failure_observed
+        ):
+            session.exitstatus = pytest.ExitCode.OK
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -162,6 +180,13 @@ def pytest_addoption(parser: pytest.Parser):
         dest="repo_path",
         default=None,
         help="The commit hash to compare against.",
+    )
+    group.addoption(
+        "--suppress-flaky-failures-exit-code",
+        action="store_true",
+        dest="suppress_flaky",
+        default=False,
+        help="Return OK exit code if the only failures are flaky failures.",
     )
 
 

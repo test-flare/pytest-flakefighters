@@ -54,7 +54,6 @@ class FlakeFighter:
                     self.lines_changed[abspath] += list(
                         range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
                     )
-        print("LINES CHANGED", self.lines_changed)
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -132,7 +131,6 @@ class FlakeFighter:
         :param file_path: The file to check.
         :param line_number: The line number to check.
         """
-        print("FILEPATH", file_path, ":", line_number)
         if line_number in self.lines_changed[file_path]:
             return self.lines_changed[file_path][line_number]
         return True

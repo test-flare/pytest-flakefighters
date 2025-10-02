@@ -4,9 +4,6 @@ Test DeFlaker algorithm.
 
 import os
 
-import git
-from pytest import ExitCode
-
 
 def repo_name(repo):
     return os.path.basename(repo.working_dir)
@@ -31,8 +28,10 @@ def test_real_failures(pytester, flaky_triangle_repo):
     )
 
 
-def test_real_failures_named_source(pytester, flaky_triangle_repo):
+def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
     """Make sure that genuine failures are labelled as such."""
+
+    flaky_triangle_repo.index.commit("Broke the tests.")
 
     # Add an extra commit so we can test indexing from not the most recent
     flaky_triangle_repo.index.commit("This is an empty commit")
@@ -63,6 +62,7 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
 
     # Add an empty commit to hide the flakiness
     # Long term, we may want to look at other ways of forcing flaky test outcomes, e.g. random seeds
+    flaky_triangle_repo.index.commit("Broke the tests.")
     flaky_triangle_repo.index.commit("This is an empty commit")
 
     result = pytester.runpytest(

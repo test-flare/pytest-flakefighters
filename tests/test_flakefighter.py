@@ -8,7 +8,11 @@ import git
 from pytest import ExitCode
 
 
-def repo_name(repo):
+def repo_name(repo: git.Repo):
+    """
+    Extract the name of the repo from its working dir.
+    :param repo: The git repo.
+    """
     return os.path.basename(repo.working_dir)
 
 

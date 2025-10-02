@@ -28,7 +28,6 @@ def fixture_flaky_triangle_repo(tmpdir_factory):
 
     shutil.copy(os.path.join(CURRENT_DIR, "resources", "triangle_broken.txt"), os.path.join(repo_root, "triangle.py"))
     repo.index.add(["triangle.py"])
-    repo.index.commit("Broke the tests.")
 
     return repo
 

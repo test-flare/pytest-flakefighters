@@ -7,6 +7,7 @@ import os
 import coverage
 import git
 import pytest
+from unidiff import PatchSet
 
 
 class FlakeFighter:
@@ -14,17 +15,37 @@ class FlakeFighter:
     Flakefighter plugin class implements the DeFlaker algorithm.
     """
 
-    def __init__(self, repo_root: str = None, commit: str = None):
+    def __init__(
+        self,
+        repo_root: str = None,
+        target_commit: str = None,
+        source_commit: str = None,
+    ):
         self.cov = coverage.Coverage()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
-        if commit is not None:
-            self.commit = commit
+        self.lines_changed = {}
+        self.target_commit = target_commit if target_commit is not None else self.repo.commit().hexsha
+        if source_commit is not None:
+            self.source_commit = source_commit
         else:
-            self.commit = self.repo.head.commit.hexsha
+            parents = [
+                commit.hexsha
+                for commit in self.repo.commit(source_commit).iter_parents()
+                if commit.hexsha != self.target_commit
+            ]
+            self.source_commit = parents[0]
+
         root = self.repo.git.rev_parse("--show-toplevel")
-        self.lines_changed = {
-            os.path.abspath(os.path.join(root, file)): {} for file in self.repo.commit(self.commit).stats.files
-        }
+        patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
+        for patch in patches:
+            if patch.target_file == patch.source_file:
+                abspath = os.path.join(root, patch.source_file)
+                self.lines_changed[abspath] = []
+                for hunk in patch:
+                    # Add each line in the hunk to lines_changed
+                    self.lines_changed[abspath] += list(
+                        range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
+                    )
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -103,9 +124,7 @@ class FlakeFighter:
         """
         if line_number in self.lines_changed[file_path]:
             return self.lines_changed[file_path][line_number]
-        output = self.repo.git.log("-L", f"{line_number},{line_number}:{file_path}")
-        self.lines_changed[file_path][line_number] = f"commit {self.commit}" in output
-        return self.lines_changed[file_path][line_number]
+        return True
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -115,11 +134,18 @@ def pytest_addoption(parser: pytest.Parser):
     """
     group = parser.getgroup("flakefighter")
     group.addoption(
-        "--commit",
+        "--target-commit",
         action="store",
-        dest="commit_hash",
+        dest="target_commit",
         default=None,
-        help="The commit hash to compare against.",
+        help="The target (newer) commit hash. Defaults to HEAD (the most recent commit).",
+    )
+    group.addoption(
+        "--source-commit",
+        action="store",
+        dest="source_commit",
+        default=None,
+        help="The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).",
     )
     group.addoption(
         "--repo",
@@ -135,4 +161,6 @@ def pytest_configure(config: pytest.Config):
     Initialise the FlakeFighter class.
     :param config: The config options.
     """
-    config.pluginmanager.register(FlakeFighter(config.option.repo_path, config.option.commit_hash))
+    config.pluginmanager.register(
+        FlakeFighter(config.option.repo_path, config.option.target_commit, config.option.source_commit)
+    )

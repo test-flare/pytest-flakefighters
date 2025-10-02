@@ -41,7 +41,7 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         f"--repo={flaky_triangle_repo.working_dir}",
-        f"--target-commit={commits[1]}",
+        f"--source-commit={commits[1]}",
         f"--target-commit={commits[2]}",
         "-s",
     )

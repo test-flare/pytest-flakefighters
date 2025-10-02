@@ -81,12 +81,16 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
 
 
 def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
-    """Make sure that flaky failures are labelled as such"""
+    """Test exit code is OK when only flaky failures"""
 
-    # run pytest with the following cmd args
+    # Add an empty commit to hide the flakiness
+    # Long term, we may want to look at other ways of forcing flaky test outcomes, e.g. random seeds
+    flaky_triangle_repo.index.commit("Broke the tests.")
+    flaky_triangle_repo.index.commit("This is an empty commit")
+
     result = pytester.runpytest(
-        os.path.join(flaky_triangle_repo, "triangle.py"),
-        f"--repo={flaky_triangle_repo}",
+        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        f"--repo={flaky_triangle_repo.working_dir}",
         "--suppress-flaky-failures-exit-code",
         "-s",
     )
@@ -94,9 +98,9 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
-            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_eqiulateral*",
-            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_isosceles*",
-            f"FLAKY {os.path.join('..','flaky_triangle_repo0', 'triangle.py')}::test_scalene*",
+            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
+            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
+            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
         ]
     )
     assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."

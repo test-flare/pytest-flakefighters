@@ -24,16 +24,25 @@ class FlakeFighter:
         self.cov = coverage.Coverage()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         self.lines_changed = {}
-        self.target_commit = target_commit if target_commit is not None else self.repo.commit().hexsha
-        if source_commit is not None:
-            self.source_commit = source_commit
+        if target_commit is None and not self.repo.is_dirty():
+            # No uncommitted changes, so use most recent commit
+            self.target_commit = self.repo.commit().hexsha
         else:
-            parents = [
-                commit.hexsha
-                for commit in self.repo.commit(source_commit).iter_parents()
-                if commit.hexsha != self.target_commit
-            ]
-            self.source_commit = parents[0]
+            self.target_commit = target_commit
+        if source_commit is None:
+            if self.target_commit is None:
+                # If uncommitted changes, use most recent commit as source
+                self.source_commit = self.repo.commit().hexsha
+            else:
+                # If no uncommitted changes, use previous commit as source
+                parents = [
+                    commit.hexsha
+                    for commit in self.repo.commit(source_commit).iter_parents()
+                    if commit.hexsha != self.target_commit
+                ]
+                self.source_commit = parents[0]
+        else:
+            self.source_commit = source_commit
 
         root = self.repo.git.rev_parse("--show-toplevel")
         self.genuine_failure_observed = False

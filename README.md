@@ -28,10 +28,8 @@ FlakeFighter is intended to run on git repositories that have test suites runnab
 Once you have installed FlakeFighter, you can run it from the root directory of your repo simply by running `pytest` in your usual way.
 If you need to call `pytest` from outside your repo, you can pass in the path to your repo as an additional parameter, `pytest --repo=path/to-repo`.
 
-By default, the DeFlaker algorithm will compare the most recent commit to the previous commit.
-This is to allow it to work with Continuous Integration actions.
-However, if you would like to run it with a historical commit, you can include this as an extra argument `pytest --commit=<commit_hash>`.
-We do not currently support comparison with uncommitted code.
+By default, flakefighter will compare the most recent commit (or local uncommitted changes if there are any) to the previous commit.
+To compare an aribtrary pair of commits, you can call `pytest --source-commit=<commit_hash> --target-commit=<commit_hash>`, where `--source-commit` represents the older commit and `--target-commit` represents the newer commit.
 
 ## Contributing
 

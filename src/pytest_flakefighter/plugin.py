@@ -9,6 +9,8 @@ import git
 import pytest
 from unidiff import PatchSet
 
+from pytest_flakefighter.database_management import Run, load_runs
+
 
 class FlakeFighter:
     """

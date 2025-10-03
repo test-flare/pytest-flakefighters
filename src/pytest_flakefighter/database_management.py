@@ -6,7 +6,16 @@ import os
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, Integer, Mapped, String, Text, create_engine, desc, select
+from sqlalchemy import (
+    Column,
+    Integer,
+    Mapped,
+    String,
+    Text,
+    create_engine,
+    desc,
+    select,
+)
 from sqlalchemy.orm import Session, declarative_base
 
 if os.path.exists(".env"):

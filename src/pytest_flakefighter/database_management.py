@@ -8,22 +8,34 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from sqlalchemy import (
     Column,
+    DateTime,
+    ForeignKey,
     Integer,
-    Mapped,
+    PickleType,
     String,
     Text,
     create_engine,
     desc,
     select,
 )
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, relationship
 
 if os.path.exists(".env"):
     load_dotenv()
 
-Base = declarative_base()
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///flakefighter.db")
 engine = create_engine(DATABASE_URL)
+
+
+class Base(DeclarativeBase):
+    def save(self):
+        """
+        Save the current run into the database.
+        """
+        with Session(engine) as session:
+            session.add(self)
+            session.commit()
+            session.flush()
 
 
 @dataclass
@@ -34,25 +46,32 @@ class Run(Base):
 
     __tablename__ = "runs"  # pylint: disable=C0103
     id: Mapped[int] = Column(Integer, primary_key=True)
-    timestamp: Mapped[int] = Column(Integer)
     source_commit: Mapped[str] = Column(String)
     target_commit: Mapped[str] = Column(String)
     junit_xml: Mapped[str] = Column(Text)
+    tests = relationship("Test", back_populates="run")
 
     def __repr__(self) -> str:
-        return (
-            f"Run(id={self.id}, timestamp={self.timestamp}, source_commit={self.source_commit},"
-            f"target_commit={self.target_commit})"
-        )
+        return f"Run(id={self.id}, source_commit={self.source_commit}, target_commit={self.target_commit})"
 
-    def save(self):
-        """
-        Save the current run into the database.
-        """
-        with Session(engine) as session:
-            session.add(self)
-            session.commit()
-            session.flush()
+
+@dataclass
+class Test(Base):
+    """
+    Class to store attributes of a test execution.
+    """
+
+    __tablename__ = "tests"
+    id: Mapped[int] = Column(Integer, primary_key=True)
+    run_id: Mapped[int] = Column(Integer, ForeignKey("runs.id"), nullable=False)
+    name: Mapped[str] = Column(String)
+    outcome: Mapped[str] = Column(String)  # pylint: disable=C0103
+    stdout: Mapped[str] = Column(Text)
+    stderr: Mapped[str] = Column(Text)
+    start_time: Mapped[int] = Column(DateTime(timezone=True))
+    end_time: Mapped[int] = Column(DateTime(timezone=True))
+    coverage: Mapped[dict] = Column(PickleType)
+    run = relationship("Run", back_populates="tests")
 
 
 Base.metadata.create_all(engine)

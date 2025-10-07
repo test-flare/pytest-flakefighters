@@ -9,7 +9,7 @@ import git
 import pytest
 from unidiff import PatchSet
 
-from pytest_flakefighter.database_management import Run, load_runs
+from pytest_flakefighter.database_management import Run, Test, load_runs
 
 
 class FlakeFighter:
@@ -18,10 +18,7 @@ class FlakeFighter:
     """
 
     def __init__(
-        self,
-        repo_root: str = None,
-        target_commit: str = None,
-        source_commit: str = None,
+        self, repo_root: str = None, target_commit: str = None, source_commit: str = None, load_max_runs: int = None
     ):
         self.cov = coverage.Coverage()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
@@ -45,6 +42,11 @@ class FlakeFighter:
                 self.source_commit = parents[0]
         else:
             self.source_commit = source_commit
+        self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
+        self.previous_runs = load_runs(load_max_runs)
+        for run in self.previous_runs:
+            print(run)
+            print(run.tests)
 
         patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
         for patch in patches:
@@ -86,6 +88,16 @@ class FlakeFighter:
         yield
         self.cov.stop()
 
+    def report_outcome(self, report):
+        if report.passed:
+            return "passed"
+        if report.failed:
+            return "failed"
+        if report.skipped:
+            return "skipped"
+        if report.error:
+            return "error"
+
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(
         self, item: pytest.Item, call: pytest.CallInfo[None]  # pylint: disable=unused-argument
@@ -111,6 +123,19 @@ class FlakeFighter:
             report.flaky = flaky
             item.user_properties.append(("flaky", flaky))
             self.genuine_failure_observed = not flaky
+        if report.when == "teardown":
+            line_coverage = self.cov.get_data()
+            captured_output = dict(report.sections)
+            Test(  # pylint: disable=E1123
+                name=item.nodeid,
+                outcome=self.report_outcome(report),
+                stdout=captured_output.get("stdout"),
+                stderr=captured_output.get("stderr"),
+                start_time=None,
+                end_time=None,
+                coverage={file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()},
+                run=self.run,
+            )
         return report
 
     def pytest_report_teststatus(
@@ -152,6 +177,7 @@ class FlakeFighter:
             and not self.genuine_failure_observed
         ):
             session.exitstatus = pytest.ExitCode.OK
+        self.run.save()
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -177,7 +203,7 @@ def pytest_addoption(parser: pytest.Parser):
     group.addoption(
         "--repo",
         action="store",
-        dest="repo_path",
+        dest="repo_root",
         default=None,
         help="The commit hash to compare against.",
     )
@@ -188,6 +214,14 @@ def pytest_addoption(parser: pytest.Parser):
         default=False,
         help="Return OK exit code if the only failures are flaky failures.",
     )
+    group.addoption(
+        "--load-max-runs",
+        "-M",
+        action="store",
+        dest="load_max_runs",
+        default=None,
+        help="The maximum number of previous runs to consider.",
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -196,5 +230,10 @@ def pytest_configure(config: pytest.Config):
     :param config: The config options.
     """
     config.pluginmanager.register(
-        FlakeFighter(config.option.repo_path, config.option.target_commit, config.option.source_commit)
+        FlakeFighter(
+            repo_root=config.option.repo_root,
+            target_commit=config.option.target_commit,
+            source_commit=config.option.source_commit,
+            load_max_runs=config.option.load_max_runs,
+        )
     )

@@ -2,10 +2,8 @@
 This module manages all interaction with the test run database.
 """
 
-import os
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
 from sqlalchemy import (
     Column,
     DateTime,
@@ -20,27 +18,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, relationship
 
-if os.path.exists(".env"):
-    load_dotenv()
-
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///flakefighter.db")
-engine = create_engine(DATABASE_URL)
-
 
 @dataclass
 class Base(DeclarativeBase):
     """
     Declarative base class with save method for Run and Test objects.
     """
-
-    def save(self):
-        """
-        Save the current run into the database.
-        """
-        with Session(engine) as session:
-            session.add(self)
-            session.commit()
-            session.flush()
 
 
 @dataclass
@@ -82,14 +65,29 @@ class Test(Base):  # pylint: disable=R0902
     run = relationship("Run", back_populates="tests", lazy="subquery")
 
 
-Base.metadata.create_all(engine)
-
-
-def load_runs(limit: int = None):
+class Database:
     """
-    Load runs from the database.
-
-    :param limit: The maximum number of runs to return (these will be most recent runs).
+    Class to handle database setup and interaction.
     """
-    with Session(engine) as session:
-        return session.scalars(select(Run).order_by(desc(Run.id)).limit(limit)).all()
+
+    def __init__(self, url: str):
+        self.engine = create_engine(url)
+        Base.metadata.create_all(self.engine)
+
+    def save(self, run: Run):
+        """
+        Save the given run into the database.
+        """
+        with Session(self.engine) as session:
+            session.add(run)
+            session.commit()
+            session.flush()
+
+    def load_runs(self, limit: int = None):
+        """
+        Load runs from the database.
+
+        :param limit: The maximum number of runs to return (these will be most recent runs).
+        """
+        with Session(self.engine) as session:
+            return session.scalars(select(Run).order_by(desc(Run.id)).limit(limit)).all()

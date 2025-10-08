@@ -44,9 +44,6 @@ class FlakeFighter:
             self.source_commit = source_commit
         self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
         self.previous_runs = load_runs(load_max_runs)
-        for run in self.previous_runs:
-            print(run)
-            print(run.tests)
 
         patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
         for patch in patches:

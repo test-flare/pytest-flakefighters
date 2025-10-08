@@ -12,7 +12,7 @@ from unidiff import PatchSet
 from pytest_flakefighter.database_management import Run, Test, load_runs
 
 
-class FlakeFighter:
+class FlakeFighter:  # pylint: disable=R0902
     """
     Flakefighter plugin class implements the DeFlaker algorithm.
     """

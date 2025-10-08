@@ -9,7 +9,7 @@ import git
 import pytest
 from unidiff import PatchSet
 
-from pytest_flakefighter.database_management import Run, Test, load_runs
+from pytest_flakefighter.database_management import Database, Run, Test
 
 
 class FlakeFighter:  # pylint: disable=R0902
@@ -18,12 +18,23 @@ class FlakeFighter:  # pylint: disable=R0902
     """
 
     def __init__(
-        self, repo_root: str = None, target_commit: str = None, source_commit: str = None, load_max_runs: int = None
+        self,
+        repo_root: str = None,
+        target_commit: str = None,
+        source_commit: str = None,
+        load_max_runs: int = None,
+        save_run: bool = True,
+        database_url: str = None,
     ):
         self.cov = coverage.Coverage()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         self.genuine_failure_observed = False
         self.lines_changed = {}
+        self.save_run = save_run
+
+        if save_run:
+            self.database = Database(database_url)
+
         if target_commit is None and not self.repo.is_dirty():
             # No uncommitted changes, so use most recent commit
             self.target_commit = self.repo.commit().hexsha
@@ -44,7 +55,7 @@ class FlakeFighter:  # pylint: disable=R0902
         else:
             self.source_commit = source_commit
         self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
-        self.previous_runs = load_runs(load_max_runs)
+        self.previous_runs = self.database.load_runs(load_max_runs)
 
         patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
         for patch in patches:
@@ -184,7 +195,8 @@ class FlakeFighter:  # pylint: disable=R0902
             and not self.genuine_failure_observed
         ):
             session.exitstatus = pytest.ExitCode.OK
-        self.run.save()
+        if self.save_run:
+            self.database.save(self.run)
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -222,12 +234,27 @@ def pytest_addoption(parser: pytest.Parser):
         help="Return OK exit code if the only failures are flaky failures.",
     )
     group.addoption(
+        "--no-save",
+        action="store_true",
+        dest="no_save",
+        default=False,
+        help="Do not save this run to the database of previous flakefighter runs.",
+    )
+    group.addoption(
         "--load-max-runs",
         "-M",
         action="store",
         dest="load_max_runs",
         default=None,
         help="The maximum number of previous runs to consider.",
+    )
+    group.addoption(
+        "--database-url",
+        "-D",
+        action="store",
+        dest="database_url",
+        default="sqlite:///flakefighter.db",
+        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
     )
 
 
@@ -242,5 +269,7 @@ def pytest_configure(config: pytest.Config):
             target_commit=config.option.target_commit,
             source_commit=config.option.source_commit,
             load_max_runs=config.option.load_max_runs,
+            save_run=not config.option.no_save,
+            database_url=config.option.database_url,
         )
     )

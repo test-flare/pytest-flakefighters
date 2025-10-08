@@ -49,7 +49,7 @@ class Run(Base):
     source_commit: Mapped[str] = Column(String)
     target_commit: Mapped[str] = Column(String)
     junit_xml: Mapped[str] = Column(Text)
-    tests = relationship("Test", back_populates="run")
+    tests = relationship("Test", back_populates="run", lazy="subquery")
 
     def __repr__(self) -> str:
         return f"Run(id={self.id}, source_commit={self.source_commit}, target_commit={self.target_commit})"
@@ -71,7 +71,7 @@ class Test(Base):
     start_time: Mapped[int] = Column(DateTime(timezone=True))
     end_time: Mapped[int] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)
-    run = relationship("Run", back_populates="tests")
+    run = relationship("Run", back_populates="tests", lazy="subquery")
 
 
 Base.metadata.create_all(engine)

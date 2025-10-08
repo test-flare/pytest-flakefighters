@@ -85,16 +85,6 @@ class FlakeFighter:
         yield
         self.cov.stop()
 
-    def report_outcome(self, report):
-        if report.passed:
-            return "passed"
-        if report.failed:
-            return "failed"
-        if report.skipped:
-            return "skipped"
-        if report.error:
-            return "error"
-
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(
         self, item: pytest.Item, call: pytest.CallInfo[None]  # pylint: disable=unused-argument
@@ -109,30 +99,49 @@ class FlakeFighter:
         """
         outcome = yield
         report = outcome.get_result()
-        if report.when == "call" and report.failed:
-            line_coverage = self.cov.get_data()
-            flaky = not any(
-                self.line_modified_by_latest_commit(file_path, line_number)
-                for file_path in line_coverage.measured_files()
-                for line_number in line_coverage.lines(file_path)
-                if file_path in self.lines_changed
+        captured_output = dict(report.sections)
+        line_coverage = self.cov.get_data()
+        if report.outcome == "skipped":
+            self.run.tests.append(
+                Test(  # pylint: disable=E1123
+                    name=item.nodeid,
+                    outcome=report.outcome,
+                    stdout=captured_output.get("stdout"),
+                    stderr=captured_output.get("stderr"),
+                    start_time=None,
+                    end_time=None,
+                    coverage={
+                        file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
+                    },
+                    run=self.run,
+                )
             )
-            report.flaky = flaky
-            item.user_properties.append(("flaky", flaky))
-            self.genuine_failure_observed = not flaky
-        if report.when == "teardown":
-            line_coverage = self.cov.get_data()
-            captured_output = dict(report.sections)
-            Test(  # pylint: disable=E1123
-                name=item.nodeid,
-                outcome=self.report_outcome(report),
-                stdout=captured_output.get("stdout"),
-                stderr=captured_output.get("stderr"),
-                start_time=None,
-                end_time=None,
-                coverage={file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()},
-                run=self.run,
+        if report.when == "call":
+            self.run.tests.append(
+                Test(  # pylint: disable=E1123
+                    name=item.nodeid,
+                    outcome=report.outcome,
+                    stdout=captured_output.get("stdout"),
+                    stderr=captured_output.get("stderr"),
+                    start_time=None,
+                    end_time=None,
+                    coverage={
+                        file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
+                    },
+                    run=self.run,
+                )
             )
+            if report.failed:
+                flaky = not any(
+                    self.line_modified_by_latest_commit(file_path, line_number)
+                    for file_path in line_coverage.measured_files()
+                    for line_number in line_coverage.lines(file_path)
+                    if file_path in self.lines_changed
+                )
+                report.flaky = flaky
+                item.user_properties.append(("flaky", flaky))
+                self.genuine_failure_observed = not flaky
+
         return report
 
     def pytest_report_teststatus(

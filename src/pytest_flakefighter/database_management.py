@@ -27,7 +27,12 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///flakefighter.db")
 engine = create_engine(DATABASE_URL)
 
 
+@dataclass
 class Base(DeclarativeBase):
+    """
+    Declarative base class with save method for Run and Test objects.
+    """
+
     def save(self):
         """
         Save the current run into the database.
@@ -52,20 +57,23 @@ class Run(Base):
     tests = relationship("Test", back_populates="run", lazy="subquery")
 
     def __repr__(self) -> str:
-        return f"Run(id={self.id}, source_commit={self.source_commit}, target_commit={self.target_commit})"
+        return (
+            f"Run(id={self.id}, source_commit={self.source_commit}, target_commit={self.target_commit}, "
+            f"tests={len(self.tests)})"
+        )
 
 
 @dataclass
-class Test(Base):
+class Test(Base):  # pylint: disable=R0902
     """
     Class to store attributes of a test execution.
     """
 
-    __tablename__ = "tests"
+    __tablename__ = "tests"  # pylint: disable=C0103
     id: Mapped[int] = Column(Integer, primary_key=True)
     run_id: Mapped[int] = Column(Integer, ForeignKey("runs.id"), nullable=False)
     name: Mapped[str] = Column(String)
-    outcome: Mapped[str] = Column(String)  # pylint: disable=C0103
+    outcome: Mapped[str] = Column(String)
     stdout: Mapped[str] = Column(Text)
     stderr: Mapped[str] = Column(Text)
     start_time: Mapped[int] = Column(DateTime(timezone=True))

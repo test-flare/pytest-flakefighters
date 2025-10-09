@@ -14,9 +14,7 @@ from sqlalchemy import (
     PickleType,
     String,
     Text,
-    asc,
     create_engine,
-    delete,
     desc,
     func,
     select,
@@ -25,13 +23,17 @@ from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     Session,
-    backref,
     declared_attr,
     relationship,
 )
 
 
+@dataclass
 class Base(DeclarativeBase):
+    """
+    Declarative base class for data objects.
+    """
+
     id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
 
     @declared_attr

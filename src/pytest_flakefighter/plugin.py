@@ -6,7 +6,6 @@ import os
 from datetime import datetime
 
 import coverage
-import dotenv
 import git
 import pytest
 from unidiff import PatchSet
@@ -98,9 +97,7 @@ class FlakeFighter:  # pylint: disable=R0902
         self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_makereport(
-        self, item: pytest.Item, call: pytest.CallInfo[None]  # pylint: disable=unused-argument
-    ) -> pytest.TestReport:
+    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo[None]) -> pytest.TestReport:
         """
         Classify failed tests as flaky if they don't cover any changed code.
 

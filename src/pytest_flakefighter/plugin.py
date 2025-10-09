@@ -3,6 +3,7 @@ This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.31801
 """
 
 import os
+from datetime import datetime
 
 import coverage
 import git
@@ -134,8 +135,8 @@ class FlakeFighter:  # pylint: disable=R0902
                     outcome=report.outcome,
                     stdout=captured_output.get("stdout"),
                     stderr=captured_output.get("stderr"),
-                    start_time=None,
-                    end_time=None,
+                    start_time=datetime.fromtimestamp(call.start),
+                    end_time=datetime.fromtimestamp(call.stop),
                     coverage={
                         file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
                     },

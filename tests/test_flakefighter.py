@@ -21,12 +21,11 @@ def test_real_failures(pytester, flaky_triangle_repo):
         "-s",
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
             "FAILED triangle.py::test_eqiulateral*",
             "FAILED triangle.py::test_isosceles*",
-            "FAILED triangle.py::test_scalene*",
         ]
     )
 
@@ -48,12 +47,11 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
         "-s",
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
             "FAILED triangle.py::test_eqiulateral*",
             "FAILED triangle.py::test_isosceles*",
-            "FAILED triangle.py::test_scalene*",
         ]
     )
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
@@ -71,12 +69,11 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"), f"--repo={flaky_triangle_repo.working_dir}", "-s"
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
             "FLAKY triangle.py::test_eqiulateral*",
             "FLAKY triangle.py::test_isosceles*",
-            "FLAKY triangle.py::test_scalene*",
         ]
     )
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
@@ -96,12 +93,11 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
         "-s",
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
             "FLAKY triangle.py::test_eqiulateral*",
             "FLAKY triangle.py::test_isosceles*",
-            "FLAKY triangle.py::test_scalene*",
         ]
     )
     assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."

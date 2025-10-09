@@ -30,9 +30,7 @@ class FlakeFighter:  # pylint: disable=R0902
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         self.lines_changed = {}
         self.save_run = save_run
-
-        if save_run:
-            self.database = Database(database_url)
+        self.database = Database(database_url)
 
         if target_commit is None and not self.repo.is_dirty():
             # No uncommitted changes, so use most recent commit
@@ -53,6 +51,7 @@ class FlakeFighter:  # pylint: disable=R0902
                 self.source_commit = parents[0]
         else:
             self.source_commit = source_commit
+
         self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
         self.previous_runs = self.database.load_runs(load_max_runs)
 

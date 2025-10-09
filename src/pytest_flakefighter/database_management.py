@@ -16,14 +16,9 @@ from sqlalchemy import (
     desc,
     select,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, relationship
+from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
 
-
-@dataclass
-class Base(DeclarativeBase):
-    """
-    Declarative base class with save method for Run and Test objects.
-    """
+Base = declarative_base()
 
 
 @dataclass
@@ -38,12 +33,6 @@ class Run(Base):
     target_commit: Mapped[str] = Column(String)
     junit_xml: Mapped[str] = Column(Text)
     tests = relationship("Test", back_populates="run", lazy="subquery")
-
-    def __repr__(self) -> str:
-        return (
-            f"Run(id={self.id}, source_commit={self.source_commit}, target_commit={self.target_commit}, "
-            f"tests={len(self.tests)})"
-        )
 
 
 @dataclass

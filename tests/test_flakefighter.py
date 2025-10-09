@@ -18,16 +18,15 @@ def test_real_failures(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
         "-s",
     )
 
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FAILED triangle.py::test_eqiulateral*",
+            "FAILED triangle.py::test_isosceles*",
+            "FAILED triangle.py::test_scalene*",
         ]
     )
 
@@ -44,7 +43,6 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
         f"--source-commit={commits[1]}",
         f"--target-commit={commits[2]}",
         "-s",
@@ -53,9 +51,9 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FAILED triangle.py::test_eqiulateral*",
+            "FAILED triangle.py::test_isosceles*",
+            "FAILED triangle.py::test_scalene*",
         ]
     )
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
@@ -76,9 +74,9 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FLAKY triangle.py::test_eqiulateral*",
+            "FLAKY triangle.py::test_isosceles*",
+            "FLAKY triangle.py::test_scalene*",
         ]
     )
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
@@ -94,7 +92,6 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
         "--suppress-flaky-failures-exit-code",
         "-s",
     )
@@ -102,9 +99,9 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
     result.assert_outcomes(failed=3)
     result.stdout.fnmatch_lines(
         [
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FLAKY triangle.py::test_eqiulateral*",
+            "FLAKY triangle.py::test_isosceles*",
+            "FLAKY triangle.py::test_scalene*",
         ]
     )
     assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."
@@ -116,7 +113,6 @@ def test_deflaker_example(pytester, deflaker_repo):
     # run pytest with the following cmd args
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
-        f"--repo={deflaker_repo.working_dir}",
     )
 
     result.assert_outcomes(failed=1)

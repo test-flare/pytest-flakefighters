@@ -1,3 +1,7 @@
+"""
+This module contains tests that are specific to database management.
+"""
+
 import os
 
 from pytest_flakefighter.database_management import Database

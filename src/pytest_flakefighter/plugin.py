@@ -260,14 +260,15 @@ def pytest_addoption(parser: pytest.Parser):
         dest="store_max_runs",
         default=None,
         type=int,
-        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
+        help="The maximum number of previous flakefighter runs to store. Default is to store all.",
     )
     group.addoption(
         "--time-immemorial",
         action="store",
         dest="time_immemorial",
         default=None,
-        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
+        help="How long to store flakefighter runs for, specified as `days:hours:minutes`. "
+        "E.g. to store tests for one week, use 7:0:0.",
     )
 
 

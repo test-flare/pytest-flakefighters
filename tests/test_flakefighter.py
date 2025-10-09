@@ -21,7 +21,6 @@ def test_real_failures(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        "-s",
     )
 
     result.assert_outcomes(failed=2, skipped=1)
@@ -47,7 +46,6 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         f"--source-commit={commits[1]}",
         f"--target-commit={commits[2]}",
-        "-s",
     )
 
     result.assert_outcomes(failed=2, skipped=1)
@@ -93,7 +91,6 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         "--suppress-flaky-failures-exit-code",
-        "-s",
     )
 
     result.assert_outcomes(failed=2, skipped=1)
@@ -107,13 +104,12 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
 
 
 def test_deflaker_example(pytester, deflaker_repo):
-    """Make sure that pytest accepts our fixture."""
+    """Make sure that the example from the DeFlaker paper works."""
 
     # run pytest with the following cmd args
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
     )
 
-    assert result.ret == 1, "Expected tests to fail"
-
+    result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["FAILED app.py::test_app - assert False"])

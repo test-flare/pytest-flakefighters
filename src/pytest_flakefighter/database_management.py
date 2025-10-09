@@ -21,9 +21,22 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    Session,
+    backref,
+    declared_attr,
+    relationship,
+)
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
+
+    @declared_attr
+    def __tablename__(self):
+        return self.__name__.lower()
 
 
 @dataclass
@@ -32,12 +45,10 @@ class Run(Base):
     Class to store attributes of a flakefighter run.
     """
 
-    __tablename__ = "runs"  # pylint: disable=C0103
-    id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
     source_commit: Mapped[str] = Column(String)
     target_commit: Mapped[str] = Column(String)
     created_at = Column(DateTime, default=func.now())
-    tests = relationship("Test", back_populates="run", lazy="subquery")
+    tests = relationship("Test", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True)
 
 
 @dataclass
@@ -46,9 +57,7 @@ class Test(Base):  # pylint: disable=R0902
     Class to store attributes of a test execution.
     """
 
-    __tablename__ = "tests"  # pylint: disable=C0103
-    id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
-    run_id: Mapped[int] = Column(Integer, ForeignKey("runs.id"), nullable=False)
+    run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
     name: Mapped[str] = Column(String)
     outcome: Mapped[str] = Column(String)
     stdout: Mapped[str] = Column(Text)
@@ -56,7 +65,6 @@ class Test(Base):  # pylint: disable=R0902
     start_time: Mapped[datetime] = Column(DateTime(timezone=True))
     end_time: Mapped[datetime] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)
-    run = relationship("Run", back_populates="tests", lazy="subquery")
 
 
 class Database:
@@ -82,10 +90,12 @@ class Database:
             session.add(run)
             if self.time_immemorial is not None:
                 expiry_date = datetime.now() - self.time_immemorial
-                session.query(Run).filter(Run.created_at < (expiry_date - self.time_immemorial)).delete()
+                for r in session.query(Run).filter(Run.created_at < (expiry_date - self.time_immemorial)):
+                    session.delete(r)
+
             if self.max_runs is not None:
-                to_delete = [run.id for run in self.load_runs()][self.max_runs - 1 :]
-                session.query(Run).filter(Run.id.in_(to_delete)).delete()
+                for r in self.load_runs()[self.max_runs - 1 :]:
+                    session.delete(r)
             session.commit()
             session.flush()
 

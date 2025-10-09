@@ -42,9 +42,10 @@ FlakeFighter has the following arguments.
   -D DATABASE_URL, --database-url=DATABASE_URL
                         The database URL. Defaults to 'flakefighter.db' in current working directory.
   --store-max-runs=STORE_MAX_RUNS
-                        The database URL. Defaults to 'flakefighter.db' in current working directory.
+                        The maximum number of previous flakefighter runs to store. Default is to store all.
   --time-immemorial=TIME_IMMEMORIAL
-                        The database URL. Defaults to 'flakefighter.db' in current working directory.
+                        How long to store flakefighter runs for, specified as `days:hours:minutes`. E.g. to store
+                        tests for one week, use 7:0:0.
 ```
 
 ## Contributing

@@ -24,7 +24,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "black",
-    "pylint",
+    "pylint==2.4.2", # the version used by the CI workflow
     "pre_commit",
     "sphinx-autoapi",
     "sphinx_rtd_theme",

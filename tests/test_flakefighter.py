@@ -18,6 +18,7 @@ def test_real_failures(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        "-s",
     )
 
     result.assert_outcomes(failed=2, skipped=1)
@@ -41,6 +42,7 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        "-s",
         f"--source-commit={commits[1]}",
         f"--target-commit={commits[2]}",
     )
@@ -87,6 +89,7 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        "-s",
         "--suppress-flaky-failures-exit-code",
     )
 
@@ -106,6 +109,7 @@ def test_deflaker_example(pytester, deflaker_repo):
     # run pytest with the following cmd args
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
+        "-s",
     )
 
     result.assert_outcomes(failed=1)

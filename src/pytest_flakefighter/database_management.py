@@ -3,6 +3,7 @@ This module manages all interaction with the test run database.
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy import (
     Column,
@@ -48,8 +49,8 @@ class Test(Base):  # pylint: disable=R0902
     outcome: Mapped[str] = Column(String)
     stdout: Mapped[str] = Column(Text)
     stderr: Mapped[str] = Column(Text)
-    start_time: Mapped[int] = Column(DateTime(timezone=True))
-    end_time: Mapped[int] = Column(DateTime(timezone=True))
+    start_time: Mapped[datetime] = Column(DateTime(timezone=True))
+    end_time: Mapped[datetime] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)
     run = relationship("Run", back_populates="tests", lazy="subquery")
 
@@ -59,7 +60,7 @@ class Database:
     Class to handle database setup and interaction.
     """
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, max_runs: int = None, time_immemorial: datetime = None):
         self.engine = create_engine(url)
         Base.metadata.create_all(self.engine)
 

@@ -17,7 +17,7 @@ class FlakeFighter:  # pylint: disable=R0902
     Flakefighter plugin class implements the DeFlaker algorithm.
     """
 
-    def __init__(  # pylint: disable=R0913, R0917
+    def __init__(  # pylint: disable=R0913
         self,
         repo_root: str = None,
         target_commit: str = None,

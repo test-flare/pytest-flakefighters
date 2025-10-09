@@ -28,7 +28,7 @@ class Run(Base):
     """
 
     __tablename__ = "runs"  # pylint: disable=C0103
-    id: Mapped[int] = Column(Integer, primary_key=True)
+    id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
     source_commit: Mapped[str] = Column(String)
     target_commit: Mapped[str] = Column(String)
     junit_xml: Mapped[str] = Column(Text)
@@ -42,7 +42,7 @@ class Test(Base):  # pylint: disable=R0902
     """
 
     __tablename__ = "tests"  # pylint: disable=C0103
-    id: Mapped[int] = Column(Integer, primary_key=True)
+    id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
     run_id: Mapped[int] = Column(Integer, ForeignKey("runs.id"), nullable=False)
     name: Mapped[str] = Column(String)
     outcome: Mapped[str] = Column(String)

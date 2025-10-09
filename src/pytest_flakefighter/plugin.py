@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 import coverage
+import dotenv
 import git
 import pytest
 from unidiff import PatchSet
@@ -20,19 +21,19 @@ class FlakeFighter:  # pylint: disable=R0902
 
     def __init__(  # pylint: disable=R0913
         self,
+        database: Database,
         repo_root: str = None,
         target_commit: str = None,
         source_commit: str = None,
         load_max_runs: int = None,
         save_run: bool = True,
-        database_url: str = None,
     ):
         self.cov = coverage.Coverage()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         self.genuine_failure_observed = False
         self.lines_changed = {}
         self.save_run = save_run
-        self.database = Database(database_url)
+        self.database = database
 
         if target_commit is None and not self.repo.is_dirty():
             # No uncommitted changes, so use most recent commit
@@ -256,6 +257,21 @@ def pytest_addoption(parser: pytest.Parser):
         default="sqlite:///flakefighter.db",
         help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
     )
+    group.addoption(
+        "--store-max-runs",
+        action="store",
+        dest="store_max_runs",
+        default=None,
+        type=int,
+        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
+    )
+    group.addoption(
+        "--time-immemorial",
+        action="store",
+        dest="time_immemorial",
+        default=None,
+        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -265,11 +281,11 @@ def pytest_configure(config: pytest.Config):
     """
     config.pluginmanager.register(
         FlakeFighter(
+            database=Database(config.option.database_url, config.option.store_max_runs, config.option.time_immemorial),
             repo_root=config.option.repo_root,
             target_commit=config.option.target_commit,
             source_commit=config.option.source_commit,
             load_max_runs=config.option.load_max_runs,
             save_run=not config.option.no_save,
-            database_url=config.option.database_url,
         )
     )

@@ -115,13 +115,6 @@ class FlakeFighter:  # pylint: disable=R0902
                 Test(  # pylint: disable=E1123
                     name=item.nodeid,
                     outcome=report.outcome,
-                    stdout=captured_output.get("stdout"),
-                    stderr=captured_output.get("stderr"),
-                    start_time=None,
-                    end_time=None,
-                    coverage={
-                        file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
-                    },
                     run=self.run,
                 )
             )
@@ -132,6 +125,7 @@ class FlakeFighter:  # pylint: disable=R0902
                     outcome=report.outcome,
                     stdout=captured_output.get("stdout"),
                     stderr=captured_output.get("stderr"),
+                    stack_trace=str(report.longrepr),
                     start_time=datetime.fromtimestamp(call.start),
                     end_time=datetime.fromtimestamp(call.stop),
                     coverage={

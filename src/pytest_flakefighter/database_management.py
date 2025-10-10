@@ -64,6 +64,7 @@ class Test(Base):  # pylint: disable=R0902
     outcome: Mapped[str] = Column(String)
     stdout: Mapped[str] = Column(Text)
     stderr: Mapped[str] = Column(Text)
+    stack_trace: Mapped[str] = Column(Text)
     start_time: Mapped[datetime] = Column(DateTime(timezone=True))
     end_time: Mapped[datetime] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)

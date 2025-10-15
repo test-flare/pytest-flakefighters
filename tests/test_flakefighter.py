@@ -21,16 +21,14 @@ def test_real_failures(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
         "-s",
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FAILED triangle.py::test_eqiulateral*",
+            "FAILED triangle.py::test_isosceles*",
         ]
     )
 
@@ -47,18 +45,16 @@ def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
+        "-s",
         f"--source-commit={commits[1]}",
         f"--target-commit={commits[2]}",
-        "-s",
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FAILED {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FAILED triangle.py::test_eqiulateral*",
+            "FAILED triangle.py::test_isosceles*",
         ]
     )
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
@@ -76,12 +72,11 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"), f"--repo={flaky_triangle_repo.working_dir}", "-s"
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FLAKY triangle.py::test_eqiulateral*",
+            "FLAKY triangle.py::test_isosceles*",
         ]
     )
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
@@ -97,33 +92,28 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
-        "--suppress-flaky-failures-exit-code",
         "-s",
+        "--suppress-flaky-failures-exit-code",
     )
 
-    result.assert_outcomes(failed=3)
+    result.assert_outcomes(failed=2, skipped=1)
     result.stdout.fnmatch_lines(
         [
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_eqiulateral*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_isosceles*",
-            f"FLAKY {os.path.join('..',repo_name(flaky_triangle_repo), 'triangle.py')}::test_scalene*",
+            "FLAKY triangle.py::test_eqiulateral*",
+            "FLAKY triangle.py::test_isosceles*",
         ]
     )
     assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."
 
 
 def test_deflaker_example(pytester, deflaker_repo):
-    """Make sure that pytest accepts our fixture."""
+    """Make sure that the example from the DeFlaker paper works."""
 
     # run pytest with the following cmd args
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
-        f"--repo={deflaker_repo.working_dir}",
+        "-s",
     )
 
-    assert result.ret == 1, "Expected tests to fail"
-
-    result.stdout.fnmatch_lines(
-        [f"FAILED {os.path.join('..',repo_name(deflaker_repo), 'app.py')}::test_app - assert False"]
-    )
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["FAILED app.py::test_app - assert False"])

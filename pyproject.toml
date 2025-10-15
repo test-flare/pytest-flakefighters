@@ -16,13 +16,15 @@ dependencies = [
     "coverage>=7.10.6",
     "GitPython>=3.1.45",
     "unidiff>=0.7.5",
+    "sqlalchemy>=2.0.43",
+    "dotenv>=0.9.9"
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
     "black",
-    "pylint",
+    "pylint==2.4.2", # the version used by the CI workflow
     "pre_commit",
     "sphinx-autoapi",
     "sphinx_rtd_theme",
@@ -40,3 +42,5 @@ minversion = "6.0"
 testpaths = [
     "tests"
     ]
+[tool.isort]
+profile = "black"

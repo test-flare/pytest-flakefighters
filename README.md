@@ -26,10 +26,27 @@ We eventually intend to distribute our tool on PyPI.
 
 FlakeFighter is intended to run on git repositories that have test suites runnable with `pytest`.
 Once you have installed FlakeFighter, you can run it from the root directory of your repo simply by running `pytest` in your usual way.
-If you need to call `pytest` from outside your repo, you can pass in the path to your repo as an additional parameter, `pytest --repo=path/to-repo`.
+FlakeFighter has the following arguments.
 
-By default, flakefighter will compare the most recent commit (or local uncommitted changes if there are any) to the previous commit.
-To compare an aribtrary pair of commits, you can call `pytest --source-commit=<commit_hash> --target-commit=<commit_hash>`, where `--source-commit` represents the older commit and `--target-commit` represents the newer commit.
+```
+  --target-commit=TARGET_COMMIT
+                        The target (newer) commit hash. Defaults to HEAD (the most recent commit).
+  --source-commit=SOURCE_COMMIT
+                        The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).
+  --repo=REPO_ROOT      The commit hash to compare against.
+  --suppress-flaky-failures-exit-code
+                        Return OK exit code if the only failures are flaky failures.
+  --no-save             Do not save this run to the database of previous flakefighter runs.
+  -M LOAD_MAX_RUNS, --load-max-runs=LOAD_MAX_RUNS
+                        The maximum number of previous runs to consider.
+  -D DATABASE_URL, --database-url=DATABASE_URL
+                        The database URL. Defaults to 'flakefighter.db' in current working directory.
+  --store-max-runs=STORE_MAX_RUNS
+                        The maximum number of previous flakefighter runs to store. Default is to store all.
+  --time-immemorial=TIME_IMMEMORIAL
+                        How long to store flakefighter runs for, specified as `days:hours:minutes`. E.g. to store
+                        tests for one week, use 7:0:0.
+```
 
 ## Contributing
 

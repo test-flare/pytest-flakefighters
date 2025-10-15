@@ -3,28 +3,37 @@ This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.31801
 """
 
 import os
+from datetime import datetime
 
 import coverage
 import git
 import pytest
 from unidiff import PatchSet
 
+from pytest_flakefighter.database_management import Database, Run, Test
 
-class FlakeFighter:
+
+class FlakeFighter:  # pylint: disable=R0902
     """
     Flakefighter plugin class implements the DeFlaker algorithm.
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=R0913
         self,
+        database: Database,
         repo_root: str = None,
         target_commit: str = None,
         source_commit: str = None,
+        load_max_runs: int = None,
+        save_run: bool = True,
     ):
         self.cov = coverage.Coverage()
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
         self.genuine_failure_observed = False
         self.lines_changed = {}
+        self.save_run = save_run
+        self.database = database
+
         if target_commit is None and not self.repo.is_dirty():
             # No uncommitted changes, so use most recent commit
             self.target_commit = self.repo.commit().hexsha
@@ -44,6 +53,9 @@ class FlakeFighter:
                 self.source_commit = parents[0]
         else:
             self.source_commit = source_commit
+
+        self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
+        self.previous_runs = self.database.load_runs(load_max_runs)
 
         patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
         for patch in patches:
@@ -86,9 +98,7 @@ class FlakeFighter:
         self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_makereport(
-        self, item: pytest.Item, call: pytest.CallInfo[None]  # pylint: disable=unused-argument
-    ) -> pytest.TestReport:
+    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo[None]) -> pytest.TestReport:
         """
         Classify failed tests as flaky if they don't cover any changed code.
 
@@ -99,17 +109,43 @@ class FlakeFighter:
         """
         outcome = yield
         report = outcome.get_result()
-        if report.when == "call" and report.failed:
-            line_coverage = self.cov.get_data()
-            flaky = not any(
-                self.line_modified_by_latest_commit(file_path, line_number)
-                for file_path in line_coverage.measured_files()
-                for line_number in line_coverage.lines(file_path)
-                if file_path in self.lines_changed
+        captured_output = dict(report.sections)
+        line_coverage = self.cov.get_data()
+        if report.outcome == "skipped":
+            self.run.tests.append(
+                Test(  # pylint: disable=E1123
+                    name=item.nodeid,
+                    outcome=report.outcome,
+                    run=self.run,
+                )
             )
-            report.flaky = flaky
-            item.user_properties.append(("flaky", flaky))
-            self.genuine_failure_observed = not flaky
+        if report.when == "call":
+            self.run.tests.append(
+                Test(  # pylint: disable=E1123
+                    name=item.nodeid,
+                    outcome=report.outcome,
+                    stdout=captured_output.get("stdout"),
+                    stderr=captured_output.get("stderr"),
+                    stack_trace=str(report.longrepr),
+                    start_time=datetime.fromtimestamp(call.start),
+                    end_time=datetime.fromtimestamp(call.stop),
+                    coverage={
+                        file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
+                    },
+                    run=self.run,
+                )
+            )
+            if report.failed:
+                flaky = not any(
+                    self.line_modified_by_latest_commit(file_path, line_number)
+                    for file_path in line_coverage.measured_files()
+                    for line_number in line_coverage.lines(file_path)
+                    if file_path in self.lines_changed
+                )
+                report.flaky = flaky
+                item.user_properties.append(("flaky", flaky))
+                self.genuine_failure_observed = not flaky
+
         return report
 
     def pytest_report_teststatus(
@@ -151,6 +187,8 @@ class FlakeFighter:
             and not self.genuine_failure_observed
         ):
             session.exitstatus = pytest.ExitCode.OK
+        if self.save_run:
+            self.database.save(self.run)
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -176,7 +214,7 @@ def pytest_addoption(parser: pytest.Parser):
     group.addoption(
         "--repo",
         action="store",
-        dest="repo_path",
+        dest="repo_root",
         default=None,
         help="The commit hash to compare against.",
     )
@@ -187,6 +225,45 @@ def pytest_addoption(parser: pytest.Parser):
         default=False,
         help="Return OK exit code if the only failures are flaky failures.",
     )
+    group.addoption(
+        "--no-save",
+        action="store_true",
+        dest="no_save",
+        default=False,
+        help="Do not save this run to the database of previous flakefighter runs.",
+    )
+    group.addoption(
+        "--load-max-runs",
+        "-M",
+        action="store",
+        dest="load_max_runs",
+        default=None,
+        help="The maximum number of previous runs to consider.",
+    )
+    group.addoption(
+        "--database-url",
+        "-D",
+        action="store",
+        dest="database_url",
+        default="sqlite:///flakefighter.db",
+        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
+    )
+    group.addoption(
+        "--store-max-runs",
+        action="store",
+        dest="store_max_runs",
+        default=None,
+        type=int,
+        help="The maximum number of previous flakefighter runs to store. Default is to store all.",
+    )
+    group.addoption(
+        "--time-immemorial",
+        action="store",
+        dest="time_immemorial",
+        default=None,
+        help="How long to store flakefighter runs for, specified as `days:hours:minutes`. "
+        "E.g. to store tests for one week, use 7:0:0.",
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -195,5 +272,12 @@ def pytest_configure(config: pytest.Config):
     :param config: The config options.
     """
     config.pluginmanager.register(
-        FlakeFighter(config.option.repo_path, config.option.target_commit, config.option.source_commit)
+        FlakeFighter(
+            database=Database(config.option.database_url, config.option.store_max_runs, config.option.time_immemorial),
+            repo_root=config.option.repo_root,
+            target_commit=config.option.target_commit,
+            source_commit=config.option.source_commit,
+            load_max_runs=config.option.load_max_runs,
+            save_run=not config.option.no_save,
+        )
     )

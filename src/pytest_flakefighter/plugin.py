@@ -141,6 +141,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             and not self.genuine_failure_observed
         ):
             session.exitstatus = pytest.ExitCode.OK
+
         if self.save_run:
             self.database.save(self.run)
 

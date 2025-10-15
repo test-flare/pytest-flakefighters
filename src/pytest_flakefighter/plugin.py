@@ -2,71 +2,39 @@
 This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
 """
 
-import os
 from datetime import datetime
 
 import coverage
-import git
 import pytest
-from unidiff import PatchSet
 
 from pytest_flakefighter.database_management import Database, Run, Test
+from pytest_flakefighter.flake_fighters import DeFlaker, FlakeFighter
 
 
-class FlakeFighter:  # pylint: disable=R0902
+class FlakeFighterPlugin:  # pylint: disable=R0902
     """
-    Flakefighter plugin class implements the DeFlaker algorithm.
+    The main plugin to manage the various FlakeFighter tools.
     """
 
     def __init__(  # pylint: disable=R0913
         self,
         database: Database,
-        repo_root: str = None,
-        target_commit: str = None,
+        flakefighters: list[FlakeFighter],
         source_commit: str = None,
+        target_commit: str = None,
         load_max_runs: int = None,
         save_run: bool = True,
     ):
         self.cov = coverage.Coverage()
-        self.repo = git.Repo(repo_root if repo_root is not None else ".")
         self.genuine_failure_observed = False
-        self.lines_changed = {}
         self.save_run = save_run
         self.database = database
-
-        if target_commit is None and not self.repo.is_dirty():
-            # No uncommitted changes, so use most recent commit
-            self.target_commit = self.repo.commit().hexsha
-        else:
-            self.target_commit = target_commit
-        if source_commit is None:
-            if self.target_commit is None:
-                # If uncommitted changes, use most recent commit as source
-                self.source_commit = self.repo.commit().hexsha
-            else:
-                # If no uncommitted changes, use previous commit as source
-                parents = [
-                    commit.hexsha
-                    for commit in self.repo.commit(source_commit).iter_parents()
-                    if commit.hexsha != self.target_commit
-                ]
-                self.source_commit = parents[0]
-        else:
-            self.source_commit = source_commit
+        self.flakefighters = flakefighters
+        self.source_commit = source_commit
+        self.target_commit = target_commit
 
         self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
         self.previous_runs = self.database.load_runs(load_max_runs)
-
-        patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
-        for patch in patches:
-            if patch.target_file == patch.source_file:
-                abspath = os.path.join(self.repo.working_dir, patch.source_file)
-                self.lines_changed[abspath] = []
-                for hunk in patch:
-                    # Add each line in the hunk to lines_changed
-                    self.lines_changed[abspath] += list(
-                        range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
-                    )
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -111,6 +79,7 @@ class FlakeFighter:  # pylint: disable=R0902
         report = outcome.get_result()
         captured_output = dict(report.sections)
         line_coverage = self.cov.get_data()
+        item.user_properties.append(("line_coverage", line_coverage))
         if report.outcome == "skipped":
             self.run.tests.append(
                 Test(  # pylint: disable=E1123
@@ -120,10 +89,16 @@ class FlakeFighter:  # pylint: disable=R0902
                 )
             )
         if report.when == "call":
+            if report.failed:
+                flaky = any(ff.flaky_failure(item, call) for ff in self.flakefighters if ff.run_live)
+                report.flaky = flaky
+                item.user_properties.append(("flaky", flaky))
+                self.genuine_failure_observed = not flaky
             self.run.tests.append(
                 Test(  # pylint: disable=E1123
                     name=item.nodeid,
                     outcome=report.outcome,
+                    flaky=hasattr(report, "flaky") and report.flaky,
                     stdout=captured_output.get("stdout"),
                     stderr=captured_output.get("stderr"),
                     stack_trace=str(report.longrepr),
@@ -135,16 +110,6 @@ class FlakeFighter:  # pylint: disable=R0902
                     run=self.run,
                 )
             )
-            if report.failed:
-                flaky = not any(
-                    self.line_modified_by_latest_commit(file_path, line_number)
-                    for file_path in line_coverage.measured_files()
-                    for line_number in line_coverage.lines(file_path)
-                    if file_path in self.lines_changed
-                )
-                report.flaky = flaky
-                item.user_properties.append(("flaky", flaky))
-                self.genuine_failure_observed = not flaky
 
         return report
 
@@ -160,17 +125,6 @@ class FlakeFighter:  # pylint: disable=R0902
         if getattr(report, "flaky", False):
             return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None
-
-    def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
-        """
-        Returns true if the given line in the file has been modified by the present commit.
-
-        :param file_path: The file to check.
-        :param line_number: The line number to check.
-        """
-        if line_number in self.lines_changed[file_path]:
-            return self.lines_changed[file_path][line_number]
-        return True
 
     def pytest_sessionfinish(
         self,
@@ -268,15 +222,21 @@ def pytest_addoption(parser: pytest.Parser):
 
 def pytest_configure(config: pytest.Config):
     """
-    Initialise the FlakeFighter class.
+    Initialise the FlakeFighterPlugin class.
     :param config: The config options.
     """
+    repo_root = config.option.repo_root
+    target_commit = config.option.target_commit
+    source_commit = config.option.source_commit
+
     config.pluginmanager.register(
-        FlakeFighter(
+        FlakeFighterPlugin(
             database=Database(config.option.database_url, config.option.store_max_runs, config.option.time_immemorial),
-            repo_root=config.option.repo_root,
-            target_commit=config.option.target_commit,
-            source_commit=config.option.source_commit,
+            flakefighters=[
+                DeFlaker(run_live=True, repo_root=repo_root, source_commit=source_commit, target_commit=target_commit)
+            ],
+            target_commit=target_commit,
+            source_commit=source_commit,
             load_max_runs=config.option.load_max_runs,
             save_run=not config.option.no_save,
         )

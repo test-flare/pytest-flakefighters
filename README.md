@@ -1,4 +1,4 @@
-# pytest-flakefighter
+# Pytest FlakeFighters
 
 [![PyPI version](https://img.shields.io/pypi/v/pytest-flakefighter.svg)](https://pypi.org/project/pytest-flakefighter)
 [![Python versions](https://img.shields.io/pypi/pyversions/pytest-flakefighter.svg)](https://pypi.org/project/pytest-flakefighter)

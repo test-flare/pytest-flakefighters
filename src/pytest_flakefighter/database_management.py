@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Union
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     ForeignKey,
@@ -62,6 +63,7 @@ class Test(Base):  # pylint: disable=R0902
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
     name: Mapped[str] = Column(String)
     outcome: Mapped[str] = Column(String)
+    flaky: Mapped[bool] = Column(Boolean)
     stdout: Mapped[str] = Column(Text)
     stderr: Mapped[str] = Column(Text)
     stack_trace: Mapped[str] = Column(Text)

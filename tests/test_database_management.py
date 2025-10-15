@@ -11,19 +11,38 @@ from sqlalchemy.orm import Session
 from pytest_flakefighter.database_management import Database, Run, Test
 
 
-def test_run_saving(pytester, deflaker_repo):
+def test_run_saving(pytester, flaky_triangle_repo):
     """Test that FlakeFighter runs are saved"""
 
     # run pytest with the following cmd args
     assert not os.path.exists(
-        os.path.join(deflaker_repo.working_dir, "flakefighter.db")
+        os.path.join(flaky_triangle_repo.working_dir, "flakefighter.db")
     ), "Database file should not exist in advance of running pytest"
     pytester.runpytest(
-        os.path.join(deflaker_repo.working_dir, "app.py"),
+        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         "-s",
     )
-    db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighter.db')}")
-    assert len(db.load_runs()) == 1, "Pytest run should have been saved"
+    db = Database(f"sqlite:///{os.path.join(flaky_triangle_repo.working_dir, 'flakefighter.db')}")
+    runs = db.load_runs()
+    assert len(runs) == 1, f"Expected 1 saved run but was {len(runs)}"
+
+    with Session(db.engine) as session:
+        tests = list(session.scalars(select(Test)))
+        print("TESTS")
+        print(tests)
+
+    assert len(runs[0].tests) == 3, f"Expected 3 tests but was {len(runs[0].tests)}"
+
+    assert [t.outcome for t in runs[0].tests] == [
+        "failed",
+        "failed",
+        "skipped",
+    ], f"Expected flaky class {['failed','failed', 'skipped']} but got {[t.outcome for t in runs[0].tests]}"
+    assert [t.flaky for t in runs[0].tests] == [
+        False,
+        False,
+        None,
+    ], f"Expected flaky class {[False, False, None]} but got {[t.flaky for t in runs[0].tests]}"
 
 
 def test_max_load_runs(pytester, deflaker_repo):

@@ -53,6 +53,11 @@ FlakeFighter has the following arguments.
 Contributions are very welcome.
 Tests can be run with [pytest](https://pytest.readthedocs.io/en/latest/), please ensure the coverage at least stays the same before you submit a pull request.
 
+## Flake Fighters
+Our plugin is made up of a collection of heuristics that come together to help inform whether a test failure is genuine or flaky.
+These come in two "flavours": those which run live after each test, and those which run at the end of the entire test suite.
+Both extend the base class `FlakeFighter` and implement the `flaky_failure` method, which returns `True` if the test is deemed to be flaky.
+
 ## Issues
 
 If you encounter any problems, please [file an issue](https://github.com/test-flare/pytest-flakefighter/issues) along with a detailed description.

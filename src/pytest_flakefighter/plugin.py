@@ -171,7 +171,7 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         dest="repo_root",
         default=None,
-        help="The commit hash to compare against.",
+        help="The root directory of the Git repository. Defaults to the current working directory.",
     )
     group.addoption(
         "--suppress-flaky-failures-exit-code",

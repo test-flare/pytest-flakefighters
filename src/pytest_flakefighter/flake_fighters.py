@@ -15,7 +15,7 @@ import pytest
 from unidiff import PatchSet
 
 
-class FlakeFighter(ABC):
+class FlakeFighter(ABC):  # pylint: disable=R0903
     """
     Abstract base class for a FlakeFighter
     :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
@@ -34,6 +34,16 @@ class FlakeFighter(ABC):
 
 
 class DeFlaker(FlakeFighter):
+    """
+    A python equivalent of the DeFlaker algorithm from Bell et al. 2019 [10.1145/3180155.3180164].
+    Given the subtle differences between JUnit and pytest, this is not intended to be an exact port, but it follows
+    the same general methodology of checking whether covered code has been changed between commits.
+
+    :ivar repo_root: The root directory of the Git repository.
+    :ivar source_commit: The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).
+    :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).
+    """
+
     def __init__(self, run_live: bool, repo_root: str, source_commit: str, target_commit: str):
         super().__init__(run_live)
 

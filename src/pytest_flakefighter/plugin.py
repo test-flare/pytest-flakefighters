@@ -7,7 +7,7 @@ from datetime import datetime
 import coverage
 import pytest
 
-from pytest_flakefighter.database_management import Database, Run, Test
+from pytest_flakefighter.database_management import Database, Run, Test, TestRun
 from pytest_flakefighter.flake_fighters import DeFlaker, FlakeFighter
 
 
@@ -84,7 +84,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             self.run.tests.append(
                 Test(  # pylint: disable=E1123
                     name=item.nodeid,
-                    outcome=report.outcome,
+                    skipped=True,
                     run=self.run,
                 )
             )
@@ -97,17 +97,22 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             self.run.tests.append(
                 Test(  # pylint: disable=E1123
                     name=item.nodeid,
-                    outcome=report.outcome,
                     flaky=hasattr(report, "flaky") and report.flaky,
-                    stdout=captured_output.get("stdout"),
-                    stderr=captured_output.get("stderr"),
-                    stack_trace=str(report.longrepr),
-                    start_time=datetime.fromtimestamp(call.start),
-                    end_time=datetime.fromtimestamp(call.stop),
-                    coverage={
-                        file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
-                    },
                     run=self.run,
+                    executions=[
+                        TestRun(
+                            outcome=report.outcome,
+                            stdout=captured_output.get("stdout"),
+                            stderr=captured_output.get("stderr"),
+                            stack_trace=str(report.longrepr),
+                            start_time=datetime.fromtimestamp(call.start),
+                            end_time=datetime.fromtimestamp(call.stop),
+                            coverage={
+                                file_path: line_coverage.lines(file_path)
+                                for file_path in line_coverage.measured_files()
+                            },
+                        )
+                    ],
                 )
             )
 

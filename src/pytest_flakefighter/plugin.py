@@ -24,6 +24,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         target_commit: str = None,
         load_max_runs: int = None,
         save_run: bool = True,
+        max_flaky_reruns: int = 0,
     ):
         self.cov = coverage.Coverage()
         self.genuine_failure_observed = False
@@ -32,6 +33,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.flakefighters = flakefighters
         self.source_commit = source_commit
         self.target_commit = target_commit
+        self.max_flaky_reruns = max_flaky_reruns
 
         self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
         self.previous_runs = self.database.load_runs(load_max_runs)
@@ -217,6 +219,14 @@ def pytest_addoption(parser: pytest.Parser):
         help="The maximum number of previous flakefighter runs to store. Default is to store all.",
     )
     group.addoption(
+        "--max-flaky-reruns",
+        action="store",
+        dest="max_flaky_reruns",
+        default=0,
+        type=int,
+        help="The maximum number of times to rerun tests classified as flaky. Default is not to rerun.",
+    )
+    group.addoption(
         "--time-immemorial",
         action="store",
         dest="time_immemorial",
@@ -244,6 +254,7 @@ def pytest_configure(config: pytest.Config):
             target_commit=target_commit,
             source_commit=source_commit,
             load_max_runs=config.option.load_max_runs,
+            max_flaky_reruns=config.option.max_flaky_reruns,
             save_run=not config.option.no_save,
         )
     )

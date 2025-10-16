@@ -13,45 +13,25 @@ def repo_name(repo: git.Repo):
     return os.path.basename(repo.working_dir)
 
 
-def test_real_failures(pytester, flaky_triangle_repo):
+def test_real_failures_named_source_target(pytester, deflaker_repo):
     """Make sure that genuine failures are labelled as such."""
-
-    result = pytester.runpytest(
-        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        "-s",
-    )
-
-    result.assert_outcomes(failed=2, skipped=1)
-    result.stdout.fnmatch_lines(
-        [
-            "FAILED triangle.py::test_eqiulateral*",
-            "FAILED triangle.py::test_isosceles*",
-        ]
-    )
-
-
-def test_real_failures_named_source_target(pytester, flaky_triangle_repo):
-    """Make sure that genuine failures are labelled as such."""
-
-    flaky_triangle_repo.index.commit("Broke the tests.")
 
     # Add an extra commit so we can test indexing from not the most recent
-    flaky_triangle_repo.index.commit("This is an empty commit")
+    deflaker_repo.index.commit("This is an empty commit")
 
-    commits = [commit.hexsha for commit in flaky_triangle_repo.iter_commits("main")]
+    commits = [commit.hexsha for commit in deflaker_repo.iter_commits("main")]
 
     result = pytester.runpytest(
-        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        os.path.join(deflaker_repo.working_dir, "app.py"),
         "-s",
         f"--source-commit={commits[1]}",
         f"--target-commit={commits[2]}",
     )
 
-    result.assert_outcomes(failed=2, skipped=1)
+    result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(
         [
-            "FAILED triangle.py::test_eqiulateral*",
-            "FAILED triangle.py::test_isosceles*",
+            "FAILED app.py::test_app*",
         ]
     )
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
@@ -64,6 +44,9 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
     # Long term, we may want to look at other ways of forcing flaky test outcomes, e.g. random seeds
     flaky_triangle_repo.index.commit("Broke the tests.")
     flaky_triangle_repo.index.commit("This is an empty commit")
+
+    with open(os.path.join(flaky_triangle_repo.working_dir, "suffix.txt"), "w") as f:
+        print("Triangle", file=f)
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"), f"--repo={flaky_triangle_repo.working_dir}", "-s"
@@ -86,6 +69,9 @@ def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
     # Long term, we may want to look at other ways of forcing flaky test outcomes, e.g. random seeds
     flaky_triangle_repo.index.commit("Broke the tests.")
     flaky_triangle_repo.index.commit("This is an empty commit")
+
+    with open(os.path.join(flaky_triangle_repo.working_dir, "suffix.txt"), "w") as f:
+        print("Triangle", file=f)
 
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),

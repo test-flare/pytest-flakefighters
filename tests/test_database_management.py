@@ -28,8 +28,6 @@ def test_run_saving(pytester, flaky_triangle_repo):
 
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test)))
-        print("TESTS")
-        print(tests)
 
     assert len(runs[0].tests) == 3, f"Expected 3 tests but was {len(runs[0].tests)}"
 
@@ -85,7 +83,6 @@ def test_store_max_runs(pytester, deflaker_repo):
     # Check it's associated Tests were cleared
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
-        print("TESTS", tests)
         assert len(list(tests)) == 0
 
 
@@ -120,5 +117,4 @@ def test_time_immemorial(pytester, deflaker_repo):
     # Check it's associated Tests were cleared
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
-        print("TESTS", tests)
         assert len(list(tests)) == 0

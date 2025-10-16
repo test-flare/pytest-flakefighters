@@ -6,6 +6,7 @@ from datetime import datetime
 
 import coverage
 import pytest
+from _pytest.runner import runtestprotocol
 
 from pytest_flakefighter.database_management import Database, Run, Test, TestRun
 from pytest_flakefighter.flake_fighters import DeFlaker, FlakeFighter
@@ -66,6 +67,34 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()
+
+    def pytest_runtest_protocol(self, item, nextitem):
+        """
+        Rerun flaky tests.
+
+        Follows a similar control logic to the pytest-rerunfailures plugin.
+        """
+        item.execution_count = 0
+
+        for _ in range(self.max_flaky_reruns + 1):
+            item.execution_count += 1
+            item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
+            reports = runtestprotocol(item, nextitem=nextitem, log=False)
+
+            for report in reports:  # up to 3 reports: setup, call, teardown
+                if (
+                    report.when == "call"
+                    and item.execution_count <= self.max_flaky_reruns
+                    and getattr(report, "flaky", False)
+                    and not report.passed  # not equivalent to report.failed because it could error
+                ):
+                    break  # trigger rerun
+                item.ihook.pytest_runtest_logreport(report=report)
+            else:
+                break  # Skip further reruns
+
+        item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
+        return True
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo[None]) -> pytest.TestReport:

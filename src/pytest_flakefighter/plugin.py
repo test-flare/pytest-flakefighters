@@ -62,11 +62,13 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         :param item: The item.
         """
+        item.start = datetime.now().timestamp()
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()
+        item.stop = datetime.now().timestamp()
 
     def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item) -> bool:
         """
@@ -85,6 +87,23 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             reports = runtestprotocol(item, nextitem=nextitem, log=False)
 
             for report in reports:  # up to 3 reports: setup, call, teardown
+                if report.when == "call":
+                    captured_output = dict(report.sections)
+                    line_coverage = dict(item.user_properties).get("line_coverage", {})
+                    item.test.executions.append(
+                        TestRun(
+                            outcome=report.outcome,
+                            stdout=captured_output.get("stdout"),
+                            stderr=captured_output.get("stderr"),
+                            stack_trace=str(report.longrepr),
+                            start_time=datetime.fromtimestamp(item.start),
+                            end_time=datetime.fromtimestamp(item.stop),
+                            coverage={
+                                file_path: line_coverage.lines(file_path)
+                                for file_path in line_coverage.measured_files()
+                            },
+                        )
+                    )
                 if (
                     report.when == "call"
                     and item.execution_count <= self.max_flaky_reruns
@@ -111,7 +130,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         """
         outcome = yield
         report = outcome.get_result()
-        captured_output = dict(report.sections)
         line_coverage = self.cov.get_data()
         item.user_properties.append(("line_coverage", line_coverage))
         if report.outcome == "skipped":
@@ -128,27 +146,14 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 report.flaky = flaky
                 item.user_properties.append(("flaky", flaky))
                 self.genuine_failure_observed = not flaky
-            self.run.tests.append(
-                Test(  # pylint: disable=E1123
-                    name=item.nodeid,
-                    flaky=hasattr(report, "flaky") and report.flaky,
-                    run=self.run,
-                    executions=[
-                        TestRun(
-                            outcome=report.outcome,
-                            stdout=captured_output.get("stdout"),
-                            stderr=captured_output.get("stderr"),
-                            stack_trace=str(report.longrepr),
-                            start_time=datetime.fromtimestamp(call.start),
-                            end_time=datetime.fromtimestamp(call.stop),
-                            coverage={
-                                file_path: line_coverage.lines(file_path)
-                                for file_path in line_coverage.measured_files()
-                            },
-                        )
-                    ],
-                )
+            test = Test(  # pylint: disable=E1123
+                name=item.nodeid,
+                flaky=hasattr(report, "flaky") and report.flaky,
+                run=self.run,
+                executions=[],
             )
+            item.test = test
+            self.run.tests.append(test)
 
         return report
 

@@ -68,11 +68,14 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         yield
         self.cov.stop()
 
-    def pytest_runtest_protocol(self, item, nextitem):
+    def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item) -> bool:
         """
-        Rerun flaky tests.
+        Rerun flaky tests. Follows a similar control logic to the pytest-rerunfailures plugin.
 
-        Follows a similar control logic to the pytest-rerunfailures plugin.
+        :param item: The item.
+        :param nextitem: The next item.
+
+        :return: The return value is not used, but only stops further processing.
         """
         item.execution_count = 0
 

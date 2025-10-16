@@ -33,11 +33,12 @@ def test_run_saving(pytester, flaky_triangle_repo):
 
     assert len(runs[0].tests) == 3, f"Expected 3 tests but was {len(runs[0].tests)}"
 
-    assert [t.outcome for t in runs[0].tests] == [
-        "failed",
-        "failed",
-        "skipped",
-    ], f"Expected flaky class {['failed','failed', 'skipped']} but got {[t.outcome for t in runs[0].tests]}"
+    outcomes = [[r.outcome for r in t.executions] for t in runs[0].tests]
+    assert outcomes == [
+        ["failed"],
+        ["failed"],
+        [],
+    ], f"Expected flaky class {[['failed'],['failed'], []]} but got {outcomes}"
     assert [t.flaky for t in runs[0].tests] == [
         False,
         False,

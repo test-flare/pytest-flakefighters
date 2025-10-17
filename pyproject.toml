@@ -28,19 +28,36 @@ dev = [
     "pre_commit",
     "sphinx-autoapi",
     "sphinx_rtd_theme",
+    "tox>=4.31.0"
 ]
+
 [project.urls]
 Repository = "https://github.com/test-flare/pytest-flakefighter"
+
 [project.entry-points.pytest11]
 flakefighter = "pytest_flakefighter.plugin"
+
 [tool.black]
 # https://github.com/psf/black
 line-length = 120
 target-version = ["py310"]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = [
     "tests"
-    ]
+]
 [tool.isort]
 profile = "black"
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["3.10","3.11","3.12","3.13"]
+skip_missing_interpreters = false  # fail if devs don’t have all required Python versions
+
+# Base configuration for all test environments
+[tool.tox.env_run_base]
+description = "Run pytest under {base_python}"
+extras = ["dev","test"]
+deps = ["pytest"]
+commands = [["pytest"]]

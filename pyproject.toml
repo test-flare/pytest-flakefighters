@@ -38,6 +38,22 @@ Repository = "https://github.com/test-flare/pytest-flakefighter"
 [project.entry-points.pytest11]
 flakefighter = "pytest_flakefighter.plugin"
 
+[tool.pylint]
+ignore-paths="tests/resources"
+disable=[
+  "raw-checker-failed",
+  "bad-inline-option",
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "useless-suppression",
+  "deprecated-pragma",
+  "use-symbolic-message-instead",
+  "logging-fstring-interpolation",
+  "import-error",
+  "unspecified-encoding"
+]
+
 [tool.black]
 # https://github.com/psf/black
 line-length = 120

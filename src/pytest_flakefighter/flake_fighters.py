@@ -25,11 +25,10 @@ class FlakeFighter(ABC):  # pylint: disable=R0903
         self.run_live = run_live
 
     @abstractmethod
-    def flaky_failure(self, item: pytest.Item, call: pytest.CallInfo[None]) -> bool:
+    def flaky_failure(self, item: pytest.Item) -> bool:
         """
         Detect whether a failed test is flaky.
         :param item: The item.
-        :param call: The :class:`~pytest.CallInfo` for the phase.
         """
 
 
@@ -80,11 +79,10 @@ class DeFlaker(FlakeFighter):
                         range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
                     )
 
-    def flaky_failure(self, item: pytest.Item, call: pytest.CallInfo[None]) -> bool:
+    def flaky_failure(self, item: pytest.Item) -> bool:
         """
         Detect whether a failed test is flaky based on whether any of the covered code has changed.
         :param item: The item.
-        :param call: The :class:`~pytest.CallInfo` for the phase.
         """
         line_coverage = dict(item.user_properties).get("line_coverage", {})
         return not any(

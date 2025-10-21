@@ -53,6 +53,7 @@ disable=[
   "import-error",
   "unspecified-encoding"
 ]
+max-line-length=120
 
 [tool.black]
 # https://github.com/psf/black

@@ -55,7 +55,7 @@ class Run(Base):
 
 
 @dataclass
-class Test(Base):  # pylint: disable=R0902
+class Test(Base):
     """
     Class to store attributes of a test case.
     """

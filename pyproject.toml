@@ -24,6 +24,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "black",
+    "pytest-cov",
     "pylint==2.4.2", # the version used by the CI workflow
     "pre_commit",
     "sphinx-autoapi",
@@ -59,5 +60,5 @@ skip_missing_interpreters = false  # fail if devs don’t have all required Pyth
 [tool.tox.env_run_base]
 description = "Run pytest under {base_python}"
 extras = ["dev","test"]
-deps = ["pytest"]
-commands = [["pytest"]]
+deps = ["pytest","pytest-cov"]
+commands = [["pytest","-p","no:flakefighter","--cov=src","--cov-report=xml","{posargs}"]]

@@ -64,11 +64,13 @@ class Test(Base):  # pylint: disable=R0902
     name: Mapped[str] = Column(String)
     flaky: Mapped[bool] = Column(Boolean)
     skipped: Mapped[bool] = Column(Boolean, default=False)
-    executions = relationship("TestRun", backref="test", lazy="subquery", cascade="all, delete", passive_deletes=True)
+    executions = relationship(
+        "TestExecution", backref="test", lazy="subquery", cascade="all, delete", passive_deletes=True
+    )
 
 
 @dataclass
-class TestRun(Base):  # pylint: disable=R0902
+class TestExecution(Base):  # pylint: disable=R0902
     """
     Class to store attributes of a test outcome.
     """

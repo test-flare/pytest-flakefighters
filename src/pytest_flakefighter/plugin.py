@@ -8,7 +8,7 @@ import coverage
 import pytest
 from _pytest.runner import runtestprotocol
 
-from pytest_flakefighter.database_management import Database, Run, Test, TestRun
+from pytest_flakefighter.database_management import Database, Run, Test, TestExecution
 from pytest_flakefighter.flake_fighters import DeFlaker, FlakeFighter
 
 
@@ -80,6 +80,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :return: The return value is not used, but only stops further processing.
         """
         item.execution_count = 0
+        flaky = None
+        executions = []
+        skipped = False
 
         for _ in range(self.max_flaky_reruns + 1):
             item.execution_count += 1
@@ -87,11 +90,19 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             reports = runtestprotocol(item, nextitem=nextitem, log=False)
 
             for report in reports:  # up to 3 reports: setup, call, teardown
+                if report.when == "setup" and report.skipped:
+                    skipped = True
                 if report.when == "call":
+                    line_coverage = self.cov.get_data()
+                    item.user_properties.append(("line_coverage", line_coverage))
+                    if report.failed:
+                        flaky = any(ff.flaky_failure(item) for ff in self.flakefighters if ff.run_live)
+                        report.flaky = flaky
+                        item.user_properties.append(("flaky", flaky))
+                        self.genuine_failure_observed = not flaky
                     captured_output = dict(report.sections)
-                    line_coverage = dict(item.user_properties).get("line_coverage", {})
-                    item.test.executions.append(
-                        TestRun(
+                    executions.append(
+                        TestExecution(
                             outcome=report.outcome,
                             stdout=captured_output.get("stdout"),
                             stderr=captured_output.get("stderr"),
@@ -104,58 +115,27 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                             },
                         )
                     )
-                if (
-                    report.when == "call"
-                    and item.execution_count <= self.max_flaky_reruns
-                    and getattr(report, "flaky", False)
-                    and not report.passed  # not equivalent to report.failed because it could error
-                ):
-                    break  # trigger rerun
+                    if (
+                        item.execution_count <= self.max_flaky_reruns
+                        and getattr(report, "flaky", False)
+                        and not report.passed  # not equivalent to report.failed because it could error
+                    ):
+                        break  # trigger rerun
                 item.ihook.pytest_runtest_logreport(report=report)
             else:
                 break  # Skip further reruns
 
         item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
+        test = Test(  # pylint: disable=E1123
+            name=item.nodeid,
+            skipped=skipped,
+            flaky=flaky,
+            run=self.run,
+            executions=executions,
+        )
+        self.run.tests.append(test)
+        print("\nNEW TEST", item.nodeid, test)
         return True
-
-    @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo[None]) -> pytest.TestReport:
-        """
-        Classify failed tests as flaky if they don't cover any changed code.
-
-        :param item: The item.
-        :param call: The :class:`~pytest.CallInfo` for the phase.
-
-        :return: The modified test report.
-        """
-        outcome = yield
-        report = outcome.get_result()
-        line_coverage = self.cov.get_data()
-        item.user_properties.append(("line_coverage", line_coverage))
-        if report.outcome == "skipped":
-            self.run.tests.append(
-                Test(  # pylint: disable=E1123
-                    name=item.nodeid,
-                    skipped=True,
-                    run=self.run,
-                )
-            )
-        if report.when == "call":
-            if report.failed:
-                flaky = any(ff.flaky_failure(item, call) for ff in self.flakefighters if ff.run_live)
-                report.flaky = flaky
-                item.user_properties.append(("flaky", flaky))
-                self.genuine_failure_observed = not flaky
-            test = Test(  # pylint: disable=E1123
-                name=item.nodeid,
-                flaky=hasattr(report, "flaky") and report.flaky,
-                run=self.run,
-                executions=[],
-            )
-            item.test = test
-            self.run.tests.append(test)
-
-        return report
 
     def pytest_report_teststatus(
         self, report: pytest.TestReport, config: pytest.Config  # pylint: disable=unused-argument
@@ -187,6 +167,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             session.exitstatus = pytest.ExitCode.OK
 
         if self.save_run:
+            print("TESTS")
+            for test in self.run.tests:
+                print(" ", test, len(test.executions))
             self.database.save(self.run)
 
 

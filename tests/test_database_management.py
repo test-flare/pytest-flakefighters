@@ -14,6 +14,9 @@ from pytest_flakefighter.database_management import Database, Run, Test
 def test_run_saving(pytester, flaky_triangle_repo):
     """Test that FlakeFighter runs are saved"""
 
+    with open(os.path.join(flaky_triangle_repo.working_dir, "suffix.txt"), "w") as f:
+        print("Triangle", file=f)
+
     # run pytest with the following cmd args
     assert not os.path.exists(
         os.path.join(flaky_triangle_repo.working_dir, "flakefighter.db")
@@ -21,6 +24,7 @@ def test_run_saving(pytester, flaky_triangle_repo):
     pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         "-s",
+        "--max-flaky-reruns=2",
     )
     db = Database(f"sqlite:///{os.path.join(flaky_triangle_repo.working_dir, 'flakefighter.db')}")
     runs = db.load_runs()
@@ -30,15 +34,15 @@ def test_run_saving(pytester, flaky_triangle_repo):
 
     outcomes = [[r.outcome for r in t.executions] for t in runs[0].tests]
     assert outcomes == [
-        ["passed"],
-        ["passed"],
+        ["failed", "failed", "failed"],
+        ["failed", "failed", "failed"],
         [],
     ], f"Expected flaky class {[['failed'],['failed'], []]} but got {outcomes}"
     assert [t.flaky for t in runs[0].tests] == [
-        False,
-        False,
+        True,
+        True,
         None,
-    ], f"Expected flaky class {[False, False, None]} but got {[t.flaky for t in runs[0].tests]}"
+    ], f"Expected flaky class {[True, True, None]} but got {[t.flaky for t in runs[0].tests]}"
 
 
 def test_max_load_runs(pytester, deflaker_repo):

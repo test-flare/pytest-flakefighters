@@ -54,6 +54,10 @@ disable=[
   "unspecified-encoding"
 ]
 max-line-length=120
+variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
+good-variables=[
+  "db"
+]
 
 [tool.black]
 # https://github.com/psf/black

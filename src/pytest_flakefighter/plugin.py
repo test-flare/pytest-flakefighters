@@ -17,7 +17,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
     The main plugin to manage the various FlakeFighter tools.
     """
 
-    def __init__(  # pylint: disable=R0913
+    def __init__(  # pylint: disable=R0913,R0917
         self,
         database: Database,
         flakefighters: list[FlakeFighter],

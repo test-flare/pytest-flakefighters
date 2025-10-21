@@ -77,6 +77,7 @@ skip_missing_interpreters = false  # fail if devs don’t have all required Pyth
 # Base configuration for all test environments
 [tool.tox.env_run_base]
 description = "Run pytest under {base_python}"
+allowlist_externals=["pytest"]
 extras = ["dev","test"]
 deps = ["pytest","pytest-cov"]
 commands = [["pytest","-p","no:flakefighter","--cov=src","--cov-report=xml","{posargs}"]]

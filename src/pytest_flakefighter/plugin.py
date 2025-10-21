@@ -134,7 +134,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             executions=executions,
         )
         self.run.tests.append(test)
-        print("\nNEW TEST", item.nodeid, test)
         return True
 
     def pytest_report_teststatus(
@@ -167,10 +166,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             session.exitstatus = pytest.ExitCode.OK
 
         if self.save_run:
-            print("TESTS")
-            for test in self.run.tests:
-                print(" ", test, len(test.executions))
             self.database.save(self.run)
+        self.database.engine.dispose()
 
 
 def pytest_addoption(parser: pytest.Parser):

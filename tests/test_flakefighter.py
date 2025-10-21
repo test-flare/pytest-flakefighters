@@ -4,6 +4,9 @@ Test DeFlaker algorithm.
 
 import os
 
+import git
+from pytest import ExitCode
+
 
 def repo_name(repo: git.Repo):
     """

@@ -25,7 +25,7 @@ dynamic = ["version"]
 dev = [
     "black",
     "pytest-cov",
-    "pylint==2.4.2", # the version used by the CI workflow
+    "pylint",
     "pre_commit",
     "sphinx-autoapi",
     "sphinx_rtd_theme",
@@ -55,9 +55,6 @@ disable=[
 ]
 max-line-length=120
 variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
-good-variables=[
-  "db"
-]
 
 [tool.black]
 # https://github.com/psf/black

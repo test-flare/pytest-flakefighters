@@ -81,7 +81,7 @@ class Profiler:
         """
         self.coverage_data.set_context(context)
 
-    def get_data(self) -> coverage.CoverageData:
+    def get_data(self) -> CoverageData:
         """
         Return coverage data.
         """

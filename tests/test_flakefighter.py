@@ -16,6 +16,20 @@ def repo_name(repo: git.Repo):
     return os.path.basename(repo.working_dir)
 
 
+def test_function_coverage(pytester, deflaker_repo):
+    """Make sure that function-level coverage runs fine."""
+
+    result = pytester.runpytest(os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--function-coverage")
+
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(
+        [
+            "FAILED app.py::test_app*",
+        ]
+    )
+    assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
+
+
 def test_real_failures_named_source_target(pytester, deflaker_repo):
     """Make sure that genuine failures are labelled as such."""
 

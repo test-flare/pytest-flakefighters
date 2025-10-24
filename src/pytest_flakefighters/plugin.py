@@ -3,6 +3,7 @@ This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.31801
 """
 
 from datetime import datetime
+from typing import Union
 
 import coverage
 import pytest
@@ -10,6 +11,7 @@ from _pytest.runner import runtestprotocol
 
 from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
 from pytest_flakefighters.flake_fighters import DeFlaker, FlakeFighter
+from pytest_flakefighters.function_coverage import Profiler
 
 
 class FlakeFighterPlugin:  # pylint: disable=R0902
@@ -20,6 +22,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
     def __init__(  # pylint: disable=R0913,R0917
         self,
         database: Database,
+        cov: Union[coverage.Coverage, Profiler],
         flakefighters: list[FlakeFighter],
         source_commit: str = None,
         target_commit: str = None,
@@ -27,7 +30,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         save_run: bool = True,
         max_flaky_reruns: int = 0,
     ):
-        self.cov = coverage.Coverage()
+        self.cov = cov
         self.genuine_failure_observed = False
         self.save_run = save_run
         self.database = database
@@ -212,6 +215,13 @@ def pytest_addoption(parser: pytest.Parser):
         help="Do not save this run to the database of previous flakefighters runs.",
     )
     group.addoption(
+        "--function-coverage",
+        action="store_true",
+        dest="function_coverage",
+        default=False,
+        help="Use function-level coverage instead of line coverage.",
+    )
+    group.addoption(
         "--load-max-runs",
         "-M",
         action="store",
@@ -262,9 +272,15 @@ def pytest_configure(config: pytest.Config):
     target_commit = config.option.target_commit
     source_commit = config.option.source_commit
 
+    if config.option.function_coverage:
+        cov = Profiler()
+    else:
+        cov = coverage.Coverage()
+
     config.pluginmanager.register(
         FlakeFighterPlugin(
             database=Database(config.option.database_url, config.option.store_max_runs, config.option.time_immemorial),
+            cov=cov,
             flakefighters=[
                 DeFlaker(run_live=True, repo_root=repo_root, source_commit=source_commit, target_commit=target_commit)
             ],

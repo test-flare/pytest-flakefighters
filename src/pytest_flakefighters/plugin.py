@@ -8,8 +8,8 @@ import coverage
 import pytest
 from _pytest.runner import runtestprotocol
 
-from pytest_flakefighter.database_management import Database, Run, Test, TestExecution
-from pytest_flakefighter.flake_fighters import DeFlaker, FlakeFighter
+from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
+from pytest_flakefighters.flake_fighters import DeFlaker, FlakeFighter
 
 
 class FlakeFighterPlugin:  # pylint: disable=R0902
@@ -209,7 +209,7 @@ def pytest_addoption(parser: pytest.Parser):
         action="store_true",
         dest="no_save",
         default=False,
-        help="Do not save this run to the database of previous flakefighter runs.",
+        help="Do not save this run to the database of previous flakefighters runs.",
     )
     group.addoption(
         "--load-max-runs",
@@ -224,8 +224,8 @@ def pytest_addoption(parser: pytest.Parser):
         "-D",
         action="store",
         dest="database_url",
-        default="sqlite:///flakefighter.db",
-        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
+        default="sqlite:///flakefighters.db",
+        help="The database URL. Defaults to 'flakefighters.db' in current working directory.",
     )
     group.addoption(
         "--store-max-runs",
@@ -233,7 +233,7 @@ def pytest_addoption(parser: pytest.Parser):
         dest="store_max_runs",
         default=None,
         type=int,
-        help="The maximum number of previous flakefighter runs to store. Default is to store all.",
+        help="The maximum number of previous flakefighters runs to store. Default is to store all.",
     )
     group.addoption(
         "--max-flaky-reruns",
@@ -248,7 +248,7 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         dest="time_immemorial",
         default=None,
-        help="How long to store flakefighter runs for, specified as `days:hours:minutes`. "
+        help="How long to store flakefighters runs for, specified as `days:hours:minutes`. "
         "E.g. to store tests for one week, use 7:0:0.",
     )
 

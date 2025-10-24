@@ -45,7 +45,7 @@ class Base(DeclarativeBase):
 @dataclass
 class Run(Base):
     """
-    Class to store attributes of a flakefighter run.
+    Class to store attributes of a flakefighters run.
     """
 
     source_commit: Mapped[str] = Column(String)

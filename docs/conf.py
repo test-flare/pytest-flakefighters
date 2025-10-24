@@ -1,4 +1,4 @@
-# pytest-flakefighter documentation build configuration file, created by
+# pytest-flakefighters documentation build configuration file, created by
 # sphinx-quickstart on Thu Oct  1 00:43:18 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -46,7 +46,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "pytest-flakefighter"
+project = "pytest-flakefighters"
 copyright = "2015, TestFLARE Team"
 author = "TestFLARE Team"
 
@@ -253,7 +253,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "pytest-cookiecutterplugin_name", "pytest-flakefighter Documentation", [author], 1)]
+man_pages = [(master_doc, "pytest-cookiecutterplugin_name", "pytest-flakefighters Documentation", [author], 1)]
 
 # If true, show URL addresses after external links.
 # man_show_urls = False
@@ -268,7 +268,7 @@ texinfo_documents = [
     (
         master_doc,
         "pytest-cookiecutterplugin_name",
-        "pytest-flakefighter Documentation",
+        "pytest-flakefighters Documentation",
         author,
         "pytest-cookiecutterplugin_name",
         "One line description of project.",

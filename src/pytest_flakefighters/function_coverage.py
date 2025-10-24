@@ -6,7 +6,7 @@ import ast
 import os
 import sys
 from types import FrameType
-from typing import Callable
+from typing import Callable, Literal
 
 from coverage import CoverageData
 
@@ -37,14 +37,19 @@ class Profiler:
             if isinstance(node, ast.FunctionDef)
         }
 
-    def profile_fun_calls(self, frame: FrameType, event: str, arg: any) -> Callable:  # pylint: disable=W0613
+    def profile_fun_calls(
+        self,
+        frame: FrameType,
+        event: Literal["call", "return", "c_call", "c_return", "c_exception"],
+        arg: any,  # pylint: disable=W0613
+    ) -> Callable:
         """
         Profile function to record the lines that define called functions.
         When `sys.setprofile(profiler.profile_fun_calls)` is enabled, this will be called every time a function is
         executed and update `coverage_data` accordingly.
 
         :param frame: The current stack frame.
-        :param event: The type of profiling event that has occurred. One of [call, return, c_call, c_return, c_exception].
+        :param event: The type of profiling event that has occurred.
         :param arg: The event-specific argument, which changes based on the event string. Not used - required for
         compatibility with the profiler.
         """
@@ -76,5 +81,8 @@ class Profiler:
         """
         self.coverage_data.set_context(context)
 
-    def get_data(self):
+    def get_data(self) -> coverage.CoverageData:
+        """
+        Return coverage data.
+        """
         return self.coverage_data

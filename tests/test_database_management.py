@@ -46,6 +46,7 @@ def test_run_saving(pytester, flaky_triangle_repo):
         True,
         None,
     ], f"Expected flaky class {[True, True, None]} but got {[t.flaky for t in run.tests]}"
+    db.engine.dispose()
 
 
 def test_max_load_runs(pytester, deflaker_repo):
@@ -66,6 +67,7 @@ def test_max_load_runs(pytester, deflaker_repo):
         5,
         4,
     ], "Expected to load only the 2 most recent runs with IDs 4 and 5"
+    db.engine.dispose()
 
 
 def test_store_max_runs(pytester, deflaker_repo):
@@ -81,13 +83,14 @@ def test_store_max_runs(pytester, deflaker_repo):
 
     # Check first run with ID=1 was cleared
     with Session(db.engine) as session:
-        run = session.query(Run).get(1)
+        run = session.get(Run, 1)
         assert run is None, "Run with ID 1 should have been deleted"
 
     # Check it's associated Tests were cleared
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
+    db.engine.dispose()
 
 
 def test_time_immemorial(pytester, deflaker_repo):
@@ -105,7 +108,7 @@ def test_time_immemorial(pytester, deflaker_repo):
     # Spoof the first run as being from 2 days ago
     db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
     with Session(db.engine) as session:
-        run = session.query(Run).get(1)
+        run = session.get(Run, 1)
         run.created_at = datetime.now() - timedelta(days=2)
         session.commit()
         session.flush()
@@ -115,10 +118,11 @@ def test_time_immemorial(pytester, deflaker_repo):
 
     # Check it was cleared
     with Session(db.engine) as session:
-        run = session.query(Run).get(1)
+        run = session.get(Run, 1)
         assert run is None, "Run with ID 1 should have been deleted"
 
     # Check it's associated Tests were cleared
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
+    db.engine.dispose()

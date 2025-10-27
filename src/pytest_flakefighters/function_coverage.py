@@ -20,8 +20,9 @@ class Profiler:
     `function_defs[module][function]`.
     """
 
-    coverage_data: CoverageData = CoverageData(no_disk=True)
-    function_defs: dict[str, dict[str, list[int]]] = {}
+    def __init__(self):
+        self.coverage_data: CoverageData = CoverageData(no_disk=True)
+        self.function_defs: dict[str, dict[str, list[int]]] = {}
 
     def update_function_defs(self, module: str):
         """

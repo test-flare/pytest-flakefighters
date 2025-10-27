@@ -29,7 +29,7 @@ class Profiler:
 
         :param module: The filepath of the module to process.
         """
-        with open(module) as f:
+        with open(module, encoding="utf8") as f:
             tree = ast.parse(f.read())
         self.function_defs[module] = {
             node.name: list(range(node.lineno, node.end_lineno + 1))

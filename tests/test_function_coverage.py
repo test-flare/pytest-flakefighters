@@ -13,7 +13,7 @@ def test_function_coverage(flaky_triangle_repo):
     Test function definition scraping.
     """
     profiler = Profiler()
-    assert profiler.function_defs == {}, f"Expected empty but got {profiler.function_defs}"
+    assert not profiler.function_defs, f"Expected empty but got {profiler.function_defs}"
 
     profiler.update_function_defs(os.path.join(flaky_triangle_repo.working_dir, "triangle.py"))
     expected = {
@@ -29,7 +29,7 @@ def test_function_coverage(flaky_triangle_repo):
 def test_profile_fun_calls():
     """Make sure that function-level coverage runs fine."""
     profiler = Profiler()
-    assert profiler.function_defs == {}, f"Expected empty but got {profiler.function_defs}"
+    assert not profiler.function_defs, f"Expected empty but got {profiler.function_defs}"
     sys.path.append("tests")
     from resources.triangle import triangle_type  # pylint: disable=C0415
 

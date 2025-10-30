@@ -11,5 +11,6 @@ class SuperNew:
 class App(SuperOld):
     pass
 
+
 def test_app():
-  App().magic()
+    App().magic()

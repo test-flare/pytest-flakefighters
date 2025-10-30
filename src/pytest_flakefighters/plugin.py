@@ -6,9 +6,10 @@ from datetime import datetime
 
 import coverage
 import pytest
+from _pytest.runner import runtestprotocol
 
-from pytest_flakefighter.database_management import Database, Run, Test
-from pytest_flakefighter.flake_fighters import DeFlaker, FlakeFighter
+from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
+from pytest_flakefighters.flake_fighters import DeFlaker, FlakeFighter
 
 
 class FlakeFighterPlugin:  # pylint: disable=R0902
@@ -16,7 +17,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
     The main plugin to manage the various FlakeFighter tools.
     """
 
-    def __init__(  # pylint: disable=R0913
+    def __init__(  # pylint: disable=R0913,R0917
         self,
         database: Database,
         flakefighters: list[FlakeFighter],
@@ -24,6 +25,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         target_commit: str = None,
         load_max_runs: int = None,
         save_run: bool = True,
+        max_flaky_reruns: int = 0,
     ):
         self.cov = coverage.Coverage()
         self.genuine_failure_observed = False
@@ -32,6 +34,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.flakefighters = flakefighters
         self.source_commit = source_commit
         self.target_commit = target_commit
+        self.max_flaky_reruns = max_flaky_reruns
 
         self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
         self.previous_runs = self.database.load_runs(load_max_runs)
@@ -59,59 +62,79 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         :param item: The item.
         """
+        item.start = datetime.now().timestamp()
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.switch_context(item.nodeid)
         yield
         self.cov.stop()
+        item.stop = datetime.now().timestamp()
 
-    @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo[None]) -> pytest.TestReport:
+    def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item) -> bool:
         """
-        Classify failed tests as flaky if they don't cover any changed code.
+        Rerun flaky tests. Follows a similar control logic to the pytest-rerunfailures plugin.
 
         :param item: The item.
-        :param call: The :class:`~pytest.CallInfo` for the phase.
+        :param nextitem: The next item.
 
-        :return: The modified test report.
+        :return: The return value is not used, but only stops further processing.
         """
-        outcome = yield
-        report = outcome.get_result()
-        captured_output = dict(report.sections)
-        line_coverage = self.cov.get_data()
-        item.user_properties.append(("line_coverage", line_coverage))
-        if report.outcome == "skipped":
-            self.run.tests.append(
-                Test(  # pylint: disable=E1123
-                    name=item.nodeid,
-                    outcome=report.outcome,
-                    run=self.run,
-                )
-            )
-        if report.when == "call":
-            if report.failed:
-                flaky = any(ff.flaky_failure(item, call) for ff in self.flakefighters if ff.run_live)
-                report.flaky = flaky
-                item.user_properties.append(("flaky", flaky))
-                self.genuine_failure_observed = not flaky
-            self.run.tests.append(
-                Test(  # pylint: disable=E1123
-                    name=item.nodeid,
-                    outcome=report.outcome,
-                    flaky=hasattr(report, "flaky") and report.flaky,
-                    stdout=captured_output.get("stdout"),
-                    stderr=captured_output.get("stderr"),
-                    stack_trace=str(report.longrepr),
-                    start_time=datetime.fromtimestamp(call.start),
-                    end_time=datetime.fromtimestamp(call.stop),
-                    coverage={
-                        file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
-                    },
-                    run=self.run,
-                )
-            )
+        item.execution_count = 0
+        flaky = None
+        executions = []
+        skipped = False
 
-        return report
+        for _ in range(self.max_flaky_reruns + 1):
+            item.execution_count += 1
+            item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
+            reports = runtestprotocol(item, nextitem=nextitem, log=False)
+
+            for report in reports:  # up to 3 reports: setup, call, teardown
+                if report.when == "setup" and report.skipped:
+                    skipped = True
+                if report.when == "call":
+                    line_coverage = self.cov.get_data()
+                    item.user_properties.append(("line_coverage", line_coverage))
+                    if report.failed:
+                        flaky = any(ff.flaky_failure(item) for ff in self.flakefighters if ff.run_live)
+                        report.flaky = flaky
+                        item.user_properties.append(("flaky", flaky))
+                        self.genuine_failure_observed = not flaky
+                    captured_output = dict(report.sections)
+                    executions.append(
+                        TestExecution(
+                            outcome=report.outcome,
+                            stdout=captured_output.get("stdout"),
+                            stderr=captured_output.get("stderr"),
+                            stack_trace=str(report.longrepr),
+                            start_time=datetime.fromtimestamp(item.start),
+                            end_time=datetime.fromtimestamp(item.stop),
+                            coverage={
+                                file_path: line_coverage.lines(file_path)
+                                for file_path in line_coverage.measured_files()
+                            },
+                        )
+                    )
+                    if (
+                        item.execution_count <= self.max_flaky_reruns
+                        and getattr(report, "flaky", False)
+                        and not report.passed  # not equivalent to report.failed because it could error
+                    ):
+                        break  # trigger rerun
+                item.ihook.pytest_runtest_logreport(report=report)
+            else:
+                break  # Skip further reruns
+
+        item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
+        self.run.tests.append(
+            Test(  # pylint: disable=E1123
+                name=item.nodeid,
+                skipped=skipped,
+                flaky=flaky,
+                executions=executions,
+            )
+        )
+        return True
 
     def pytest_report_teststatus(
         self, report: pytest.TestReport, config: pytest.Config  # pylint: disable=unused-argument
@@ -144,6 +167,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         if self.save_run:
             self.database.save(self.run)
+        self.database.engine.dispose()
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -185,7 +209,7 @@ def pytest_addoption(parser: pytest.Parser):
         action="store_true",
         dest="no_save",
         default=False,
-        help="Do not save this run to the database of previous flakefighter runs.",
+        help="Do not save this run to the database of previous flakefighters runs.",
     )
     group.addoption(
         "--load-max-runs",
@@ -200,8 +224,8 @@ def pytest_addoption(parser: pytest.Parser):
         "-D",
         action="store",
         dest="database_url",
-        default="sqlite:///flakefighter.db",
-        help="The database URL. Defaults to 'flakefighter.db' in current working directory.",
+        default="sqlite:///flakefighters.db",
+        help="The database URL. Defaults to 'flakefighters.db' in current working directory.",
     )
     group.addoption(
         "--store-max-runs",
@@ -209,14 +233,22 @@ def pytest_addoption(parser: pytest.Parser):
         dest="store_max_runs",
         default=None,
         type=int,
-        help="The maximum number of previous flakefighter runs to store. Default is to store all.",
+        help="The maximum number of previous flakefighters runs to store. Default is to store all.",
+    )
+    group.addoption(
+        "--max-flaky-reruns",
+        action="store",
+        dest="max_flaky_reruns",
+        default=0,
+        type=int,
+        help="The maximum number of times to rerun tests classified as flaky. Default is not to rerun.",
     )
     group.addoption(
         "--time-immemorial",
         action="store",
         dest="time_immemorial",
         default=None,
-        help="How long to store flakefighter runs for, specified as `days:hours:minutes`. "
+        help="How long to store flakefighters runs for, specified as `days:hours:minutes`. "
         "E.g. to store tests for one week, use 7:0:0.",
     )
 
@@ -239,6 +271,7 @@ def pytest_configure(config: pytest.Config):
             target_commit=target_commit,
             source_commit=source_commit,
             load_max_runs=config.option.load_max_runs,
+            max_flaky_reruns=config.option.max_flaky_reruns,
             save_run=not config.option.no_save,
         )
     )

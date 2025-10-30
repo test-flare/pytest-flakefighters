@@ -24,23 +24,60 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "black",
-    "pylint==2.4.2", # the version used by the CI workflow
+    "pytest-cov",
+    "pylint",
     "pre_commit",
     "sphinx-autoapi",
     "sphinx_rtd_theme",
+    "tox>=4.31.0"
 ]
+
 [project.urls]
 Repository = "https://github.com/test-flare/pytest-flakefighter"
+
 [project.entry-points.pytest11]
-flakefighter = "pytest_flakefighter.plugin"
+flakefighters = "pytest_flakefighters.plugin"
+
+[tool.pylint]
+ignore-paths="tests/resources"
+disable=[
+  "raw-checker-failed",
+  "bad-inline-option",
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "useless-suppression",
+  "deprecated-pragma",
+  "use-symbolic-message-instead",
+  "logging-fstring-interpolation",
+  "import-error",
+  "unspecified-encoding"
+]
+max-line-length=120
+variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
+
 [tool.black]
 # https://github.com/psf/black
 line-length = 120
 target-version = ["py310"]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = [
     "tests"
-    ]
+]
 [tool.isort]
 profile = "black"
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["3.10","3.11","3.12","3.13"]
+skip_missing_interpreters = false  # fail if devs don’t have all required Python versions
+
+# Base configuration for all test environments
+[tool.tox.env_run_base]
+description = "Run pytest under {base_python}"
+allowlist_externals=["pytest"]
+extras = ["dev","test"]
+deps = ["pytest","pytest-cov"]
+commands = [["pytest","-p","no:flakefighter","--cov=src","--cov-report=xml","{posargs}"]]

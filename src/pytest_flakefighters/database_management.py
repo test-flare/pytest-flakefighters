@@ -45,7 +45,7 @@ class Base(DeclarativeBase):
 @dataclass
 class Run(Base):
     """
-    Class to store attributes of a flakefighter run.
+    Class to store attributes of a flakefighters run.
     """
 
     source_commit: Mapped[str] = Column(String)
@@ -55,15 +55,28 @@ class Run(Base):
 
 
 @dataclass
-class Test(Base):  # pylint: disable=R0902
+class Test(Base):
     """
-    Class to store attributes of a test execution.
+    Class to store attributes of a test case.
     """
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
     name: Mapped[str] = Column(String)
-    outcome: Mapped[str] = Column(String)
     flaky: Mapped[bool] = Column(Boolean)
+    skipped: Mapped[bool] = Column(Boolean, default=False)
+    executions = relationship(
+        "TestExecution", backref="test", lazy="subquery", cascade="all, delete", passive_deletes=True
+    )
+
+
+@dataclass
+class TestExecution(Base):  # pylint: disable=R0902
+    """
+    Class to store attributes of a test outcome.
+    """
+
+    test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=False)
+    outcome: Mapped[str] = Column(String)
     stdout: Mapped[str] = Column(Text)
     stderr: Mapped[str] = Column(Text)
     stack_trace: Mapped[str] = Column(Text)

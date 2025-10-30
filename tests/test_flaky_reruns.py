@@ -1,8 +1,10 @@
+"""
+This module implements tests for reruning flaky failures.
+"""
+
 import os
 
-from pytest import ExitCode
-
-from pytest_flakefighters.database_management import Database, Run, Test
+from pytest_flakefighters.database_management import Database
 
 
 def test_flaky_reruns(pytester, flaky_triangle_repo):
@@ -16,7 +18,7 @@ def test_flaky_reruns(pytester, flaky_triangle_repo):
     with open(os.path.join(flaky_triangle_repo.working_dir, "suffix.txt"), "w") as f:
         print("Triangle", file=f)
 
-    result = pytester.runpytest(
+    pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         f"--repo={flaky_triangle_repo.working_dir}",
         "-s",

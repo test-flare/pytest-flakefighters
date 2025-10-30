@@ -126,14 +126,14 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 break  # Skip further reruns
 
         item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
-        test = Test(  # pylint: disable=E1123
-            name=item.nodeid,
-            skipped=skipped,
-            flaky=flaky,
-            run=self.run,
-            executions=executions,
+        self.run.tests.append(
+            Test(  # pylint: disable=E1123
+                name=item.nodeid,
+                skipped=skipped,
+                flaky=flaky,
+                executions=executions,
+            )
         )
-        self.run.tests.append(test)
         return True
 
     def pytest_report_teststatus(

@@ -46,6 +46,7 @@ def test_run_saving(pytester, flaky_triangle_repo):
         True,
         None,
     ], f"Expected flaky class {[True, True, None]} but got {[t.flaky for t in run.tests]}"
+    db.engine.dispose()
 
 
 def test_max_load_runs(pytester, deflaker_repo):
@@ -66,6 +67,7 @@ def test_max_load_runs(pytester, deflaker_repo):
         5,
         4,
     ], "Expected to load only the 2 most recent runs with IDs 4 and 5"
+    db.engine.dispose()
 
 
 def test_store_max_runs(pytester, deflaker_repo):
@@ -88,6 +90,7 @@ def test_store_max_runs(pytester, deflaker_repo):
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
+    db.engine.dispose()
 
 
 def test_time_immemorial(pytester, deflaker_repo):
@@ -122,3 +125,4 @@ def test_time_immemorial(pytester, deflaker_repo):
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
+    db.engine.dispose()

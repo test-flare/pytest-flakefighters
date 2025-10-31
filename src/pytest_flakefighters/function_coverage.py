@@ -61,6 +61,7 @@ class Profiler:
 
         :param context: The context name to set.
         """
+        self.profiler.clear()
         self.coverage_data.set_context(context)
 
     def get_data(self) -> CoverageData:

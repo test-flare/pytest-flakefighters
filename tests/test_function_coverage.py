@@ -47,3 +47,37 @@ def test_profile_fun_calls():
     function_defs = profiler.function_defs.get(triangle)
     assert function_defs == expected, f"Expected {expected} but got {function_defs}."
     assert profiler.coverage_data.lines(triangle) == list(range(11, 19))
+
+
+def test_set_context():
+    """Make sure that context setting works fine."""
+    profiler = Profiler()
+    sys.path.append("tests")
+    from resources.triangle import (  # pylint: disable=C0415
+        test_eqiulateral,
+        test_isosceles,
+    )
+
+    triangle = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources", "triangle.py")
+
+    profiler.switch_context("test_eqiulateral")
+    profiler.start()
+    test_eqiulateral()
+    profiler.stop()
+
+    profiler.coverage_data.set_query_context("test_eqiulateral")
+    expected = list(range(11, 19)) + [21, 22]
+    lines = profiler.coverage_data.lines(triangle)
+    assert lines == expected, f"Expected test_eqiulateral coverage {expected} but was {lines}."
+
+    profiler.profiler.clear()
+
+    profiler.switch_context("test_isosceles")
+    profiler.start()
+    test_isosceles()
+    profiler.stop()
+
+    profiler.coverage_data.set_query_context("test_isosceles")
+    expected = list(range(11, 19)) + [25, 26]
+    lines = profiler.coverage_data.lines(triangle)
+    assert lines == expected, f"Expected test_isosceles coverage {expected} but was {lines}."

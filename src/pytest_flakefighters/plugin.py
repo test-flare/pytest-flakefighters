@@ -97,6 +97,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
+                    line_coverage.set_query_context(item.nodeid)
                     item.user_properties.append(("line_coverage", line_coverage))
                     if report.failed:
                         flaky = any(ff.flaky_failure(item) for ff in self.flakefighters if ff.run_live)

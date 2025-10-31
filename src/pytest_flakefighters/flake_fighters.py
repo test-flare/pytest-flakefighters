@@ -101,5 +101,5 @@ class DeFlaker(FlakeFighter):
         :param line_number: The line number to check.
         """
         if line_number in self.lines_changed[file_path]:
-            return self.lines_changed[file_path][line_number]
+            return line_number in self.lines_changed[file_path]
         return True

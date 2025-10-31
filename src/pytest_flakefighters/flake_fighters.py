@@ -84,7 +84,8 @@ class DeFlaker(FlakeFighter):
         Detect whether a failed test is flaky based on whether any of the covered code has changed.
         :param item: The item.
         """
-        line_coverage = dict(item.user_properties).get("line_coverage", {})
+        line_coverage = dict(item.user_properties)["line_coverage"]
+
         return not any(
             self.line_modified_by_latest_commit(file_path, line_number)
             for file_path in line_coverage.measured_files()
@@ -100,5 +101,5 @@ class DeFlaker(FlakeFighter):
         :param line_number: The line number to check.
         """
         if line_number in self.lines_changed[file_path]:
-            return self.lines_changed[file_path][line_number]
+            return line_number in self.lines_changed[file_path]
         return True

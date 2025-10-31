@@ -10,3 +10,12 @@ repos:
   hooks:
     - id: black
       language_version: python3.11
+- repo: local
+  hooks:
+    - id: pylint
+      name: pylint
+      entry: pylint
+      language: system
+      types: [python]
+      args: ['--max-line-length=120', '--max-positional-arguments=12']
+      files: ^src/|^tests/

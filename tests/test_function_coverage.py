@@ -33,9 +33,9 @@ def test_profile_fun_calls():
     sys.path.append("tests")
     from resources.triangle import triangle_type  # pylint: disable=C0415
 
-    sys.setprofile(profiler.profile_fun_calls)
+    profiler.start()
     triangle_type(3, 4, 5)
-    sys.setprofile(None)
+    profiler.stop()
 
     expected = {
         "triangle_type": list(range(11, 19)),

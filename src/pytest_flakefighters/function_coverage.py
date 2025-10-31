@@ -3,10 +3,9 @@ This module implements the Profiler class to help measure function-level coverag
 """
 
 import ast
+import cProfile
 import os
-import sys
-from types import FrameType
-from typing import Callable, Literal
+import pstats
 
 from coverage import CoverageData
 
@@ -23,6 +22,7 @@ class Profiler:
     def __init__(self):
         self.coverage_data: CoverageData = CoverageData(no_disk=True)
         self.function_defs: dict[str, dict[str, list[int]]] = {}
+        self.profiler = cProfile.Profile()
 
     def update_function_defs(self, module: str):
         """
@@ -38,41 +38,22 @@ class Profiler:
             if isinstance(node, ast.FunctionDef)
         }
 
-    def profile_fun_calls(
-        self,
-        frame: FrameType,
-        event: Literal["call", "return", "c_call", "c_return", "c_exception"],
-        arg: any,  # pylint: disable=W0613
-    ) -> Callable:
-        """
-        Profile function to record the lines that define called functions.
-        When `sys.setprofile(profiler.profile_fun_calls)` is enabled, this will be called every time a function is
-        executed and update `coverage_data` accordingly.
-
-        :param frame: The current stack frame.
-        :param event: The type of profiling event that has occurred.
-        :param arg: The event-specific argument, which changes based on the event string. Not used - required for
-        compatibility with the profiler.
-        """
-        if event == "call":
-            module = frame.f_code.co_filename
-            if module not in self.function_defs and os.path.exists(module):
-                self.update_function_defs(module)
-
-            self.coverage_data.add_lines({module: self.function_defs.get(module, {}).get(frame.f_code.co_name, [])})
-        return self.profile_fun_calls
-
     def start(self):
         """
         Start measuring coverage.
         """
-        sys.setprofile(self.profile_fun_calls)
+        self.profiler.enable()
 
     def stop(self):
         """
         Stop measuring coverage.
         """
-        sys.setprofile(None)
+        self.profiler.disable()
+        p = pstats.Stats(self.profiler)
+        for module, _, function in p.stats.keys():
+            if module not in self.function_defs and os.path.exists(module):
+                self.update_function_defs(module)
+            self.coverage_data.add_lines({module: self.function_defs.get(module, {}).get(function, [])})
 
     def switch_context(self, context: str):
         """

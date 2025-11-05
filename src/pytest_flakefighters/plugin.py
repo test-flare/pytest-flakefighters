@@ -84,7 +84,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :return: The return value is not used, but only stops further processing.
         """
         item.execution_count = 0
-        flaky = None
         executions = []
         skipped = False
 
@@ -112,12 +111,15 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         },
                     )
                     executions.append(test_execution)
-                    flaky = any(ff.flaky_test_live(test_execution) for ff in self.flakefighters if ff.run_live)
-                    report.flaky = flaky
-                    self.genuine_failure_observed = self.genuine_failure_observed or (report.failed and not flaky)
+                    for ff in filter(lambda ff: ff.run_live, self.flakefighters):
+                        ff.flaky_test_live(test_execution)
+                    report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
+                    self.genuine_failure_observed = self.genuine_failure_observed or (
+                        report.failed and not report.flaky
+                    )
                     if (
                         item.execution_count <= self.max_flaky_reruns
-                        and flaky
+                        and report.flaky
                         and not report.passed  # not equivalent to report.failed because it could error
                     ):
                         break  # trigger rerun
@@ -129,7 +131,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         test = Test(  # pylint: disable=E1123
             name=item.nodeid,
             skipped=skipped,
-            flaky=flaky,
             run=self.run,
             executions=executions,
         )

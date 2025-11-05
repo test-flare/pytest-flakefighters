@@ -7,7 +7,11 @@ import os
 import git
 from unidiff import PatchSet
 
-from pytest_flakefighters.database_management import Run, TestExecution
+from pytest_flakefighters.database_management import (
+    FlakefighterResult,
+    Run,
+    TestExecution,
+)
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
 
@@ -69,7 +73,7 @@ class DeFlaker(FlakeFighter):
             return line_number in self.lines_changed[file_path]
         return True
 
-    def flaky_test_live(self, execution: TestExecution) -> bool:
+    def flaky_test_live(self, execution: TestExecution):
         """
         Classify a failing test as flaky if it does not cover any code which has been changed between the source and
         target commits.
@@ -77,11 +81,16 @@ class DeFlaker(FlakeFighter):
         :return: `True` if a the given test does not cover any code which has been changed between the source and
         target commits.
         """
-        return not any(
-            execution.outcome == "failed" and self.line_modified_by_latest_commit(file_path, line_number)
-            for file_path in execution.coverage
-            for line_number in execution.coverage[file_path]
-            if file_path in self.lines_changed
+        execution.flakefighter_results.append(
+            FlakefighterResult(
+                name=self.__class__.__name__,
+                flaky=not any(
+                    execution.outcome == "failed" and self.line_modified_by_latest_commit(file_path, line_number)
+                    for file_path in execution.coverage
+                    for line_number in execution.coverage[file_path]
+                    if file_path in self.lines_changed
+                ),
+            )
         )
 
     def flaky_tests_post(self, run: Run) -> list[bool | None]:

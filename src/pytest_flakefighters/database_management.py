@@ -17,6 +17,7 @@ from sqlalchemy import (
     Text,
     create_engine,
     desc,
+    event,
     func,
     select,
 )
@@ -62,11 +63,24 @@ class Test(Base):
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
     name: Mapped[str] = Column(String)
-    flaky: Mapped[bool] = Column(Boolean)
     skipped: Mapped[bool] = Column(Boolean, default=False)
     executions = relationship(
         "TestExecution", backref="test", lazy="subquery", cascade="all, delete", passive_deletes=True
     )
+    flakefighter_results = relationship(
+        "FlakefighterResult", backref="test", lazy="subquery", cascade="all, delete", passive_deletes=True
+    )
+
+    @property
+    def flaky(self) -> bool:
+        """
+        Return whether a test (or any of its executions) has been marked as flaky by any flakefighter.
+        """
+        if not self.executions and not self.flakefighter_results:
+            return None
+        return any(result.flaky for result in self.flakefighter_results) or any(
+            any(result.flaky for result in execution.flakefighter_results) for execution in self.executions
+        )
 
 
 @dataclass
@@ -74,6 +88,8 @@ class TestExecution(Base):  # pylint: disable=R0902
     """
     Class to store attributes of a test outcome.
     """
+
+    __tablename__ = "test_execution"
 
     test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=False)
     outcome: Mapped[str] = Column(String)
@@ -83,6 +99,32 @@ class TestExecution(Base):  # pylint: disable=R0902
     start_time: Mapped[datetime] = Column(DateTime(timezone=True))
     end_time: Mapped[datetime] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)
+    flakefighter_results = relationship(
+        "FlakefighterResult", backref="test_execution", lazy="subquery", cascade="all, delete", passive_deletes=True
+    )
+
+
+@dataclass
+class FlakefighterResult(Base):  # pylint: disable=R0902
+    """
+    Class to store flakefighter results.
+    """
+
+    __tablename__ = "flakefighter_result"
+
+    test_execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=True)
+    test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=False)
+    name: Mapped[str] = Column(String)
+    flaky: Mapped[bool] = Column(Boolean)
+
+
+@event.listens_for(FlakefighterResult, "before_insert")
+def set_flake_fighter_test_id(mapper, connection, target):  # pylint: disable=W0613
+    """
+    Set the test ID
+    """
+    if target.test_execution and target.test_id is None:
+        target.test_id = target.test_execution.test.id
 
 
 class Database:

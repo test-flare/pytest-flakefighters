@@ -112,13 +112,12 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         },
                     )
                     executions.append(test_execution)
-                    if report.failed:
-                        flaky = any(ff.flaky_test_live(test_execution) for ff in self.flakefighters if ff.run_live)
-                        report.flaky = flaky
-                        self.genuine_failure_observed = not flaky
+                    flaky = any(ff.flaky_test_live(test_execution) for ff in self.flakefighters if ff.run_live)
+                    report.flaky = flaky
+                    self.genuine_failure_observed = self.genuine_failure_observed or (report.failed and not flaky)
                     if (
                         item.execution_count <= self.max_flaky_reruns
-                        and getattr(report, "flaky", False)
+                        and flaky
                         and not report.passed  # not equivalent to report.failed because it could error
                     ):
                         break  # trigger rerun
@@ -159,6 +158,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The pytest session object.
         :param exitstatus: The status which pytest will return to the system.
         """
+
         if (
             session.config.option.suppress_flaky
             and session.exitstatus == pytest.ExitCode.TESTS_FAILED

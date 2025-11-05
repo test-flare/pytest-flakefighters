@@ -3,7 +3,6 @@ This module implements tests for function-level coverage.
 """
 
 import os
-import sys
 
 from pytest_flakefighters.function_coverage import Profiler
 
@@ -30,8 +29,7 @@ def test_profile_fun_calls():
     """Make sure that function-level coverage runs fine."""
     profiler = Profiler()
     assert not profiler.function_defs, f"Expected empty but got {profiler.function_defs}"
-    sys.path.append("tests")
-    from resources.triangle import triangle_type  # pylint: disable=C0415
+    from tests.resources.triangle import triangle_type  # pylint: disable=C0415
 
     profiler.start()
     triangle_type(3, 4, 5)
@@ -52,8 +50,7 @@ def test_profile_fun_calls():
 def test_set_context():
     """Make sure that context setting works fine."""
     profiler = Profiler()
-    sys.path.append("tests")
-    from resources.triangle import (  # pylint: disable=C0415
+    from tests.resources.triangle import (  # pylint: disable=C0415
         test_eqiulateral,
         test_isosceles,
     )

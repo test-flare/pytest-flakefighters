@@ -80,4 +80,4 @@ description = "Run pytest under {base_python}"
 allowlist_externals=["pytest"]
 extras = ["dev","test"]
 deps = ["pytest","pytest-cov"]
-commands = [["pytest","-p","no:flakefighter","--cov=src","--cov-report=xml","{posargs}"]]
+commands = [["pytest","-p","no:flakefighters","--cov=src","--cov-report=xml","{posargs}"]]

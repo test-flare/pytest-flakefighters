@@ -9,7 +9,7 @@ If running as a postprocessing step, detectors are run at the start of pytest_se
 
 from abc import ABC, abstractmethod
 
-from pytest_flakefighters.database_management import Test, TestExecution
+from pytest_flakefighters.database_management import Run, TestExecution
 
 
 class FlakeFighter(ABC):  # pylint: disable=R0903
@@ -30,10 +30,10 @@ class FlakeFighter(ABC):  # pylint: disable=R0903
         """
 
     @abstractmethod
-    def flaky_tests_post(self, tests: list[Test]) -> list[bool | None]:
+    def flaky_tests_post(self, run: Run) -> list[bool | None]:
         """
         Detect whether tests in a given test suite are flaky.
-        :param tests: The list of tests to classify.
-        :return: The flaky classification of each test in order.
+        :param run: Run object representing the pytest run.
+        :return: The flaky classification of each test in `run.tests` in order.
         `True` if a test is classed as flaky, and `False` otherwise.
         """

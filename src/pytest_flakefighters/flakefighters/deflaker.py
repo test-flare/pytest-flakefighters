@@ -7,7 +7,7 @@ import os
 import git
 from unidiff import PatchSet
 
-from pytest_flakefighters.database_management import Test, TestExecution
+from pytest_flakefighters.database_management import Run, TestExecution
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
 
@@ -78,19 +78,18 @@ class DeFlaker(FlakeFighter):
         target commits.
         """
         return not any(
-            self.line_modified_by_latest_commit(file_path, line_number)
+            execution.outcome == "failed" and self.line_modified_by_latest_commit(file_path, line_number)
             for file_path in execution.coverage
             for line_number in execution.coverage[file_path]
             if file_path in self.lines_changed
         )
 
-    def flaky_tests_post(self, tests: list[Test]) -> list[bool | None]:
+    def flaky_tests_post(self, run: Run) -> list[bool | None]:
         """
-        Classify failing tests as flaky if all of their executions are flaky, i.e. if none of them cover any changed
-        code.
-        :param tests: The list of tests to classify.
+        Classify failing tests as flaky if any of their executions are flaky.
+        :param run: The list of tests to classify.
         :return: The flaky classification of each test in order.
         `True` if a test is classed as flaky, and `False` otherwise.
         """
 
-        return [all(self.flaky_test_live(execution) for execution in test.executions) for test in tests]
+        return [any(self.flaky_test_live(execution) for execution in test.executions) for test in run.tests]

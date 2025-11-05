@@ -10,7 +10,8 @@ import pytest
 from _pytest.runner import runtestprotocol
 
 from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
-from pytest_flakefighters.flake_fighters import DeFlaker, FlakeFighter
+from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
+from pytest_flakefighters.flakefighters.deflaker import DeFlaker
 from pytest_flakefighters.function_coverage import Profiler
 
 
@@ -98,27 +99,23 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
                     line_coverage.set_query_context(item.nodeid)
-                    item.user_properties.append(("line_coverage", line_coverage))
-                    if report.failed:
-                        flaky = any(ff.flaky_failure(item) for ff in self.flakefighters if ff.run_live)
-                        report.flaky = flaky
-                        item.user_properties.append(("flaky", flaky))
-                        self.genuine_failure_observed = not flaky
                     captured_output = dict(report.sections)
-                    executions.append(
-                        TestExecution(
-                            outcome=report.outcome,
-                            stdout=captured_output.get("stdout"),
-                            stderr=captured_output.get("stderr"),
-                            stack_trace=str(report.longrepr),
-                            start_time=datetime.fromtimestamp(item.start),
-                            end_time=datetime.fromtimestamp(item.stop),
-                            coverage={
-                                file_path: line_coverage.lines(file_path)
-                                for file_path in line_coverage.measured_files()
-                            },
-                        )
+                    test_execution = TestExecution(
+                        outcome=report.outcome,
+                        stdout=captured_output.get("stdout"),
+                        stderr=captured_output.get("stderr"),
+                        stack_trace=str(report.longrepr),
+                        start_time=datetime.fromtimestamp(item.start),
+                        end_time=datetime.fromtimestamp(item.stop),
+                        coverage={
+                            file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
+                        },
                     )
+                    executions.append(test_execution)
+                    if report.failed:
+                        flaky = any(ff.flaky_test_live(test_execution) for ff in self.flakefighters if ff.run_live)
+                        report.flaky = flaky
+                        self.genuine_failure_observed = not flaky
                     if (
                         item.execution_count <= self.max_flaky_reruns
                         and getattr(report, "flaky", False)

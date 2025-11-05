@@ -1,35 +1,14 @@
 """
-This module implements the FlakeFighter abstract class and our supported flake fighter classes.
-Each of these is a microservice which takes a failed test and classifies that failure as either genuine or flaky.
-The failure detectors can be configured to either run "live" after each test, or as a postprocessing step after the test
-suite has been run.
-If running live, detectors are run at the end of pytest_runtest_makereport.
-If running as a postprocessing step, detectors are run at the start of pytest_sessionfinish.
+This module implements the DeFlaker FlakeFighter.
 """
 
 import os
-from abc import ABC, abstractmethod
 
 import git
-import pytest
 from unidiff import PatchSet
 
-
-class FlakeFighter(ABC):  # pylint: disable=R0903
-    """
-    Abstract base class for a FlakeFighter
-    :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
-    """
-
-    def __init__(self, run_live: bool):
-        self.run_live = run_live
-
-    @abstractmethod
-    def flaky_failure(self, item: pytest.Item) -> bool:
-        """
-        Detect whether a failed test is flaky.
-        :param item: The item.
-        """
+from pytest_flakefighters.database_management import Test, TestExecution
+from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
 
 class DeFlaker(FlakeFighter):
@@ -79,20 +58,6 @@ class DeFlaker(FlakeFighter):
                         range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
                     )
 
-    def flaky_failure(self, item: pytest.Item) -> bool:
-        """
-        Detect whether a failed test is flaky based on whether any of the covered code has changed.
-        :param item: The item.
-        """
-        line_coverage = dict(item.user_properties)["line_coverage"]
-
-        return not any(
-            self.line_modified_by_latest_commit(file_path, line_number)
-            for file_path in line_coverage.measured_files()
-            for line_number in line_coverage.lines(file_path)
-            if file_path in self.lines_changed
-        )
-
     def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
         """
         Returns true if the given line in the file has been modified by the present commit.
@@ -103,3 +68,29 @@ class DeFlaker(FlakeFighter):
         if line_number in self.lines_changed[file_path]:
             return line_number in self.lines_changed[file_path]
         return True
+
+    def flaky_test_live(self, execution: TestExecution) -> bool:
+        """
+        Classify a failing test as flaky if it does not cover any code which has been changed between the source and
+        target commits.
+        :param execution: The test execution.
+        :return: `True` if a the given test does not cover any code which has been changed between the source and
+        target commits.
+        """
+        return not any(
+            self.line_modified_by_latest_commit(file_path, line_number)
+            for file_path in execution.coverage
+            for line_number in execution.coverage[file_path]
+            if file_path in self.lines_changed
+        )
+
+    def flaky_tests_post(self, tests: list[Test]) -> list[bool | None]:
+        """
+        Classify failing tests as flaky if all of their executions are flaky, i.e. if none of them cover any changed
+        code.
+        :param tests: The list of tests to classify.
+        :return: The flaky classification of each test in order.
+        `True` if a test is classed as flaky, and `False` otherwise.
+        """
+
+        return [all(self.flaky_test_live(execution) for execution in test.executions) for test in tests]

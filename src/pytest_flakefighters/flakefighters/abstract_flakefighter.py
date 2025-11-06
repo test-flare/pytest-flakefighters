@@ -25,13 +25,12 @@ class FlakeFighter(ABC):  # pylint: disable=R0903
     def flaky_test_live(self, execution: TestExecution):
         """
         Detect whether a given test execution is flaky and append the result to its `flakefighter_results` attribute.
-        :param execution: The test execution.
+        :param execution: The test execution to classify.
         """
 
     @abstractmethod
     def flaky_tests_post(self, run: Run):
         """
         Go through each test in the test suite and append the result to its `flakefighter_results` attribute.
-        :param run: Run object representing the pytest run.
-        `True` if a test is classed as flaky, and `False` otherwise.
+        :param run: Run object representing the pytest run, with tests accessible through run.tests.
         """

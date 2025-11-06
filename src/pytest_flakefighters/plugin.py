@@ -11,6 +11,9 @@ from _pytest.runner import runtestprotocol
 
 from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
+from pytest_flakefighters.flakefighters.coverage_independence import (
+    CoverageIndependence,
+)
 from pytest_flakefighters.flakefighters.deflaker import DeFlaker
 from pytest_flakefighters.function_coverage import Profiler
 
@@ -131,7 +134,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         test = Test(  # pylint: disable=E1123
             name=item.nodeid,
             skipped=skipped,
-            run=self.run,
             executions=executions,
         )
         self.run.tests.append(test)
@@ -159,6 +161,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The pytest session object.
         :param exitstatus: The status which pytest will return to the system.
         """
+        for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
+            ff.flaky_tests_post(self.run)
 
         if (
             session.config.option.suppress_flaky
@@ -260,6 +264,21 @@ def pytest_addoption(parser: pytest.Parser):
         help="How long to store flakefighters runs for, specified as `days:hours:minutes`. "
         "E.g. to store tests for one week, use 7:0:0.",
     )
+    group.addoption(
+        "--coverage-distaince-threshold",
+        action="store",
+        dest="coverage_distaince_threshold",
+        default=0,
+        help="The minimum distance to consider as 'similar', expressed as a proportion 0 <= threshold < 1 where 0 "
+        "represents no difference and 1 represents complete difference.",
+    )
+    group.addoption(
+        "--coverage-distaince-metric",
+        action="store",
+        dest="coverage_distaince_metric",
+        default="jaccard",
+        help="The metric to use when computing the distance between coverage.",
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -281,7 +300,10 @@ def pytest_configure(config: pytest.Config):
             database=Database(config.option.database_url, config.option.store_max_runs, config.option.time_immemorial),
             cov=cov,
             flakefighters=[
-                DeFlaker(run_live=True, repo_root=repo_root, source_commit=source_commit, target_commit=target_commit)
+                DeFlaker(run_live=True, repo_root=repo_root, source_commit=source_commit, target_commit=target_commit),
+                CoverageIndependence(
+                    threshold=config.option.coverage_distaince_threshold, metric=config.option.coverage_distaince_metric
+                ),
             ],
             target_commit=target_commit,
             source_commit=source_commit,

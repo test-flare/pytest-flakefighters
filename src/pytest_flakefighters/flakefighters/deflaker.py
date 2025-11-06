@@ -77,9 +77,7 @@ class DeFlaker(FlakeFighter):
         """
         Classify a failing test as flaky if it does not cover any code which has been changed between the source and
         target commits.
-        :param execution: The test execution.
-        :return: `True` if a the given test does not cover any code which has been changed between the source and
-        target commits.
+        :param execution: The test execution to classify.
         """
         execution.flakefighter_results.append(
             FlakefighterResult(

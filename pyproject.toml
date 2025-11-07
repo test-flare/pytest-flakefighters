@@ -65,9 +65,7 @@ target-version = ["py310"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-testpaths = [
-    "tests"
-]
+testpaths = ["tests"]
 [tool.isort]
 profile = "black"
 

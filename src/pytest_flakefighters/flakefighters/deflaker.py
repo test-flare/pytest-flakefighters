@@ -71,6 +71,14 @@ class DeFlaker(FlakeFighter):
         """
         return line_number in self.lines_changed.get(file_path, [])
 
+    def _flaky_test(self, execution):
+        return not any(
+            execution.outcome == "failed" and self.line_modified_by_target_commit(file_path, line_number)
+            for file_path in execution.coverage
+            for line_number in execution.coverage[file_path]
+            if file_path in self.lines_changed
+        )
+
     def flaky_test_live(self, execution: TestExecution):
         """
         Classify a failing test as flaky if it does not cover any code which has been changed between the source and
@@ -78,23 +86,18 @@ class DeFlaker(FlakeFighter):
         :param execution: The test execution to classify.
         """
         execution.flakefighter_results.append(
-            FlakefighterResult(
-                name=self.__class__.__name__,
-                flaky=not any(
-                    execution.outcome == "failed" and self.line_modified_by_target_commit(file_path, line_number)
-                    for file_path in execution.coverage
-                    for line_number in execution.coverage[file_path]
-                    if file_path in self.lines_changed
-                ),
-            )
+            FlakefighterResult(name=self.__class__.__name__, flaky=self._flaky_test(execution))
         )
 
     def flaky_tests_post(self, run: Run) -> list[bool | None]:
         """
         Classify failing tests as flaky if any of their executions are flaky.
-        :param run: The list of tests to classify.
-        :return: The flaky classification of each test in order.
-        `True` if a test is classed as flaky, and `False` otherwise.
+        :param run: Run object representing the pytest run, with tests accessible through run.tests.
         """
-
-        return [any(self.flaky_test_live(execution) for execution in test.executions) for test in run.tests]
+        for test in run.tests:
+            test.flakefighter_results.append(
+                FlakefighterResult(
+                    name=self.__class__.__name__,
+                    flaky=any(self._flaky_test(execution) for execution in test.executions),
+                )
+            )

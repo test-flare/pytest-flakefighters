@@ -37,6 +37,8 @@ class Base(DeclarativeBase):
     """
 
     id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
+    # @pytest, these are not the tests you're looking for...
+    __test__ = False  # pylint: disable=C0103
 
     @declared_attr
     def __tablename__(self):

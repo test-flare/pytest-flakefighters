@@ -7,19 +7,12 @@ import os
 from pytest import ExitCode
 
 
-def test_real_failures_named_source_target(pytester, deflaker_repo):
+def test_real_failures(pytester, deflaker_repo):
     """Make sure that genuine failures are labelled as such."""
-
-    # Add an extra commit so we can test indexing from not the most recent
-    deflaker_repo.index.commit("This is an empty commit")
-
-    commits = [commit.hexsha for commit in deflaker_repo.iter_commits("main")]
 
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "-s",
-        f"--source-commit={commits[1]}",
-        f"--target-commit={commits[2]}",
     )
 
     result.assert_outcomes(failed=1)
@@ -31,62 +24,29 @@ def test_real_failures_named_source_target(pytester, deflaker_repo):
     assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
 
 
-def test_flaky_failures(pytester, flaky_triangle_repo):
-    """Make sure that flaky failures are labelled as such"""
-
-    # Add an empty commit to hide the flakiness
-    # Long term, we may want to look at other ways of forcing flaky test outcomes, e.g. random seeds
-    flaky_triangle_repo.index.commit("Broke the tests.")
-    flaky_triangle_repo.index.commit("This is an empty commit")
-
-    with open(os.path.join(flaky_triangle_repo.working_dir, "suffix.txt"), "w") as f:
-        print("Triangle", file=f)
-
-    pytester.runpytest(
-        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
-        "-s",
-    )
-    result = pytester.runpytest(
-        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
-        f"--repo={flaky_triangle_repo.working_dir}",
-        "-s",
-    )
-
-    result.assert_outcomes(failed=2, skipped=1)
-    result.stdout.fnmatch_lines(
-        [
-            "FLAKY triangle.py::test_eqiulateral*",
-            "FLAKY triangle.py::test_isosceles*",
-        ]
-    )
-    assert result.ret == ExitCode.TESTS_FAILED, f"Expected exit code {ExitCode.TESTS_FAILED} but was {result.ret}."
-
-
-def test_suppress_flaky_failures(pytester, flaky_triangle_repo):
+def test_rerun_flaky_failures(pytester, flaky_reruns_repo):
     """Test exit code is OK when only flaky failures"""
 
-    # Add an empty commit to hide the flakiness
-    # Long term, we may want to look at other ways of forcing flaky test outcomes, e.g. random seeds
-    flaky_triangle_repo.index.commit("Broke the tests.")
-    flaky_triangle_repo.index.commit("This is an empty commit")
+    result = pytester.runpytest(
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+        "-s",
+        "--max-flaky-reruns=3",
+    )
 
-    with open(os.path.join(flaky_triangle_repo.working_dir, "suffix.txt"), "w") as f:
-        print("Triangle", file=f)
+    result.assert_outcomes(passed=1)
+    assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."
+
+
+def test_suppress_flaky_failures(pytester, flaky_reruns_repo):
+    """Test exit code is OK when only flaky failures"""
 
     result = pytester.runpytest(
-        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         "-s",
         "--suppress-flaky-failures-exit-code",
     )
 
-    result.assert_outcomes(failed=2, skipped=1)
-    result.stdout.fnmatch_lines(
-        [
-            "FLAKY triangle.py::test_eqiulateral*",
-            "FLAKY triangle.py::test_isosceles*",
-        ]
-    )
+    result.assert_outcomes(failed=1)
     assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."
 
 

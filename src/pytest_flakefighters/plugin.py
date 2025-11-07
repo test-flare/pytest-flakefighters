@@ -52,7 +52,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The session.
         """
         self.cov.start()
-        self.cov.switch_context("collection")
+        self.cov.switch_context("collection")  # pragma: no cover
 
     def pytest_collection_finish(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -60,8 +60,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The session.
         """
         # Line cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
-        self.cov.switch_context(None)
-        self.cov.stop()
+        self.cov.switch_context(None)  # pragma: no cover
+        self.cov.stop()  # pragma: no cover
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(self, item: pytest.Item):
@@ -74,9 +74,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         item.start = datetime.now().timestamp()
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
-        self.cov.switch_context(item.nodeid)
-        yield
-        self.cov.stop()
+        self.cov.switch_context(item.nodeid)  # pragma: no cover
+        yield  # pragma: no cover
+        self.cov.stop()  # pragma: no cover
         item.stop = datetime.now().timestamp()
 
     def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item) -> bool:

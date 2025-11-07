@@ -61,3 +61,20 @@ def test_deflaker_example(pytester, deflaker_repo):
 
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["FAILED app.py::test_app - assert False"])
+
+
+def test_deflaker_example_function_coverage(pytester, deflaker_repo):
+    """
+    Test the DeFlaker example with function coverage.
+    This will show the test as flaky, since none of the function definitions have chnaged.
+    """
+
+    # run pytest with the following cmd args
+    result = pytester.runpytest(
+        os.path.join(deflaker_repo.working_dir, "app.py"),
+        "--function-coverage",
+        "-s",
+    )
+
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(["FLAKY app.py::test_app - assert False"])

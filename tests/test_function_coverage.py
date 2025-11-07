@@ -44,7 +44,7 @@ def test_profile_fun_calls():
     triangle = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources", "triangle.py")
     function_defs = profiler.function_defs.get(triangle)
     assert function_defs == expected, f"Expected {expected} but got {function_defs}."
-    assert profiler.coverage_data.lines(triangle) == list(range(11, 19))
+    assert profiler.get_data().lines(triangle) == list(range(11, 19))
 
 
 def test_set_context():
@@ -62,9 +62,9 @@ def test_set_context():
     test_eqiulateral()
     profiler.stop()
 
-    profiler.coverage_data.set_query_context("test_eqiulateral")
+    profiler.get_data().set_query_context("test_eqiulateral")
     expected = list(range(11, 19)) + [21, 22]
-    lines = profiler.coverage_data.lines(triangle)
+    lines = profiler.get_data().lines(triangle)
     assert lines == expected, f"Expected test_eqiulateral coverage {expected} but was {lines}."
 
     profiler.profiler.clear()
@@ -74,7 +74,7 @@ def test_set_context():
     test_isosceles()
     profiler.stop()
 
-    profiler.coverage_data.set_query_context("test_isosceles")
+    profiler.get_data().set_query_context("test_isosceles")
     expected = list(range(11, 19)) + [25, 26]
-    lines = profiler.coverage_data.lines(triangle)
+    lines = profiler.get_data().lines(triangle)
     assert lines == expected, f"Expected test_isosceles coverage {expected} but was {lines}."

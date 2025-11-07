@@ -57,9 +57,9 @@ class CoverageIndependence(FlakeFighter):
             return
 
         coverage = pd.DataFrame(coverage)
-        coverage[coverage.columns.drop(["test", "execution"])] = coverage[
-            coverage.columns.drop(["test", "execution"])
-        ].fillna(False)
+        coverage[coverage.columns.drop(["test", "execution"])] = (
+            coverage[coverage.columns.drop(["test", "execution"])].astype(pd.BooleanDtype()).fillna(False).astype(bool)
+        )
         # Calculate the distance between each pair of test executions
         raw_coverage = coverage.drop(["test", "execution"], axis=1).to_numpy()
         distances = pdist(raw_coverage, metric=self.metric)

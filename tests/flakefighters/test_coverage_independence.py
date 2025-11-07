@@ -30,7 +30,7 @@ def test_flaky_tests_post_flaky():
     Test that flaky_tests_post correctly identifies a flaky test.
     """
 
-    run = Run(
+    run = Run(  # pylint: disable=E1123
         tests=[
             Test(  # pylint: disable=E1123
                 name="Test1",
@@ -55,11 +55,11 @@ def test_flaky_tests_post_not_flaky():
 
     run = Run(  # pylint: disable=E1123
         tests=[
-            Test(
+            Test(  # pylint: disable=E1123
                 name="Test1",
                 executions=[TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]})],
             ),
-            Test(
+            Test(  # pylint: disable=E1123
                 name="Test2",
                 executions=[TestExecution(outcome="failed", coverage={"file1.py": [1, 2, 3, 6, 8]})],
             ),
@@ -78,7 +78,7 @@ def test_flaky_tests_post_flaky_executions():
 
     run = Run(  # pylint: disable=E1123
         tests=[
-            Test(
+            Test(  # pylint: disable=E1123
                 name="Test1",
                 executions=[
                     TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]}),

@@ -26,7 +26,7 @@ class DeFlaker(FlakeFighter):
     :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).
     """
 
-    def __init__(self, run_live: bool, repo_root: str, source_commit: str, target_commit: str):
+    def __init__(self, run_live: bool, repo_root: str, source_commit: str = None, target_commit: str = None):
         super().__init__(run_live)
 
         self.repo = git.Repo(repo_root if repo_root is not None else ".")
@@ -59,19 +59,20 @@ class DeFlaker(FlakeFighter):
                 for hunk in patch:
                     # Add each line in the hunk to lines_changed
                     self.lines_changed[abspath] += list(
-                        range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
+                        range(hunk.target_start, hunk.target_start + hunk.target_length)
                     )
+        print("LINES CHANGED")
+        print(self.lines_changed)
 
-    def line_modified_by_latest_commit(self, file_path: str, line_number: int) -> bool:
+    def line_modified_by_target_commit(self, file_path: str, line_number: int) -> bool:
         """
         Returns true if the given line in the file has been modified by the present commit.
 
         :param file_path: The file to check.
         :param line_number: The line number to check.
         """
-        if line_number in self.lines_changed[file_path]:
-            return line_number in self.lines_changed[file_path]
-        return True
+        print(f"Checking {file_path}:{line_number}")
+        return line_number in self.lines_changed.get(file_path, [])
 
     def flaky_test_live(self, execution: TestExecution):
         """
@@ -79,11 +80,13 @@ class DeFlaker(FlakeFighter):
         target commits.
         :param execution: The test execution to classify.
         """
+        print("COVERAGE")
+        print(execution.coverage)
         execution.flakefighter_results.append(
             FlakefighterResult(
                 name=self.__class__.__name__,
                 flaky=not any(
-                    execution.outcome == "failed" and self.line_modified_by_latest_commit(file_path, line_number)
+                    execution.outcome == "failed" and self.line_modified_by_target_commit(file_path, line_number)
                     for file_path in execution.coverage
                     for line_number in execution.coverage[file_path]
                     if file_path in self.lines_changed

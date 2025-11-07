@@ -52,6 +52,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The session.
         """
         self.cov.start()
+        self.cov.switch_context("collection")
 
     def pytest_collection_finish(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -59,6 +60,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The session.
         """
         # Line cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
+        self.cov.switch_context(None)
         self.cov.stop()
 
     @pytest.hookimpl(hookwrapper=True)
@@ -100,7 +102,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
-                    line_coverage.set_query_context(item.nodeid)
+                    line_coverage.set_query_contexts(["collection", item.nodeid])
                     captured_output = dict(report.sections)
                     test_execution = TestExecution(
                         outcome=report.outcome,

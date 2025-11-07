@@ -117,9 +117,9 @@ def test_flaky_tests_post_false(deflaker_repo):
             os.path.join(deflaker_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
     )
-    run = Run(
+    run = Run(  # pylint: disable=E1123
         tests=[
-            Test(
+            Test(  # pylint: disable=E1123
                 name="app.py::test_app",
                 executions=[test_execution],
             ),
@@ -159,9 +159,9 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): list(range(23)),
         },
     )
-    run = Run(
+    run = Run(  # pylint: disable=E1123
         tests=[
-            Test(
+            Test(  # pylint: disable=E1123
                 name="app.py::test_app",
                 executions=[test_execution],
             ),

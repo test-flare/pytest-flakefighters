@@ -53,7 +53,7 @@ def test_flaky_tests_post_not_flaky():
     Test that flaky_tests_post correctly identifies a non-flaky test.
     """
 
-    run = Run(
+    run = Run(  # pylint: disable=E1123
         tests=[
             Test(
                 name="Test1",
@@ -76,7 +76,7 @@ def test_flaky_tests_post_flaky_executions():
     Test that flaky_tests_post correctly identifies a flaky test with passing and failing executions.
     """
 
-    run = Run(
+    run = Run(  # pylint: disable=E1123
         tests=[
             Test(
                 name="Test1",
@@ -98,7 +98,7 @@ def test_flaky_tests_post_single_execution():
     Test that flaky_tests_post gracefully handles a single execution.
     """
 
-    run = Run(
+    run = Run(  # pylint: disable=E1123
         tests=[
             Test(  # pylint: disable=E1123
                 name="Test1",

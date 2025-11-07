@@ -61,8 +61,6 @@ class DeFlaker(FlakeFighter):
                     self.lines_changed[abspath] += list(
                         range(hunk.target_start, hunk.target_start + hunk.target_length)
                     )
-        print("LINES CHANGED")
-        print(self.lines_changed)
 
     def line_modified_by_target_commit(self, file_path: str, line_number: int) -> bool:
         """
@@ -71,7 +69,6 @@ class DeFlaker(FlakeFighter):
         :param file_path: The file to check.
         :param line_number: The line number to check.
         """
-        print(f"Checking {file_path}:{line_number}")
         return line_number in self.lines_changed.get(file_path, [])
 
     def flaky_test_live(self, execution: TestExecution):
@@ -80,8 +77,6 @@ class DeFlaker(FlakeFighter):
         target commits.
         :param execution: The test execution to classify.
         """
-        print("COVERAGE")
-        print(execution.coverage)
         execution.flakefighter_results.append(
             FlakefighterResult(
                 name=self.__class__.__name__,

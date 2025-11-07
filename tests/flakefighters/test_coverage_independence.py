@@ -32,11 +32,11 @@ def test_flaky_tests_post_flaky():
 
     run = Run(
         tests=[
-            Test(
+            Test(  # pylint: disable=E1123
                 name="Test1",
                 executions=[TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]})],
             ),
-            Test(
+            Test(  # pylint: disable=E1123
                 name="Test2",
                 executions=[TestExecution(outcome="failed", coverage={"file1.py": [1, 2, 3, 6, 7]})],
             ),
@@ -100,7 +100,7 @@ def test_flaky_tests_post_single_execution():
 
     run = Run(
         tests=[
-            Test(
+            Test(  # pylint: disable=E1123
                 name="Test1",
                 executions=[
                     TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]}),

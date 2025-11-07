@@ -66,8 +66,6 @@ class CoverageIndependence(FlakeFighter):
         # Assign each test execution to a cluster
         coverage["cluster"] = fcluster(linkage(distances, method="single"), t=self.threshold, criterion="distance")
 
-        coverage.to_csv("/tmp/coverage.csv")
-
         for _, group in coverage.groupby("cluster"):
             for test in group["test"]:
                 result = FlakefighterResult(

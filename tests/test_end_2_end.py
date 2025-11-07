@@ -42,8 +42,15 @@ def test_flaky_failures(pytester, flaky_triangle_repo):
     with open(os.path.join(flaky_triangle_repo.working_dir, "suffix.txt"), "w") as f:
         print("Triangle", file=f)
 
+    pytester.runpytest(
+        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        f"--repo={flaky_triangle_repo.working_dir}",
+        "-s",
+    )
     result = pytester.runpytest(
-        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"), f"--repo={flaky_triangle_repo.working_dir}", "-s"
+        os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
+        f"--repo={flaky_triangle_repo.working_dir}",
+        "-s",
     )
 
     result.assert_outcomes(failed=2, skipped=1)

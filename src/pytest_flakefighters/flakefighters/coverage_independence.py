@@ -4,8 +4,7 @@ This module implements the CoverageIndependence FlakeFighter.
 
 import pandas as pd
 from scipy.cluster.hierarchy import fcluster, linkage
-from scipy.spatial.distance import squareform
-from sklearn.metrics.pairwise import pairwise_distances
+from scipy.spatial.distance import pdist
 
 from pytest_flakefighters.database_management import (
     FlakefighterResult,
@@ -26,7 +25,7 @@ class CoverageIndependence(FlakeFighter):
     ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’].
     """
 
-    def __init__(self, threshold: float, metric: str = "jaccard"):
+    def __init__(self, threshold: float = 0, metric: str = "jaccard"):
         super().__init__(False)
         self.threshold = threshold
         self.metric = metric
@@ -50,24 +49,30 @@ class CoverageIndependence(FlakeFighter):
             for execution in test.executions:
                 coverage.append(
                     {"test": test, "execution": execution}
-                    | {f"{file}:{line}": 1 for file in execution.coverage for line in execution.coverage[file]}
+                    | {f"{file}:{line}": True for file in execution.coverage for line in execution.coverage[file]}
                 )
-        coverage = pd.DataFrame(coverage).fillna(0)
+
+        # Can't compute the pairwise distance of a single execution
+        if len(coverage) < 2:
+            return
+
+        coverage = pd.DataFrame(coverage)
+        coverage[coverage.columns.drop(["test", "execution"])] = coverage[
+            coverage.columns.drop(["test", "execution"])
+        ].fillna(False)
         # Calculate the distance between each pair of test executions
-        distances = pd.DataFrame(
-            pairwise_distances(coverage.drop(["test", "execution"], axis=1).to_numpy(), metric=self.metric),
-            index=coverage.index,
-            columns=coverage.index,
-        )
+        raw_coverage = coverage.drop(["test", "execution"], axis=1).to_numpy()
+        distances = pdist(raw_coverage, metric=self.metric)
         # Assign each test execution to a cluster
-        coverage["cluster"] = fcluster(
-            linkage(squareform(distances.values), method="single"), t=self.threshold, criterion="distance"
-        )
+        coverage["cluster"] = fcluster(linkage(distances, method="single"), t=self.threshold, criterion="distance")
+
+        coverage.to_csv("/tmp/coverage.csv")
 
         for _, group in coverage.groupby("cluster"):
             for test in group["test"]:
-                test.flakefighter_results.append(
-                    FlakefighterResult(
-                        name=self.__class__.__name__, flaky=len(set(map(lambda x: x.outcome, group["execution"]))) > 1
-                    )
+                result = FlakefighterResult(
+                    name=self.__class__.__name__,
+                    flaky=len(set(map(lambda x: x.outcome, group["execution"]))) > 1,
                 )
+                if result not in test.flakefighter_results:
+                    test.flakefighter_results.append(result)

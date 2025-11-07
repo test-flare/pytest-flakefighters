@@ -8,6 +8,7 @@ from typing import Union
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     ForeignKey,
@@ -17,7 +18,6 @@ from sqlalchemy import (
     Text,
     create_engine,
     desc,
-    event,
     func,
     select,
 )
@@ -113,18 +113,13 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
     __tablename__ = "flakefighter_result"
 
     test_execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=True)
-    test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=False)
+    test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=True)
     name: Mapped[str] = Column(String)
     flaky: Mapped[bool] = Column(Boolean)
 
-
-@event.listens_for(FlakefighterResult, "before_insert")
-def set_flake_fighter_test_id(mapper, connection, target):  # pylint: disable=W0613
-    """
-    Set the test ID
-    """
-    if target.test_execution and target.test_id is None:
-        target.test_id = target.test_execution.test.id
+    __table_args__ = (
+        CheckConstraint("(test_execution_id IS NOT NULL) + (test_id IS NOT NULL) = 1", name="check_test_id_not_null"),
+    )
 
 
 class Database:

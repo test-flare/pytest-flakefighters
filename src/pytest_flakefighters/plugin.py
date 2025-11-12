@@ -10,7 +10,11 @@ import pytest
 from _pytest.runner import runtestprotocol
 
 from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
-from pytest_flakefighters.flake_fighters import DeFlaker, FlakeFighter
+from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
+from pytest_flakefighters.flakefighters.coverage_independence import (
+    CoverageIndependence,
+)
+from pytest_flakefighters.flakefighters.deflaker import DeFlaker
 from pytest_flakefighters.function_coverage import Profiler
 
 
@@ -48,6 +52,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The session.
         """
         self.cov.start()
+        self.cov.switch_context("collection")  # pragma: no cover
 
     def pytest_collection_finish(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -55,7 +60,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The session.
         """
         # Line cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
-        self.cov.stop()
+        self.cov.switch_context(None)  # pragma: no cover
+        self.cov.stop()  # pragma: no cover
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(self, item: pytest.Item):
@@ -68,9 +74,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         item.start = datetime.now().timestamp()
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
-        self.cov.switch_context(item.nodeid)
-        yield
-        self.cov.stop()
+        self.cov.switch_context(item.nodeid)  # pragma: no cover
+        yield  # pragma: no cover
+        self.cov.stop()  # pragma: no cover
         item.stop = datetime.now().timestamp()
 
     def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item) -> bool:
@@ -83,7 +89,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :return: The return value is not used, but only stops further processing.
         """
         item.execution_count = 0
-        flaky = None
         executions = []
         skipped = False
 
@@ -97,31 +102,29 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
-                    line_coverage.set_query_context(item.nodeid)
-                    item.user_properties.append(("line_coverage", line_coverage))
-                    if report.failed:
-                        flaky = any(ff.flaky_failure(item) for ff in self.flakefighters if ff.run_live)
-                        report.flaky = flaky
-                        item.user_properties.append(("flaky", flaky))
-                        self.genuine_failure_observed = not flaky
+                    line_coverage.set_query_contexts(["collection", item.nodeid])
                     captured_output = dict(report.sections)
-                    executions.append(
-                        TestExecution(
-                            outcome=report.outcome,
-                            stdout=captured_output.get("stdout"),
-                            stderr=captured_output.get("stderr"),
-                            stack_trace=str(report.longrepr),
-                            start_time=datetime.fromtimestamp(item.start),
-                            end_time=datetime.fromtimestamp(item.stop),
-                            coverage={
-                                file_path: line_coverage.lines(file_path)
-                                for file_path in line_coverage.measured_files()
-                            },
-                        )
+                    test_execution = TestExecution(
+                        outcome=report.outcome,
+                        stdout=captured_output.get("stdout"),
+                        stderr=captured_output.get("stderr"),
+                        stack_trace=str(report.longrepr),
+                        start_time=datetime.fromtimestamp(item.start),
+                        end_time=datetime.fromtimestamp(item.stop),
+                        coverage={
+                            file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
+                        },
+                    )
+                    executions.append(test_execution)
+                    for ff in filter(lambda ff: ff.run_live, self.flakefighters):
+                        ff.flaky_test_live(test_execution)
+                    report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
+                    self.genuine_failure_observed = self.genuine_failure_observed or (
+                        report.failed and not report.flaky
                     )
                     if (
                         item.execution_count <= self.max_flaky_reruns
-                        and getattr(report, "flaky", False)
+                        and report.flaky
                         and not report.passed  # not equivalent to report.failed because it could error
                     ):
                         break  # trigger rerun
@@ -130,14 +133,12 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 break  # Skip further reruns
 
         item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
-        self.run.tests.append(
-            Test(  # pylint: disable=E1123
-                name=item.nodeid,
-                skipped=skipped,
-                flaky=flaky,
-                executions=executions,
-            )
+        test = Test(  # pylint: disable=E1123
+            name=item.nodeid,
+            skipped=skipped,
+            executions=executions,
         )
+        self.run.tests.append(test)
         return True
 
     def pytest_report_teststatus(
@@ -162,6 +163,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The pytest session object.
         :param exitstatus: The status which pytest will return to the system.
         """
+        for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
+            ff.flaky_tests_post(self.run)
+
         if (
             session.config.option.suppress_flaky
             and session.exitstatus == pytest.ExitCode.TESTS_FAILED
@@ -262,6 +266,21 @@ def pytest_addoption(parser: pytest.Parser):
         help="How long to store flakefighters runs for, specified as `days:hours:minutes`. "
         "E.g. to store tests for one week, use 7:0:0.",
     )
+    group.addoption(
+        "--coverage-distaince-threshold",
+        action="store",
+        dest="coverage_distaince_threshold",
+        default=0,
+        help="The minimum distance to consider as 'similar', expressed as a proportion 0 <= threshold < 1 where 0 "
+        "represents no difference and 1 represents complete difference.",
+    )
+    group.addoption(
+        "--coverage-distaince-metric",
+        action="store",
+        dest="coverage_distaince_metric",
+        default="jaccard",
+        help="The metric to use when computing the distance between coverage.",
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -283,7 +302,10 @@ def pytest_configure(config: pytest.Config):
             database=Database(config.option.database_url, config.option.store_max_runs, config.option.time_immemorial),
             cov=cov,
             flakefighters=[
-                DeFlaker(run_live=True, repo_root=repo_root, source_commit=source_commit, target_commit=target_commit)
+                DeFlaker(run_live=True, repo_root=repo_root, source_commit=source_commit, target_commit=target_commit),
+                CoverageIndependence(
+                    threshold=config.option.coverage_distaince_threshold, metric=config.option.coverage_distaince_metric
+                ),
             ],
             target_commit=target_commit,
             source_commit=source_commit,

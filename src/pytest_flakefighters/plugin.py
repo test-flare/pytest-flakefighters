@@ -3,6 +3,7 @@ This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.31801
 """
 
 from datetime import datetime
+from enum import Enum
 from typing import Union
 
 import coverage
@@ -12,6 +13,19 @@ from _pytest.runner import runtestprotocol
 from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 from pytest_flakefighters.function_coverage import Profiler
+
+
+class RerunStrategy(Enum):
+    """
+    Enum for supported test rerunning strategies.
+    :cvar ALL: Rerun all tests, regardless of outcome.
+    :cvar FLAKY_FAILURE: Rerun failing tests marked as flaky.
+    :cvar PREVIOUS_FLAKY: Rerun tests that have previously been marked as flaky as well as newly failing flaky tests.
+    """
+
+    ALL = "ALL"
+    FLAKY_FAILURE = "FLAKY_FAILURE"
+    PREVIOUSLY_FLAKY = "PREVIOUSLY_FLAKY"
 
 
 class FlakeFighterPlugin:  # pylint: disable=R0902
@@ -28,7 +42,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         target_commit: str = None,
         load_max_runs: int = None,
         save_run: bool = True,
-        max_flaky_reruns: int = 0,
+        rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
     ):
         self.cov = cov
         self.genuine_failure_observed = False
@@ -37,7 +51,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.flakefighters = flakefighters
         self.source_commit = source_commit
         self.target_commit = target_commit
-        self.max_flaky_reruns = max_flaky_reruns
+        self.rerun_strategy = rerun_strategy
 
         self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
         self.previous_runs = self.database.load_runs(load_max_runs)
@@ -88,7 +102,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         executions = []
         skipped = False
 
-        for _ in range(self.max_flaky_reruns + 1):
+        for _ in range(self.rerun_strategy.max_reruns + 1):
             item.execution_count += 1
             item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
             reports = runtestprotocol(item, nextitem=nextitem, log=False)
@@ -118,11 +132,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     self.genuine_failure_observed = self.genuine_failure_observed or (
                         report.failed and not report.flaky
                     )
-                    if (
-                        item.execution_count <= self.max_flaky_reruns
-                        and report.flaky
-                        and not report.passed  # not equivalent to report.failed because it could error
-                    ):
+                    if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
                 item.ihook.pytest_runtest_logreport(report=report)
             else:

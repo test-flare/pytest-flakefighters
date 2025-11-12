@@ -30,7 +30,7 @@ def test_rerun_flaky_failures(pytester, flaky_reruns_repo):
     result = pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         "-s",
-        "--max-flaky-reruns=3",
+        "--max-reruns=3",
     )
 
     result.assert_outcomes(passed=1)

@@ -22,7 +22,7 @@ def test_flaky_reruns(pytester, flaky_triangle_repo):
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         f"--repo={flaky_triangle_repo.working_dir}",
         "-s",
-        "--max-flaky-reruns=2",
+        "--max-reruns=2",
     )
 
     db = Database(f"sqlite:///{os.path.join(flaky_triangle_repo.working_dir, 'flakefighters.db')}")

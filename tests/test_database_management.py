@@ -24,7 +24,7 @@ def test_run_saving(pytester, flaky_triangle_repo):
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         "-s",
-        "--max-flaky-reruns=2",
+        "--max-reruns=2",
     )
 
     result.assert_outcomes(failed=2, skipped=1)

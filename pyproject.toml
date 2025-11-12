@@ -38,7 +38,7 @@ dev = [
 Repository = "https://github.com/test-flare/pytest-flakefighter"
 
 [project.entry-points.pytest11]
-flakefighters = "pytest_flakefighters.plugin"
+flakefighters = "pytest_flakefighters.main"
 
 [tool.pylint]
 ignore-paths="tests/resources"

@@ -83,7 +83,7 @@ def test_store_max_runs(pytester, deflaker_repo):
 
     # Check first run with ID=1 was cleared
     with Session(db.engine) as session:
-        run = session.query(Run).get(1)
+        run = session.get(Run, 1)
         assert run is None, "Run with ID 1 should have been deleted"
 
     # Check it's associated Tests were cleared
@@ -108,7 +108,7 @@ def test_time_immemorial(pytester, deflaker_repo):
     # Spoof the first run as being from 2 days ago
     db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
     with Session(db.engine) as session:
-        run = session.query(Run).get(1)
+        run = session.get(Run, 1)
         run.created_at = datetime.now() - timedelta(days=2)
         session.commit()
         session.flush()
@@ -118,7 +118,7 @@ def test_time_immemorial(pytester, deflaker_repo):
 
     # Check it was cleared
     with Session(db.engine) as session:
-        run = session.query(Run).get(1)
+        run = session.get(Run, 1)
         assert run is None, "Run with ID 1 should have been deleted"
 
     # Check it's associated Tests were cleared

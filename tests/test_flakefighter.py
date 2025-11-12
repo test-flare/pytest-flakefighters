@@ -4,16 +4,7 @@ Test DeFlaker algorithm.
 
 import os
 
-import git
 from pytest import ExitCode
-
-
-def repo_name(repo: git.Repo):
-    """
-    Extract the name of the repo from its working dir.
-    :param repo: The git repo.
-    """
-    return os.path.basename(repo.working_dir)
 
 
 def test_real_failures_named_source_target(pytester, deflaker_repo):

@@ -46,3 +46,22 @@ def fixture_deflaker_repo(tmpdir_factory):
     repo.index.commit("Broke the tests.")
     os.chdir(repo_root)
     return repo
+
+
+@pytest.fixture(scope="function", name="flaky_reruns_repo")
+def fixture_flaky_reruns_repo(tmpdir_factory):
+    """
+    Fixture for a minimal git repo with a commit history to hide failing tests.
+    """
+    repo_root = tmpdir_factory.mktemp("flaky_reruns_repo")
+    repo = git.Repo.init(repo_root, initial_branch="main")
+
+    shutil.copy(
+        os.path.join(Path(__file__).parent, "resources", "flaky_reruns.py"), os.path.join(repo_root, "flaky_reruns.py")
+    )
+    repo.index.add(["flaky_reruns.py"])
+    repo.index.commit("Initial commit of test file.")
+    repo.index.commit("This is an empty commit")
+
+    os.chdir(repo_root)
+    return repo

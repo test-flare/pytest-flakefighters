@@ -17,7 +17,9 @@ dependencies = [
     "GitPython>=3.1.45",
     "unidiff>=0.7.5",
     "sqlalchemy>=2.0.43",
-    "dotenv>=0.9.9"
+    "dotenv>=0.9.9",
+    "pandas",
+    "scipy<=1.15"
 ]
 dynamic = ["version"]
 
@@ -36,7 +38,7 @@ dev = [
 Repository = "https://github.com/test-flare/pytest-flakefighter"
 
 [project.entry-points.pytest11]
-flakefighters = "pytest_flakefighters.plugin"
+flakefighters = "pytest_flakefighters.main"
 
 [tool.pylint]
 ignore-paths="tests/resources"
@@ -63,9 +65,7 @@ target-version = ["py310"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-testpaths = [
-    "tests"
-]
+testpaths = ["tests"]
 [tool.isort]
 profile = "black"
 
@@ -80,4 +80,4 @@ description = "Run pytest under {base_python}"
 allowlist_externals=["pytest"]
 extras = ["dev","test"]
 deps = ["pytest","pytest-cov"]
-commands = [["pytest","-p","no:flakefighter","--cov=src","--cov-report=xml","{posargs}"]]
+commands = [["pytest","-p","no:flakefighters","--cov=src","--cov-report=xml","{posargs}"]]

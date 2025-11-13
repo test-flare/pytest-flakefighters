@@ -75,7 +75,8 @@ class PreviouslyFlaky(FlakyFailure):
     def __init__(self, reruns: int, database: Database):
         super().__init__(reruns)
         with Session(database.engine) as session:
-            self.previously_flaky = session.scalars(select(Test.name).where(Test.flaky)).all()
+            tests = session.scalars(select(Test)).all()
+            self.previously_flaky = list(filter(lambda t: t.flaky, tests))
 
     def rerun(self, report: pytest.TestReport) -> bool:
         """

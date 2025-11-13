@@ -21,8 +21,6 @@ def rerun_strategy(strategy: str, max_reruns: int, **kwargs):
     """
     Instantiate the selected rerun strategy.
     """
-    if strategy not in rerun_strategies:
-        raise ValueError(f"Invalid rerun strategy {strategy}. Supported: {sorted(list(rerun_strategies))}")
     if strategy == "PREVIOUSLY_FLAKY":
         return PreviouslyFlaky(max_reruns, kwargs["database"])
     return rerun_strategies[strategy](max_reruns)

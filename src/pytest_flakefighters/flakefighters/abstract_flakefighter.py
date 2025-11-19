@@ -34,3 +34,9 @@ class FlakeFighter(ABC):  # pylint: disable=R0903
         Go through each test in the test suite and append the result to its `flakefighter_results` attribute.
         :param run: Run object representing the pytest run, with tests accessible through run.tests.
         """
+
+    @abstractmethod
+    def params(self) -> dict:
+        """
+        Return a dictionary of the parameters used to create the object.
+        """

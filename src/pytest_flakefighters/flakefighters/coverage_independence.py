@@ -30,6 +30,9 @@ class CoverageIndependence(FlakeFighter):
         self.threshold = threshold
         self.metric = metric
 
+    def params(self):
+        return {"threshold": self.threshold, "metric": self.metric}
+
     def flaky_test_live(self, execution: TestExecution):
         """
         NOT SUPPORTED.

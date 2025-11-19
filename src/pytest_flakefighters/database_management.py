@@ -51,10 +51,23 @@ class Run(Base):
     Class to store attributes of a flakefighters run.
     """
 
-    source_commit: Mapped[str] = Column(String)
-    target_commit: Mapped[str] = Column(String)
     created_at = Column(DateTime, default=func.now())
+    root: Mapped[str] = Column(String)
     tests = relationship("Test", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True)
+    active_flakefighters = relationship(
+        "ActiveFlakeFighter", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True
+    )
+
+
+@dataclass
+class ActiveFlakeFighter(Base):
+    """
+    Store relevant information about the active flakefighters.
+    """
+
+    run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
+    name: Mapped[str] = Column(String)
+    params: Mapped[dict] = Column(PickleType)
 
 
 @dataclass
@@ -136,6 +149,7 @@ class TracebackEntry(Base):  # pylint: disable=R0902
     """
 
     exception_id: Mapped[int] = Column(Integer, ForeignKey("test_exception.id"), nullable=False)
+    path: Mapped[str] = Column(String)
     lineno: Mapped[int] = Column(Integer)
     colno: Mapped[int] = Column(Integer)
     statement: Mapped[str] = Column(String)
@@ -165,15 +179,23 @@ class Database:
     Class to handle database setup and interaction.
     """
 
-    def __init__(self, url: str, max_runs: int = None, time_immemorial: Union[timedelta, str] = None):
+    def __init__(
+        self,
+        url: str,
+        load_max_runs: int = None,
+        store_max_runs: int = None,
+        time_immemorial: Union[timedelta, str] = None,
+    ):
         if isinstance(time_immemorial, str) and time_immemorial:
             days, hours, minutes = [int(x) for x in time_immemorial.split(":")]
             time_immemorial = timedelta(days=days, hours=hours, minutes=minutes)
 
         self.engine = create_engine(url)
-        self.max_runs = max_runs
-        self.time_immemorial = time_immemorial
         Base.metadata.create_all(self.engine)
+
+        self.store_max_runs = store_max_runs
+        self.time_immemorial = time_immemorial
+        self.previous_runs = self.load_runs(load_max_runs)
 
     def save(self, run: Run):
         """
@@ -186,8 +208,8 @@ class Database:
                 for r in session.query(Run).filter(Run.created_at < (expiry_date - self.time_immemorial)):
                     session.delete(r)
 
-            if self.max_runs is not None:
-                for r in self.load_runs()[self.max_runs - 1 :]:
+            if self.store_max_runs is not None:
+                for r in self.load_runs()[self.store_max_runs - 1 :]:
                     session.delete(r)
             session.commit()
             session.flush()

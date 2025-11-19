@@ -10,6 +10,7 @@ from pytest_flakefighters.flakefighters.coverage_independence import (
     CoverageIndependence,
 )
 from pytest_flakefighters.flakefighters.deflaker import DeFlaker
+from pytest_flakefighters.flakefighters.traceback_matching import TracebackMatching
 from pytest_flakefighters.function_coverage import Profiler
 from pytest_flakefighters.plugin import FlakeFighterPlugin
 from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyFlaky
@@ -45,11 +46,11 @@ def pytest_addoption(parser: pytest.Parser):
         help="The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).",
     )
     group.addoption(
-        "--repo",
-        dest="repo_root",
+        "--root",
+        dest="root",
         action="store",
-        default=None,
-        help="The root directory of the Git repository. Defaults to the current working directory.",
+        default=".",
+        help="The root directory of the project. Defaults to the current working directory.",
     )
     group.addoption(
         "--suppress-flaky-failures-exit-code",
@@ -136,10 +137,14 @@ def pytest_configure(config: pytest.Config):
     Initialise the FlakeFighterPlugin class.
     :param config: The config options.
     """
-    repo_root = config.option.repo_root
     target_commit = config.option.target_commit
     source_commit = config.option.source_commit
-    database = Database(config.option.database_url, config.option.store_max_runs, config.option.time_immemorial)
+    database = Database(
+        config.option.database_url,
+        config.option.load_max_runs,
+        config.option.store_max_runs,
+        config.option.time_immemorial,
+    )
 
     if config.option.function_coverage:
         cov = Profiler()
@@ -148,18 +153,19 @@ def pytest_configure(config: pytest.Config):
 
     config.pluginmanager.register(
         FlakeFighterPlugin(
+            root=config.option.root,
             database=database,
             cov=cov,
             flakefighters=[
-                DeFlaker(run_live=True, repo_root=repo_root, source_commit=source_commit, target_commit=target_commit),
+                DeFlaker(
+                    run_live=True, root=config.option.root, source_commit=source_commit, target_commit=target_commit
+                ),
                 CoverageIndependence(
                     threshold=config.option.coverage_distaince_threshold, metric=config.option.coverage_distaince_metric
                 ),
+                TracebackMatching(run_live=True, previous_runs=database.previous_runs, root=config.option.root),
             ],
             rerun_strategy=rerun_strategy(config.option.rerun_strategy, config.option.max_reruns, database=database),
-            target_commit=target_commit,
-            source_commit=source_commit,
-            load_max_runs=config.option.load_max_runs,
             save_run=not config.option.no_save,
         )
     )

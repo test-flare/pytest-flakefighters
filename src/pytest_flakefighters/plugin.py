@@ -10,7 +10,14 @@ import coverage
 import pytest
 from _pytest.runner import runtestprotocol
 
-from pytest_flakefighters.database_management import Database, Run, Test, TestExecution
+from pytest_flakefighters.database_management import (
+    Database,
+    Run,
+    Test,
+    TestException,
+    TestExecution,
+    TracebackEntry,
+)
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 from pytest_flakefighters.function_coverage import Profiler
 
@@ -89,6 +96,31 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.cov.stop()  # pragma: no cover
         item.stop = datetime.now().timestamp()
 
+    @pytest.hookimpl(hookwrapper=True)
+    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo):  # pylint: disable=unused-argument
+        """
+        Called after a test execution call (setup, call, teardown)
+        to create a TestReport.
+
+        :param item: The item.
+        :param call: The call info.
+        """
+        outcome = yield
+        report = outcome.get_result()
+        excinfo = call.excinfo
+        if excinfo is not None and call.when == "call":
+            report.exception = TestException(  # pylint: disable=E1123
+                name=excinfo.type.__name__,
+                traceback=[
+                    TracebackEntry(
+                        lineno=entry.lineno, colno=entry.colno, statement=str(entry.statement), source=str(entry.source)
+                    )
+                    for entry in excinfo.traceback
+                ],
+            )
+        else:
+            report.exception = None
+
     def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item) -> bool:
         """
         Rerun flaky tests. Follows a similar control logic to the pytest-rerunfailures plugin.
@@ -114,17 +146,19 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     line_coverage = self.cov.get_data()
                     line_coverage.set_query_contexts(["collection", item.nodeid])
                     captured_output = dict(report.sections)
-                    test_execution = TestExecution(
+                    test_execution = TestExecution(  # pylint: disable=E1123
                         outcome=report.outcome,
                         stdout=captured_output.get("stdout"),
                         stderr=captured_output.get("stderr"),
-                        stack_trace=str(report.longrepr),
+                        report=str(report.longrepr),
                         start_time=datetime.fromtimestamp(item.start),
                         end_time=datetime.fromtimestamp(item.stop),
                         coverage={
                             file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
                         },
+                        exception=report.exception,
                     )
+                    item.test_execution = test_execution
                     executions.append(test_execution)
                     for ff in filter(lambda ff: ff.run_live, self.flakefighters):
                         ff.flaky_test_live(test_execution)

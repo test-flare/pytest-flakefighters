@@ -97,13 +97,49 @@ class TestExecution(Base):  # pylint: disable=R0902
     outcome: Mapped[str] = Column(String)
     stdout: Mapped[str] = Column(Text)
     stderr: Mapped[str] = Column(Text)
-    stack_trace: Mapped[str] = Column(Text)
+    report: Mapped[str] = Column(Text)
     start_time: Mapped[datetime] = Column(DateTime(timezone=True))
     end_time: Mapped[datetime] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)
     flakefighter_results = relationship(
         "FlakefighterResult", backref="test_execution", lazy="subquery", cascade="all, delete", passive_deletes=True
     )
+    exception = relationship(
+        "TestException",
+        uselist=False,
+        backref="test_execution",
+        lazy="subquery",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+
+
+@dataclass
+class TestException(Base):  # pylint: disable=R0902
+    """
+    Class to store information about the exceptions that cause tests to fail.
+    """
+
+    __tablename__ = "test_exception"
+
+    execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=False)
+    name: Mapped[str] = Column(String)
+    traceback = relationship(
+        "TracebackEntry", backref="exception", lazy="subquery", cascade="all, delete", passive_deletes=True
+    )
+
+
+@dataclass
+class TracebackEntry(Base):  # pylint: disable=R0902
+    """
+    Class to store attributes of entries in the stack trace.
+    """
+
+    exception_id: Mapped[int] = Column(Integer, ForeignKey("test_exception.id"), nullable=False)
+    lineno: Mapped[int] = Column(Integer)
+    colno: Mapped[int] = Column(Integer)
+    statement: Mapped[str] = Column(String)
+    source: Mapped[str] = Column(Text)
 
 
 @dataclass

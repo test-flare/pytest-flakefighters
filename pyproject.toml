@@ -5,7 +5,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pytest-flakefighter"
+name = "pytest-flakefighters"
 authors = [{ name = "TestFLARE Team" },]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 readme = "README.md"
@@ -76,8 +76,9 @@ skip_missing_interpreters = false  # fail if devs don’t have all required Pyth
 
 # Base configuration for all test environments
 [tool.tox.env_run_base]
+usedevelop = true
 description = "Run pytest under {base_python}"
 allowlist_externals=["pytest"]
 extras = ["dev","test"]
 deps = ["pytest","pytest-cov"]
-commands = [["pytest","-p","no:flakefighters","--cov=src","--cov-report=xml","{posargs}"]]
+commands = [["pytest","-p","no:flakefighters","--cov=src/pytest_flakefighters","--cov-report=html","{posargs:tests}"]]

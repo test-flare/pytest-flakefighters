@@ -58,6 +58,12 @@ class Run(Base):
         "ActiveFlakeFighter", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True
     )
 
+    def flaky_tests(self):
+        """
+        :return: all the flaky tests from a run.
+        """
+        return list(filter(lambda test: test.flaky, self.tests))
+
 
 @dataclass
 class ActiveFlakeFighter(Base):

@@ -2,6 +2,8 @@
 This module adds all the FlakeFighter configuration options to pytest.
 """
 
+import os
+
 import coverage
 import pytest
 
@@ -49,7 +51,7 @@ def pytest_addoption(parser: pytest.Parser):
         "--root",
         dest="root",
         action="store",
-        default=".",
+        default=os.getcwd(),
         help="The root directory of the project. Defaults to the current working directory.",
     )
     group.addoption(
@@ -163,7 +165,7 @@ def pytest_configure(config: pytest.Config):
                 CoverageIndependence(
                     threshold=config.option.coverage_distaince_threshold, metric=config.option.coverage_distaince_metric
                 ),
-                TracebackMatching(run_live=True, previous_runs=database.previous_runs, root=config.option.root),
+                TracebackMatching(run_live=False, previous_runs=database.previous_runs, root=config.option.root),
             ],
             rerun_strategy=rerun_strategy(config.option.rerun_strategy, config.option.max_reruns, database=database),
             save_run=not config.option.no_save,

@@ -50,7 +50,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         save_run: bool = True,
         rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
     ):
-        self.root = (root,)
+        self.root = root
         self.database = database
         self.cov = cov
         self.flakefighters = flakefighters
@@ -122,6 +122,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         source=str(entry.source),
                     )
                     for entry in excinfo.traceback
+                    if entry.path
                 ],
             )
         else:

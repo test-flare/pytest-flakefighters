@@ -21,46 +21,49 @@ class DeFlaker(FlakeFighter):
     Given the subtle differences between JUnit and pytest, this is not intended to be an exact port, but it follows
     the same general methodology of checking whether covered code has been changed between commits.
 
-    :ivar repo_root: The root directory of the Git repository.
+    :ivar root: The root directory of the Git repository.
     :ivar source_commit: The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).
     :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).
     """
 
-    def __init__(self, run_live: bool, repo_root: str, source_commit: str = None, target_commit: str = None):
+    def __init__(self, run_live: bool, root: str = ".", source_commit: str = None, target_commit: str = None):
         super().__init__(run_live)
 
-        self.repo = git.Repo(repo_root if repo_root is not None else ".")
-        if target_commit is None and not self.repo.is_dirty():
+        self.repo_root = git.Repo(root)
+        if target_commit is None and not self.repo_root.is_dirty():
             # No uncommitted changes, so use most recent commit
-            self.target_commit = self.repo.commit().hexsha
+            self.target_commit = self.repo_root.commit().hexsha
         else:
             self.target_commit = target_commit
         if source_commit is None:
             if self.target_commit is None:
                 # If uncommitted changes, use most recent commit as source
-                self.source_commit = self.repo.commit().hexsha
+                self.source_commit = self.repo_root.commit().hexsha
             else:
                 # If no uncommitted changes, use previous commit as source
                 parents = [
                     commit.hexsha
-                    for commit in self.repo.commit(source_commit).iter_parents()
+                    for commit in self.repo_root.commit(source_commit).iter_parents()
                     if commit.hexsha != self.target_commit
                 ]
                 self.source_commit = parents[0]
         else:
             self.source_commit = source_commit
 
-        patches = PatchSet(self.repo.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
+        patches = PatchSet(self.repo_root.git.diff(self.source_commit, self.target_commit, "-U0", "--no-prefix"))
         self.lines_changed = {}
         for patch in patches:
             if patch.target_file == patch.source_file:
-                abspath = os.path.join(self.repo.working_dir, patch.source_file)
+                abspath = os.path.join(self.repo_root.working_dir, patch.source_file)
                 self.lines_changed[abspath] = []
                 for hunk in patch:
                     # Add each line in the hunk to lines_changed
                     self.lines_changed[abspath] += list(
                         range(hunk.target_start, hunk.target_start + hunk.target_length)
                     )
+
+    def params(self):
+        return {"root": self.repo_root, "source_commit": self.source_commit, "target_commit": self.target_commit}
 
     def line_modified_by_target_commit(self, file_path: str, line_number: int) -> bool:
         """

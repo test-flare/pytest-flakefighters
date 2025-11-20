@@ -11,6 +11,7 @@ import pytest
 from _pytest.runner import runtestprotocol
 
 from pytest_flakefighters.database_management import (
+    ActiveFlakeFighter,
     Database,
     Run,
     Test,
@@ -42,26 +43,27 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
     def __init__(  # pylint: disable=R0913,R0917
         self,
+        root: str,
         database: Database,
         cov: Union[coverage.Coverage, Profiler],
         flakefighters: list[FlakeFighter],
-        source_commit: str = None,
-        target_commit: str = None,
-        load_max_runs: int = None,
         save_run: bool = True,
         rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
     ):
-        self.cov = cov
-        self.genuine_failure_observed = False
-        self.save_run = save_run
+        self.root = (root,)
         self.database = database
+        self.cov = cov
         self.flakefighters = flakefighters
-        self.source_commit = source_commit
-        self.target_commit = target_commit
+        self.save_run = save_run
         self.rerun_strategy = rerun_strategy
+        self.genuine_failure_observed = False
 
-        self.run = Run(source_commit=self.source_commit, target_commit=self.target_commit)
-        self.previous_runs = self.database.load_runs(load_max_runs)
+        self.run = Run(  # pylint: disable=E1123
+            root=root,
+            active_flakefighters=[
+                ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
+            ],
+        )
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -113,7 +115,11 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 name=excinfo.type.__name__,
                 traceback=[
                     TracebackEntry(
-                        lineno=entry.lineno, colno=entry.colno, statement=str(entry.statement), source=str(entry.source)
+                        path=str(entry.path),
+                        lineno=entry.lineno,
+                        colno=entry.colno,
+                        statement=str(entry.statement),
+                        source=str(entry.source),
                     )
                     for entry in excinfo.traceback
                 ],

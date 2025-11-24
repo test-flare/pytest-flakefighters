@@ -21,6 +21,13 @@ class FlakeFighter(ABC):  # pylint: disable=R0903
     def __init__(self, run_live: bool):
         self.run_live = run_live
 
+    @classmethod
+    @abstractmethod
+    def from_config(cls, config: dict):
+        """
+        Factory method to create a new instance from a pytest configuration.
+        """
+
     @abstractmethod
     def flaky_test_live(self, execution: TestExecution):
         """

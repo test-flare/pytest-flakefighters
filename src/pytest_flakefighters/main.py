@@ -2,22 +2,23 @@
 This module adds all the FlakeFighter configuration options to pytest.
 """
 
+import logging
 import os
+from importlib.metadata import entry_points
 
 import coverage
 import pytest
+import yaml
 
 from pytest_flakefighters.database_management import Database
-from pytest_flakefighters.flakefighters.coverage_independence import (
-    CoverageIndependence,
-)
 from pytest_flakefighters.flakefighters.deflaker import DeFlaker
-from pytest_flakefighters.flakefighters.traceback_matching import TracebackMatching
 from pytest_flakefighters.function_coverage import Profiler
 from pytest_flakefighters.plugin import FlakeFighterPlugin
 from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyFlaky
 
 rerun_strategies = {"ALL": All, "FLAKY_FAILURE": FlakyFailure, "PREVIOUSLY_FLAKY": PreviouslyFlaky}
+
+logger = logging.getLogger(__name__)
 
 
 def rerun_strategy(strategy: str, max_reruns: int, **kwargs):
@@ -34,19 +35,7 @@ def pytest_addoption(parser: pytest.Parser):
     Add extra pytest options.
     :param parser: The argument parser.
     """
-    group = parser.getgroup("flakefighter")
-    group.addoption(
-        "--target-commit",
-        action="store",
-        default=None,
-        help="The target (newer) commit hash. Defaults to HEAD (the most recent commit).",
-    )
-    group.addoption(
-        "--source-commit",
-        action="store",
-        default=None,
-        help="The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).",
-    )
+    group = parser.getgroup("flakefighters")
     group.addoption(
         "--root",
         dest="root",
@@ -119,19 +108,6 @@ def pytest_addoption(parser: pytest.Parser):
         help="How long to store flakefighters runs for, specified as `days:hours:minutes`. "
         "E.g. to store tests for one week, use 7:0:0.",
     )
-    group.addoption(
-        "--coverage-distaince-threshold",
-        action="store",
-        default=0,
-        help="The minimum distance to consider as 'similar', expressed as a proportion 0 <= threshold < 1 where 0 "
-        "represents no difference and 1 represents complete difference.",
-    )
-    group.addoption(
-        "--coverage-distaince-metric",
-        action="store",
-        default="jaccard",
-        help="The metric to use when computing the distance between coverage.",
-    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -139,8 +115,6 @@ def pytest_configure(config: pytest.Config):
     Initialise the FlakeFighterPlugin class.
     :param config: The config options.
     """
-    target_commit = config.option.target_commit
-    source_commit = config.option.source_commit
     database = Database(
         config.option.database_url,
         config.option.load_max_runs,
@@ -153,20 +127,35 @@ def pytest_configure(config: pytest.Config):
     else:
         cov = coverage.Coverage()
 
+    algorithms = entry_points(group="pytest_flakefighters")
+    flakefighter_configs = config.inicfg.get("pytest_flakefighters")
+
+    flakefighters = []
+    if flakefighter_configs is not None:
+        flakefighter_configs = yaml.safe_load(flakefighter_configs.value)
+        for flakefighter in algorithms:
+            if flakefighter.name in flakefighter_configs:
+                flakefighters.append(
+                    flakefighter.load().from_config(
+                        vars(config.option) | {"database": database} | flakefighter_configs[flakefighter.name]
+                    )
+                )
+
+    else:
+        logger.warning("No flakefighters specified. Using basic DeFlaker only.")
+        flakefighters.append(
+            DeFlaker(
+                run_live=True,
+                root=config.option.root,
+            )
+        )
+
     config.pluginmanager.register(
         FlakeFighterPlugin(
             root=config.option.root,
             database=database,
             cov=cov,
-            flakefighters=[
-                DeFlaker(
-                    run_live=True, root=config.option.root, source_commit=source_commit, target_commit=target_commit
-                ),
-                CoverageIndependence(
-                    threshold=config.option.coverage_distaince_threshold, metric=config.option.coverage_distaince_metric
-                ),
-                TracebackMatching(run_live=False, previous_runs=database.previous_runs, root=config.option.root),
-            ],
+            flakefighters=flakefighters,
             rerun_strategy=rerun_strategy(config.option.rerun_strategy, config.option.max_reruns, database=database),
             save_run=not config.option.no_save,
         )

@@ -62,6 +62,15 @@ class DeFlaker(FlakeFighter):
                         range(hunk.target_start, hunk.target_start + hunk.target_length)
                     )
 
+    @classmethod
+    def from_config(cls, config: dict):
+        return DeFlaker(
+            run_live=config.get("run_live", True),
+            root=config.get("root", "."),
+            source_commit=config.get("source_commit"),
+            target_commit=config.get("target_commit"),
+        )
+
     def params(self):
         return {"root": self.repo_root, "source_commit": self.source_commit, "target_commit": self.target_commit}
 

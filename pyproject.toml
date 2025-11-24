@@ -40,6 +40,12 @@ Repository = "https://github.com/test-flare/pytest-flakefighter"
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"
 
+[project.entry-points."pytest_flakefighters"]
+CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
+DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
+TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
+
+
 [tool.pylint]
 ignore-paths="tests/resources"
 disable=[

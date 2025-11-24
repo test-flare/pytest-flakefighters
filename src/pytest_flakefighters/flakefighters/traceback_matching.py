@@ -25,6 +25,14 @@ class TracebackMatching(FlakeFighter):
         self.root = root
         self.previous_runs = previous_runs
 
+    @classmethod
+    def from_config(cls, config: dict):
+        return TracebackMatching(
+            run_live=config.get("run_live", True),
+            previous_runs=config["database"].previous_runs,
+            root=config.get("root", "."),
+        )
+
     def params(self):
         return {"root": self.root}
 

@@ -30,6 +30,13 @@ class CoverageIndependence(FlakeFighter):
         self.threshold = threshold
         self.metric = metric
 
+    @classmethod
+    def from_config(cls, config: dict):
+        return CoverageIndependence(
+            threshold=config.get("coverage_distaince_threshold", 0),
+            metric=config.get("coverage_distaince_metric", "jaccard"),
+        )
+
     def params(self):
         return {"threshold": self.threshold, "metric": self.metric}
 

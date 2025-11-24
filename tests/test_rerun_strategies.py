@@ -15,7 +15,7 @@ def test_flaky_reruns(pytester, flaky_reruns_repo):
 
     pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
-        f"--repo={flaky_reruns_repo.working_dir}",
+        f"--root={flaky_reruns_repo.working_dir}",
         "-s",
         "--max-reruns=2",
     )
@@ -34,7 +34,7 @@ def test_flaky_reruns_second_time_lucky(pytester, flaky_reruns_repo):
 
     pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
-        f"--repo={flaky_reruns_repo.working_dir}",
+        f"--root={flaky_reruns_repo.working_dir}",
         "-s",
         "--max-reruns=3",
     )
@@ -54,13 +54,13 @@ def test_previously_flaky(pytester, flaky_reruns_repo):
 
     pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
-        f"--repo={flaky_reruns_repo.working_dir}",
+        f"--root={flaky_reruns_repo.working_dir}",
         "-s",
     )
 
     pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
-        f"--repo={flaky_reruns_repo.working_dir}",
+        f"--root={flaky_reruns_repo.working_dir}",
         "-s",
         "--max-reruns=1",
         "--rerun-strategy=PREVIOUSLY_FLAKY",
@@ -86,13 +86,13 @@ def test_previously_flaky_no_rerun(pytester, deflaker_repo):
 
     pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
-        f"--repo={deflaker_repo.working_dir}",
+        f"--root={deflaker_repo.working_dir}",
         "-s",
     )
 
     pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
-        f"--repo={deflaker_repo.working_dir}",
+        f"--root={deflaker_repo.working_dir}",
         "-s",
         "--max-reruns=1",
         "--rerun-strategy=PREVIOUSLY_FLAKY",
@@ -121,7 +121,7 @@ def test_rerun_all(pytester, flaky_reruns_repo):
 
     pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "pass_fail_flaky.py"),
-        f"--repo={flaky_reruns_repo.working_dir}",
+        f"--root={flaky_reruns_repo.working_dir}",
         "-s",
         "--max-reruns=1",
         "--rerun-strategy=ALL",

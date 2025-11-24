@@ -19,7 +19,7 @@ def test_clean_repo(flaky_reruns_repo):
     """
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
 
-    deflaker = DeFlaker(True, repo_root=flaky_reruns_repo.working_dir)
+    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
 
     assert deflaker.source_commit == commits[1], f"Expected source commit {commits[1]} but was {deflaker.source_commit}"
     assert deflaker.target_commit == commits[0], f"Expected source commit {commits[0]} but was {deflaker.target_commit}"
@@ -34,7 +34,7 @@ def test_dirty_repo(flaky_reruns_repo):
     with open(os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"), "w") as f:
         print("print()", file=f)
 
-    deflaker = DeFlaker(True, repo_root=flaky_reruns_repo.working_dir)
+    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
 
     assert deflaker.source_commit == commits[0], f"Expected source commit {commits[0]} but was {deflaker.source_commit}"
     assert deflaker.target_commit is None, f"Expected source commit None but was {deflaker.target_commit}"
@@ -53,9 +53,7 @@ def test_named_source_target(flaky_reruns_repo):
 
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
 
-    deflaker = DeFlaker(
-        True, repo_root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[2]
-    )
+    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[2])
 
     assert deflaker.source_commit == commits[1], f"Expected source commit {commits[1]} but was {deflaker.source_commit}"
     assert deflaker.target_commit == commits[2], f"Expected source commit {commits[2]} but was {deflaker.target_commit}"
@@ -72,7 +70,7 @@ def test_line_modified_by_target_commit(flaky_reruns_repo):
     flaky_reruns_repo.index.add(["flaky_reruns.py"])
     flaky_reruns_repo.index.commit("Added a print statement.")
 
-    deflaker = DeFlaker(True, repo_root=flaky_reruns_repo.working_dir)
+    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
     with open(flaky_reruns_py) as f:
         lines = len(f.readlines())
 
@@ -94,7 +92,7 @@ def test_flaky_test_live_false(deflaker_repo):
     """
     Test live classification of genuine failure.
     """
-    deflaker = DeFlaker(run_live=True, repo_root=deflaker_repo.working_dir)
+    deflaker = DeFlaker(run_live=True, root=deflaker_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -110,7 +108,7 @@ def test_flaky_tests_post_false(deflaker_repo):
     """
     Test same failure as test_flaky_test_live_false but as a postprocess.
     """
-    deflaker = DeFlaker(run_live=True, repo_root=deflaker_repo.working_dir)
+    deflaker = DeFlaker(run_live=True, root=deflaker_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -136,7 +134,7 @@ def test_flaky_test_live_true(flaky_reruns_repo):
     """
     Test live classification of genuine failure.
     """
-    deflaker = DeFlaker(run_live=True, repo_root=flaky_reruns_repo.working_dir)
+    deflaker = DeFlaker(run_live=True, root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -152,7 +150,7 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
     """
     Test same failure as test_flaky_test_live_false but as a postprocess.
     """
-    deflaker = DeFlaker(run_live=True, repo_root=flaky_reruns_repo.working_dir)
+    deflaker = DeFlaker(run_live=True, root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={

@@ -29,6 +29,8 @@ class TracebackMatching(FlakeFighter):
         return {"root": self.root}
 
     def _flaky_execution(self, execution, previous_executions):
+        if not execution.exception:
+            return False
         current_traceback = [
             (e.path, e.lineno, e.colno, e.statement)
             for e in execution.exception.traceback
@@ -84,6 +86,7 @@ class TracebackMatching(FlakeFighter):
                                 (os.path.relpath(t.path, self.root), t.lineno, t.colno, t.statement)
                                 for test in run.tests
                                 for x in test.executions
+                                if x.exception
                                 for t in x.exception.traceback
                                 if t != execution
                             ],

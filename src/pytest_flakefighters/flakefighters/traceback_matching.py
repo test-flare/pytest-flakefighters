@@ -22,7 +22,7 @@ class TracebackMatching(FlakeFighter):
 
     def __init__(self, run_live: bool, previous_runs: list[Run], root: str = "."):
         super().__init__(run_live)
-        self.root = root
+        self.root = os.path.abspath(root)
         self.previous_runs = previous_runs
 
     @classmethod
@@ -40,7 +40,7 @@ class TracebackMatching(FlakeFighter):
         if not execution.exception:
             return False
         current_traceback = [
-            (e.path, e.lineno, e.colno, e.statement)
+            (os.path.relpath(e.path, self.root), e.lineno, e.colno, e.statement)
             for e in execution.exception.traceback
             if e.path.startswith(self.root)
         ]
@@ -53,11 +53,14 @@ class TracebackMatching(FlakeFighter):
         test executions.
         """
         return [
-            (os.path.relpath(elem.path, run.root), elem.lineno, elem.colno, elem.statement)
+            [
+                (os.path.relpath(elem.path, run.root), elem.lineno, elem.colno, elem.statement)
+                for elem in execution.exception.traceback
+            ]
             for run in self.previous_runs
             for test in run.tests
             for execution in test.executions
-            for elem in execution.exception.traceback
+            if any(result.flaky for result in execution.flakefighter_results + test.flakefighter_results)
         ]
 
     def flaky_test_live(self, execution: TestExecution):

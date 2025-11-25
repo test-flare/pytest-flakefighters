@@ -4,6 +4,8 @@ This module tests the DeFlaker flakefighter.
 
 import os
 
+import pytest
+
 from pytest_flakefighters.database_management import (
     FlakefighterResult,
     Run,
@@ -11,6 +13,31 @@ from pytest_flakefighters.database_management import (
     TestExecution,
 )
 from pytest_flakefighters.flakefighters.deflaker import DeFlaker
+
+
+@pytest.mark.parametrize("run_live", [True, False])
+def test_from_config_params(flaky_reruns_repo, run_live):
+    """
+    Test that from_config generates the same result as a direct call
+    """
+    commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
+
+    from_config = DeFlaker.from_config(
+        {
+            "run_live": run_live,
+            "root": flaky_reruns_repo.working_dir,
+            "source_commit": commits[1],
+            "target_commit": commits[0],
+        }
+    )
+    init = DeFlaker(
+        run_live=run_live, root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[0]
+    )
+    assert from_config.run_live == init.run_live
+    assert from_config.repo_root == init.repo_root
+    assert from_config.source_commit == init.source_commit
+    assert from_config.target_commit == init.target_commit
+    assert from_config.params() == init.params()
 
 
 def test_clean_repo(flaky_reruns_repo):

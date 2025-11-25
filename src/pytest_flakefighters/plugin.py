@@ -56,7 +56,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.flakefighters = flakefighters
         self.save_run = save_run
         self.rerun_strategy = rerun_strategy
-        self.genuine_failure_observed = False
 
         self.run = Run(  # pylint: disable=E1123
             root=root,
@@ -170,9 +169,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     for ff in filter(lambda ff: ff.run_live, self.flakefighters):
                         ff.flaky_test_live(test_execution)
                     report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
-                    self.genuine_failure_observed = self.genuine_failure_observed or (
-                        report.failed and not report.flaky
-                    )
                     if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
                 item.ihook.pytest_runtest_logreport(report=report)
@@ -213,10 +209,14 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
             ff.flaky_tests_post(self.run)
 
+        genuine_failure_observed = any(
+            not test.flaky for test in self.run.tests if any(e.outcome != "passed" for e in test.executions)
+        )
+
         if (
             session.config.option.suppress_flaky
             and session.exitstatus == pytest.ExitCode.TESTS_FAILED
-            and not self.genuine_failure_observed
+            and not genuine_failure_observed
         ):
             session.exitstatus = pytest.ExitCode.OK
 

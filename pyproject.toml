@@ -59,7 +59,8 @@ disable=[
   "use-symbolic-message-instead",
   "logging-fstring-interpolation",
   "import-error",
-  "unspecified-encoding"
+  "unspecified-encoding",
+  "unexpected-keyword-arg"
 ]
 max-line-length=120
 variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"

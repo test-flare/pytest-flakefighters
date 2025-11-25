@@ -15,6 +15,19 @@ from pytest_flakefighters.flakefighters.coverage_independence import (
 )
 
 
+def test_from_config_params():
+    """
+    Test that from_config generates the same result as a direct call
+    """
+
+    from_config = CoverageIndependence.from_config({"threshold": 0.9, "metric": "hamming"})
+    init = CoverageIndependence(threshold=0.9, metric="hamming")
+    assert from_config.run_live == init.run_live
+    assert from_config.threshold == init.threshold
+    assert from_config.metric == init.metric
+    assert from_config.params() == init.params()
+
+
 def test_flaky_test_live():
     """
     Test flaky_test_live is not implemented.

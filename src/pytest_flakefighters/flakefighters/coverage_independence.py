@@ -32,12 +32,19 @@ class CoverageIndependence(FlakeFighter):
 
     @classmethod
     def from_config(cls, config: dict):
+        """
+        Factory method to create a new instance from a pytest configuration.
+        """
         return CoverageIndependence(
             threshold=config.get("threshold", 0),
             metric=config.get("metric", "jaccard"),
         )
 
     def params(self):
+        """
+        Convert the key parameters into a dictionary so that the object can be replicated.
+        :return A dictionary of the parameters used to create the object.
+        """
         return {"threshold": self.threshold, "metric": self.metric}
 
     def flaky_test_live(self, execution: TestExecution):

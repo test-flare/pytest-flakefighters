@@ -27,6 +27,9 @@ class TracebackMatching(FlakeFighter):
 
     @classmethod
     def from_config(cls, config: dict):
+        """
+        Factory method to create a new instance from a pytest configuration.
+        """
         return TracebackMatching(
             run_live=config.get("run_live", True),
             previous_runs=config["database"].previous_runs,
@@ -34,9 +37,17 @@ class TracebackMatching(FlakeFighter):
         )
 
     def params(self):
+        """
+        Convert the key parameters into a dictionary so that the object can be replicated.
+        :return A dictionary of the parameters used to create the object.
+        """
         return {"root": self.root}
 
-    def _flaky_execution(self, execution, previous_executions):
+    def _flaky_execution(self, execution, previous_executions) -> bool:
+        """
+        Classify an execution as flaky or not.
+        :return: Boolean True of the test is classed as flaky and False otherwise.
+        """
         if not execution.exception:
             return False
         current_traceback = [

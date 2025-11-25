@@ -45,5 +45,6 @@ class FlakeFighter(ABC):  # pylint: disable=R0903
     @abstractmethod
     def params(self) -> dict:
         """
-        Return a dictionary of the parameters used to create the object.
+        Convert the key parameters into a dictionary so that the object can be replicated.
+        :return A dictionary of the parameters used to create the object.
         """

@@ -64,6 +64,9 @@ class DeFlaker(FlakeFighter):
 
     @classmethod
     def from_config(cls, config: dict):
+        """
+        Factory method to create a new instance from a pytest configuration.
+        """
         return DeFlaker(
             run_live=config.get("run_live", True),
             root=config.get("root", "."),
@@ -72,6 +75,10 @@ class DeFlaker(FlakeFighter):
         )
 
     def params(self):
+        """
+        Convert the key parameters into a dictionary so that the object can be replicated.
+        :return A dictionary of the parameters used to create the object.
+        """
         return {"root": self.repo_root, "source_commit": self.source_commit, "target_commit": self.target_commit}
 
     def line_modified_by_target_commit(self, file_path: str, line_number: int) -> bool:
@@ -83,7 +90,11 @@ class DeFlaker(FlakeFighter):
         """
         return line_number in self.lines_changed.get(file_path, [])
 
-    def _flaky_test(self, execution):
+    def _flaky_execution(self, execution):
+        """
+        Classify an execution as flaky or not.
+        :return: Boolean True of the test is classed as flaky and False otherwise.
+        """
         return not any(
             execution.outcome == "failed" and self.line_modified_by_target_commit(file_path, line_number)
             for file_path in execution.coverage
@@ -98,7 +109,7 @@ class DeFlaker(FlakeFighter):
         :param execution: The test execution to classify.
         """
         execution.flakefighter_results.append(
-            FlakefighterResult(name=self.__class__.__name__, flaky=self._flaky_test(execution))
+            FlakefighterResult(name=self.__class__.__name__, flaky=self._flaky_execution(execution))
         )
 
     def flaky_tests_post(self, run: Run) -> list[bool | None]:
@@ -110,6 +121,6 @@ class DeFlaker(FlakeFighter):
             test.flakefighter_results.append(
                 FlakefighterResult(
                     name=self.__class__.__name__,
-                    flaky=any(self._flaky_test(execution) for execution in test.executions),
+                    flaky=any(self._flaky_execution(execution) for execution in test.executions),
                 )
             )

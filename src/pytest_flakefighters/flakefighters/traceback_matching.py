@@ -42,7 +42,7 @@ class TracebackMatching(FlakeFighter):
         current_traceback = [
             (os.path.relpath(e.path, self.root), e.lineno, e.colno, e.statement)
             for e in execution.exception.traceback
-            if e.path.startswith(self.root)
+            if os.path.commonpath([self.root, e.path]) == self.root
         ]
         return any(e == current_traceback for e in previous_executions)
 

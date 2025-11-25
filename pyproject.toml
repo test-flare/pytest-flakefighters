@@ -19,7 +19,8 @@ dependencies = [
     "sqlalchemy>=2.0.43",
     "dotenv>=0.9.9",
     "pandas",
-    "scipy<=1.15"
+    "scipy<=1.15",
+    "pyyaml>=6"
 ]
 dynamic = ["version"]
 

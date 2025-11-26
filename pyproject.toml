@@ -20,7 +20,9 @@ dependencies = [
     "dotenv>=0.9.9",
     "pandas",
     "scipy<=1.15",
-    "pyyaml>=6"
+    "pyyaml>=6",
+    "scikit-learn>=1.7",
+    "nltk>=3.9",
 ]
 dynamic = ["version"]
 
@@ -45,6 +47,7 @@ flakefighters = "pytest_flakefighters.main"
 CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
 DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
+CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
 
 
 [tool.pylint]

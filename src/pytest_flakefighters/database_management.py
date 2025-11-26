@@ -94,7 +94,7 @@ class Test(Base):
         if not self.executions and not self.flakefighter_results:
             return None
         return any(result.flaky for result in self.flakefighter_results) or any(
-            any(result.flaky for result in execution.flakefighter_results) for execution in self.executions
+            execution.flaky for execution in self.executions
         )
 
 
@@ -125,6 +125,13 @@ class TestExecution(Base):  # pylint: disable=R0902
         cascade="all, delete",
         passive_deletes=True,
     )
+
+    @property
+    def flaky(self) -> bool:
+        """
+        Return whether a test (or any of its executions) has been marked as flaky by any flakefighter.
+        """
+        return any(result.flaky for result in self.flakefighter_results)
 
 
 @dataclass

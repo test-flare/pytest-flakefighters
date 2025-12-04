@@ -23,7 +23,7 @@ class CoverageIndependence(FlakeFighter):
     :ivar metric: From `scipy.spatial.distance`: ['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice',
     'hamming', 'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
     'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'].
-    :ivar linkage: From `scipy.cluster.hierarchy.linkage`: ['single', 'complete', 'average', 'weighted', 'centroid',
+    :ivar linkage_method: From `scipy.cluster.hierarchy.linkage`: ['single', 'complete', 'average', 'weighted', 'centroid',
     'median', 'ward']
     """
 
@@ -49,7 +49,7 @@ class CoverageIndependence(FlakeFighter):
         Convert the key parameters into a dictionary so that the object can be replicated.
         :return A dictionary of the parameters used to create the object.
         """
-        return {"threshold": self.threshold, "metric": self.metric, "linkage": self.linkage}
+        return {"threshold": self.threshold, "metric": self.metric, "linkage_method": self.linkage_method}
 
     def flaky_test_live(self, execution: TestExecution):
         """
@@ -85,7 +85,9 @@ class CoverageIndependence(FlakeFighter):
         raw_coverage = coverage.drop(["test", "execution"], axis=1).to_numpy()
         distances = pdist(raw_coverage, metric=self.metric)
         # Assign each test execution to a cluster
-        coverage["cluster"] = fcluster(linkage(distances, method="single"), t=self.threshold, criterion="distance")
+        coverage["cluster"] = fcluster(
+            linkage(distances, method=self.linkage_method), t=self.threshold, criterion="distance"
+        )
 
         for _, group in coverage.groupby("cluster"):
             for test in group["test"]:

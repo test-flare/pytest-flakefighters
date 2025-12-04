@@ -27,11 +27,11 @@ class CoverageIndependence(FlakeFighter):
     'median', 'ward']
     """
 
-    def __init__(self, threshold: float = 0, metric: str = "jaccard", linkage="single"):
+    def __init__(self, threshold: float = 0, metric: str = "jaccard", linkage_method="single"):
         super().__init__(False)
         self.threshold = threshold
         self.metric = metric
-        self.linkage = linkage
+        self.linkage_method = linkage_method
 
     @classmethod
     def from_config(cls, config: dict):
@@ -41,7 +41,7 @@ class CoverageIndependence(FlakeFighter):
         return CoverageIndependence(
             threshold=config.get("threshold", 0),
             metric=config.get("metric", "jaccard"),
-            linkage=config.get("linkage", "single"),
+            linkage_method=config.get("linkage_method", "single"),
         )
 
     def params(self):

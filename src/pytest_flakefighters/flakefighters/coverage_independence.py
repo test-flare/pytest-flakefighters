@@ -23,8 +23,8 @@ class CoverageIndependence(FlakeFighter):
     :ivar metric: From `scipy.spatial.distance`: ['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice',
     'hamming', 'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
     'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'].
-    :ivar linkage_method: From `scipy.cluster.hierarchy.linkage`: ['single', 'complete', 'average', 'weighted', 'centroid',
-    'median', 'ward']
+    :ivar linkage_method: From `scipy.cluster.hierarchy.linkage`: ['single', 'complete', 'average', 'weighted',
+    'centroid', 'median', 'ward']
     """
 
     def __init__(self, threshold: float = 0, metric: str = "jaccard", linkage_method="single"):

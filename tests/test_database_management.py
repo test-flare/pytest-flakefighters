@@ -21,11 +21,13 @@ def test_run_saving(pytester, flaky_triangle_repo):
     assert not os.path.exists(
         os.path.join(flaky_triangle_repo.working_dir, "flakefighters.db")
     ), "Database file should not exist in advance of running pytest"
-    pytester.runpytest(
+    result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         "-s",
-        "--max-flaky-reruns=2",
+        "--max-reruns=2",
     )
+
+    result.assert_outcomes(failed=2, skipped=1)
 
     db = Database(f"sqlite:///{os.path.join(flaky_triangle_repo.working_dir, 'flakefighters.db')}")
     runs = db.load_runs()
@@ -56,6 +58,7 @@ def test_max_load_runs(pytester, deflaker_repo):
     assert not os.path.exists(
         os.path.join(deflaker_repo.working_dir, "flakefighters.db")
     ), "Database file should not exist in advance of running pytest"
+
     for _ in range(5):
         pytester.runpytest(
             os.path.join(deflaker_repo.working_dir, "app.py"),

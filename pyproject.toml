@@ -5,7 +5,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pytest-flakefighter"
+name = "pytest-flakefighters"
 authors = [{ name = "TestFLARE Team" },]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 readme = "README.md"
@@ -17,7 +17,12 @@ dependencies = [
     "GitPython>=3.1.45",
     "unidiff>=0.7.5",
     "sqlalchemy>=2.0.43",
-    "dotenv>=0.9.9"
+    "dotenv>=0.9.9",
+    "pandas",
+    "scipy<=1.15",
+    "pyyaml>=6",
+    "scikit-learn>=1.7",
+    "nltk>=3.9",
 ]
 dynamic = ["version"]
 
@@ -36,7 +41,14 @@ dev = [
 Repository = "https://github.com/test-flare/pytest-flakefighter"
 
 [project.entry-points.pytest11]
-flakefighters = "pytest_flakefighters.plugin"
+flakefighters = "pytest_flakefighters.main"
+
+[project.entry-points."pytest_flakefighters"]
+CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
+DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
+TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
+CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
+
 
 [tool.pylint]
 ignore-paths="tests/resources"
@@ -51,7 +63,8 @@ disable=[
   "use-symbolic-message-instead",
   "logging-fstring-interpolation",
   "import-error",
-  "unspecified-encoding"
+  "unspecified-encoding",
+  "unexpected-keyword-arg"
 ]
 max-line-length=120
 variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
@@ -63,9 +76,7 @@ target-version = ["py310"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-testpaths = [
-    "tests"
-]
+testpaths = ["tests"]
 [tool.isort]
 profile = "black"
 
@@ -76,8 +87,9 @@ skip_missing_interpreters = false  # fail if devs don’t have all required Pyth
 
 # Base configuration for all test environments
 [tool.tox.env_run_base]
+usedevelop = true
 description = "Run pytest under {base_python}"
 allowlist_externals=["pytest"]
 extras = ["dev","test"]
 deps = ["pytest","pytest-cov"]
-commands = [["pytest","-p","no:flakefighter","--cov=src","--cov-report=xml","{posargs}"]]
+commands = [["pytest","-p","no:flakefighters","--cov=src/pytest_flakefighters","--cov-report=html","{posargs:tests}"]]

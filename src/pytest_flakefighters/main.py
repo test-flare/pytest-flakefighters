@@ -131,7 +131,7 @@ def pytest_configure(config: pytest.Config):
     flakefighter_configs = config.inicfg.get("pytest_flakefighters")
 
     flakefighters = []
-    if flakefighter_configs is not None:
+    if flakefighter_configs:
         flakefighter_configs = yaml.safe_load(flakefighter_configs.value)
         for flakefighter in algorithms:
             if flakefighter.name in flakefighter_configs:

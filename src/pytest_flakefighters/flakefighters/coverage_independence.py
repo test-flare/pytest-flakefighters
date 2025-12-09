@@ -19,12 +19,12 @@ class CoverageIndependence(FlakeFighter):
     Classify tests as flaky if they fail independently of passing test cases that exercise overlapping code.
 
     :ivar threshold: The minimum distance to consider as "similar", expressed as a proportion 0 <= threshold < 1 where 0
-    represents no difference and 1 represents complete difference.
+        represents no difference and 1 represents complete difference.
     :ivar metric: From `scipy.spatial.distance`: ['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice',
-    'hamming', 'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-    'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'].
+        'hamming', 'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'].
     :ivar linkage_method: From `scipy.cluster.hierarchy.linkage`: ['single', 'complete', 'average', 'weighted',
-    'centroid', 'median', 'ward']
+        'centroid', 'median', 'ward']
     """
 
     def __init__(self, threshold: float = 0, metric: str = "jaccard", linkage_method="single"):

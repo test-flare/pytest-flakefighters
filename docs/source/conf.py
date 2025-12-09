@@ -33,7 +33,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 extensions = [
     "autoapi.extension",
     "myst_parser",
-    # "sphinx.ext.autosectionlabel",
     "nbsphinx",
     "sphinx.ext.autosummary",
 ]
@@ -115,7 +114,7 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
 # Path to generate documentation from using Sphinx AutoAPI
 autoapi_dirs = [os.path.abspath(os.path.join("..", "..", "src"))]
@@ -151,6 +150,12 @@ autoapi_keep_files = True
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = ["css/custom.css"]
+
+html_theme_options = {
+    "style_nav_header_background": "#9ADBE8",  # Set the colour using CSS
+    "logo_only": True,
+}
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

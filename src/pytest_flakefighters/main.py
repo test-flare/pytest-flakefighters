@@ -130,11 +130,14 @@ def pytest_configure(config: pytest.Config):
     algorithms = entry_points(group="pytest_flakefighters")
     flakefighter_configs = config.inicfg.get("pytest_flakefighters")
 
-    print("flakefighter_configs", flakefighter_configs)
-
     flakefighters = []
     if flakefighter_configs is not None:
-        flakefighter_configs = yaml.safe_load(flakefighter_configs.value)
+        if isinstance(flakefighter_configs, str):
+            flakefighter_configs = yaml.safe_load(flakefighter_configs)
+        elif hasattr(flakefighter_configs, "value"):
+            flakefighter_configs = yaml.safe_load(flakefighter_configs.value)
+        else:
+            raise TypeError(f"Unexpected type for config: {type(flakefighter_configs)}")
         for flakefighter in algorithms:
             if flakefighter.name in flakefighter_configs:
                 flakefighters.append(

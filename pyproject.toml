@@ -1,6 +1,7 @@
 [build-system]
 requires = [
   "setuptools>=61.0.0",
+  "wheel"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -30,15 +31,18 @@ dynamic = ["version"]
 dev = [
     "black",
     "pytest-cov",
+    "astroid==3.3.8",
     "pylint",
     "pre_commit",
     "sphinx-autoapi",
     "sphinx_rtd_theme",
-    "tox>=4.31.0"
+    "tox>=4.31.0",
+    "myst_parser",
+    "nbsphinx",
 ]
 
 [project.urls]
-Repository = "https://github.com/test-flare/pytest-flakefighter"
+Repository = "https://github.com/test-flare/pytest-flakefighters"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"

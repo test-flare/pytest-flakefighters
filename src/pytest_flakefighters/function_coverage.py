@@ -16,7 +16,7 @@ class Profiler:
 
     :ivar coverage_data: The (potentially) covered lines for each module.
     :ivar function_defs: The lines that define a given function in a given module, accessed as
-    `function_defs[module][function]`.
+        `function_defs[module][function]`.
     """
 
     def __init__(self):

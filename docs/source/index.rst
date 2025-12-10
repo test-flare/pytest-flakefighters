@@ -9,6 +9,7 @@ Welcome to pytest Flakefighters
 |status|
 |ci-tests|
 |code-cov|
+|pypi|
 |docs|
 |python|
 |license|
@@ -31,6 +32,7 @@ Flaky tests are then reported separately in the test report, and can be optional
 .. toctree::
    :hidden:
    :caption: Home
+
 .. toctree::
    :hidden:
    :maxdepth: 1
@@ -39,13 +41,6 @@ Flaky tests are then reported separately in the test report, and can be optional
    installation
    configuration
 
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :caption: Module Descriptions
-
-   /modules/flakefighters
 
 .. toctree::
    :maxdepth: 2
@@ -63,27 +58,30 @@ Flaky tests are then reported separately in the test report, and can be optional
    glossary
 
 .. toctree::
-   :hidden:
-   :maxdepth: 1
-   :caption: Development
+  :hidden:
+  :maxdepth: 1
+  :caption: Development
 
-   /dev/version_release
-   /dev/documentation
-   /dev/actions_and_webhooks
+  /dev/version_release
+  /dev/documentation
+  /dev/actions_and_webhooks
 
 .. toctree::
    :caption: Useful Links
    :hidden:
    :maxdepth: 2
 
+   Source code <https://github.com/test-flare/pytest-flakefighters/>
+   Documentation <https://causal-testing-framework.readthedocs.io/en/latest/>
+   PyPI <https://pypi.org/project/pytest-flakefighters/>
    TestFLARE Homepage <https://test-flare.github.io/>
 
 .. toctree::
    :hidden:
    :maxdepth: 2
-   :caption: Credits
+   :caption: Acknowledgements
 
-   credits
+   acknowlegements
 
 .. Define variables for our GH badges
 
@@ -107,6 +105,9 @@ Flaky tests are then reported separately in the test report, and can be optional
    :target: https://www.repostatus.org/#active
    :alt: Status
 
+.. |pypi| image:: https://img.shields.io/pypi/v/pytest-flakefighters
+  :target: https://pypi.org/project/pytest-flakefighters
+  :alt: PyPI
 
 .. |license| image:: https://img.shields.io/github/license/test-flare/pytest-flakefighters
    :target: https://github.com/test-flare/pytest-flakefighters

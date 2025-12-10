@@ -17,10 +17,11 @@ from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighte
 
 class DeFlaker(FlakeFighter):
     """
-    A python equivalent of the DeFlaker algorithm from Bell et al. 2019 [10.1145/3180155.3180164].
+    A python equivalent of the DeFlaker algorithm from `Bell et al. (2019) <https://doi.org/10.1145/3180155.3180164>`_.
     Given the subtle differences between JUnit and pytest, this is not intended to be an exact port, but it follows
     the same general methodology of checking whether covered code has been changed between commits.
 
+    :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
     :ivar root: The root directory of the Git repository.
     :ivar source_commit: The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).
     :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).

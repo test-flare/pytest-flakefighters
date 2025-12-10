@@ -20,16 +20,18 @@ from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighte
 
 class TracebackMatching(FlakeFighter):
     """
-    Simple text-based matching classifier from Section II.A of [Alshammari et. al.].
+    Simple text-based matching classifier from Section II.A of
+    `Alshammari et al. (2024) <https://doi.org/10.1109/ICST60714.2024.00031>`_.
     We implement text-based matching on the failure logs for each test. Each failure log is represented by its failure
     exception and stacktrace.
+
+    :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
     """
 
     def __init__(self, run_live: bool, previous_runs: list[Run], root: str = "."):
         super().__init__(run_live)
         self.root = os.path.abspath(root)
         self.previous_runs = previous_runs
-        print("TracebackMatching")
 
     @classmethod
     def from_config(cls, config: dict):
@@ -119,8 +121,11 @@ class TracebackMatching(FlakeFighter):
 
 class CosineSimilarity(TracebackMatching):
     """
-    TF-IDF cosine similarity matching classifier from Section II.C of [Alshammari et. al.].
+    TF-IDF cosine similarity matching classifier from Section II.C of
+    `Alshammari et al. (2024) <https://doi.org/10.1109/ICST60714.2024.00031>`_.
     Test executions are classified as flaky if the stack trace is sufficiently similar to a previous flaky execution.
+
+    :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
     """
 
     def __init__(self, run_live: bool, previous_runs: list[Run], root: str = ".", threshold: float = 1):

@@ -31,11 +31,16 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "autoclasstoc",
     "autoapi.extension",
     "myst_parser",
     "nbsphinx",
+    "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
 ]
+
+# Get autosummary to work with templates
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

@@ -62,8 +62,4 @@ After installation, verify that the framework is installed correctly in your env
 Next Steps
 -----------
 
-* Check out the :doc:`tutorials` to learn how to use the framework.
-* Read about :doc:`modules/causal_specification` to understand causal specifications and :doc:`modules/causal_testing` for the end-to-end causal testing process.
-* Try the command-line interface for quick and simple testing::
-
-    python -m causal_testing test --help
+* Check out the :doc:`configuration` to learn how to configure the extension.

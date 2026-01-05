@@ -95,8 +95,8 @@ class DeFlaker(FlakeFighter):
         Classify an execution as flaky or not.
         :return: Boolean True of the test is classed as flaky and False otherwise.
         """
-        return not any(
-            execution.outcome == "failed" and self.line_modified_by_target_commit(file_path, line_number)
+        return execution.outcome == "failed" and not any(
+            self.line_modified_by_target_commit(file_path, line_number)
             for file_path in execution.coverage
             for line_number in execution.coverage[file_path]
             if file_path in self.lines_changed

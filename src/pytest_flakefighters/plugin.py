@@ -193,7 +193,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param config: The pytest config object.
         :returns: The test status.
         """
-        if getattr(report, "flaky", False):
+        if getattr(report, "flaky", False) and not report.passed:
             return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None
 

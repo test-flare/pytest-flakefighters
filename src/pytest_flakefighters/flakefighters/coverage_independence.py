@@ -18,13 +18,14 @@ class CoverageIndependence(FlakeFighter):
     """
     Classify tests as flaky if they fail independently of passing test cases that exercise overlapping code.
 
+    :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
+                    This is always False as live classification is not supported.
     :ivar threshold: The minimum distance to consider as "similar", expressed as a proportion 0 <= threshold < 1 where 0
-    represents no difference and 1 represents complete difference.
-    :ivar metric: From `scipy.spatial.distance`: ['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice',
-    'hamming', 'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-    'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'].
+        represents no difference and 1 represents complete difference.
+    :ivar metric: The distance metric to use. For a full list of valid values,see the `SciPy documentation for spatial
+        distances <https://docs.scipy.org/doc/scipy/reference/spatial.distance.html>`_.
     :ivar linkage_method: From `scipy.cluster.hierarchy.linkage`: ['single', 'complete', 'average', 'weighted',
-    'centroid', 'median', 'ward']
+        'centroid', 'median', 'ward']
     """
 
     def __init__(self, threshold: float = 0, metric: str = "jaccard", linkage_method="single"):

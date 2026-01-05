@@ -81,7 +81,7 @@ class PreviouslyFlaky(FlakyFailure):
     def rerun(self, report: pytest.TestReport) -> bool:
         """
         :return: Boolean true if a test is a flaky failure or has previously been marked as flaky and has the same name
-        as the current test.
+            as the current test.
         """
         return super().rerun(report) or any(test.name == report.nodeid for test in self.previously_flaky)
 

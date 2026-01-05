@@ -15,7 +15,7 @@ authors = [{ name = "TestFLARE Team" },]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license-files = ["LICENSE"]
 dependencies = [
 "pytest>=6.2.0",
 "coverage>=7.10.6",

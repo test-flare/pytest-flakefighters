@@ -1,4 +1,5 @@
 # Pytest FlakeFighters
+### Pytest plugin implementing flaky test failure detection and classification.
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![PyPI version](https://img.shields.io/pypi/v/pytest-flakefighters.svg)](https://pypi.org/project/pytest-flakefighters)
@@ -9,7 +10,6 @@
 ![GitHub License](https://img.shields.io/github/license/test-flare/pytest-flakefighters)
 
 
-### Pytest plugin implementing flaky test failure detection and classification.
 
 ## Features
 

@@ -36,7 +36,7 @@ dev = [
 "pre_commit",
 "sphinx-autoapi",
 "sphinx_rtd_theme",
-"tox>=4.31.0"
+"tox>=4.31.0",
 "myst_parser",
 "nbsphinx",
 ]

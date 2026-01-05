@@ -1,7 +1,8 @@
 [build-system]
 requires = [
-  "setuptools>=61.0.0",
-  "wheel"
+"setuptools>=64",
+"setuptools_scm[toml]>=6.2",
+"wheel"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -13,32 +14,31 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 dependencies = [
-    "pytest>=6.2.0",
-    "coverage>=7.10.6",
-    "GitPython>=3.1.45",
-    "unidiff>=0.7.5",
-    "sqlalchemy>=2.0.43",
-    "dotenv>=0.9.9",
-    "pandas",
-    "scipy<=1.15",
-    "pyyaml>=6",
-    "scikit-learn>=1.7",
-    "nltk>=3.9",
+"pytest>=6.2.0",
+"coverage>=7.10.6",
+"GitPython>=3.1.45",
+"unidiff>=0.7.5",
+"sqlalchemy>=2.0.43",
+"dotenv>=0.9.9",
+"pandas",
+"scipy<=1.15",
+"pyyaml>=6",
+"scikit-learn>=1.7",
+"nltk>=3.9",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-    "black",
-    "pytest-cov",
-    "astroid==3.3.8",
-    "pylint",
-    "pre_commit",
-    "sphinx-autoapi",
-    "sphinx_rtd_theme",
-    "tox>=4.31.0",
-    "myst_parser",
-    "nbsphinx",
+"black",
+"pytest-cov",
+"pylint",
+"pre_commit",
+"sphinx-autoapi",
+"sphinx_rtd_theme",
+"tox>=4.31.0"
+"myst_parser",
+"nbsphinx",
 ]
 
 [project.urls]

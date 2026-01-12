@@ -21,10 +21,11 @@ Motivation
 :term:`Flaky tests` intermittently pass and fail without changes to test or project source code, often without an obvious cause.
 When flaky tests proliferate, developers may loose faith in their test suites, potentially exposing end-users to the consequences of software failures.
 
-The Extension
--------------
+Pytest Extension
+----------------
 
-Flakefighters is a pytest extension that provides a "Swiss army knife" of techniques to detect flaky tests.
+Flakefighters is a pytest extension developed as part of the `TestFLARE <https://test-flare.github.io/>`__ project.
+The extension provides a "Swiss army knife" of techniques (called flakefighters) to detect flaky tests.
 The extension incorporates several cutting edge flaky test detection techniques from research to automatically classify test failures as either genuine: indicating either a fault in the code or a mis-specified test case, or flaky: indicating a test with a nondeterministic outcome.
 Flaky tests are then reported separately in the test report, and can be optionally suppressed so they don't block CI/CD pipelines.
 
@@ -40,6 +41,8 @@ Flaky tests are then reported separately in the test report, and can be optional
 
    installation
    configuration
+   custom_flakefighters
+   ci_cd
 
 
 .. toctree::

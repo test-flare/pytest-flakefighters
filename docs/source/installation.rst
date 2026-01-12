@@ -5,14 +5,14 @@ Installation
 -----------------
 * We currently support Python versions 3.10, 3.11, 3.12, and 3.13.
 
-* The Flakefighters plugin can be installed through the `Python Package Index (PyPI)`_ (recommended), or directly from source (recommended for contributors).
+* The Flakefighters plugin can be installed through the `Python Package Index (PyPI)`_ (recommended for normal use), or directly from source (recommended for contributors).
 
 .. _Python Package Index (PyPI): https://pypi.org/project/pytest-flakefighters
 
 Method 1: Installing via pip
 ..............................
 
-To install the Causal Testing Framework using :code:`pip` for the latest stable version::
+To install the extension using :code:`pip` for the latest stable version::
 
     pip install pytest-flakefighters
 

@@ -23,11 +23,12 @@ dependencies = [
 "unidiff>=0.7.5",
 "sqlalchemy>=2.0.43",
 "dotenv>=0.9.9",
-"pandas",
+"pandas>=2.3",
 "scipy<=1.15",
 "pyyaml>=6",
 "scikit-learn>=1.7",
 "nltk>=3.9",
+"psycopg2>2.9",
 ]
 dynamic = ["version"]
 

@@ -23,6 +23,16 @@ If you also want to install the framework with (optional) development packages/t
     pip install pytest-flakefighters[dev]
 
 
+.. note::
+  If you plan to use the extension using a PostgreSQL database (see :ref:`remote-databases`), then you will need to install PostgreSQL on your system, have :code:`pg_config` on your path, and then install using the :code:`pg` option.
+
+  ..  code-block:: python
+
+    pip install pytest-flakefighters[pg]
+
+  If you wish to use `other dialects <https://docs.sqlalchemy.org/en/20/dialects/>`_, you may need to install additional packages to support this.
+
+
 Method 2: Installing via Source (For Developers/Contributors)
 ...............................................................
 

@@ -6,6 +6,7 @@ The :code:`flakefighers` extension is therefore developed to integrate seamlessl
 If you already have a workflow that uses :code:`pytest`, all you need to do is include :code:`pytest-flakefighers` as a dependency.
 The extension will then automatically be run as part of :code:`pytest`.
 
+.. _remote-databases:
 
 Remote Databases
 ----------------

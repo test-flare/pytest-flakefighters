@@ -28,7 +28,6 @@ dependencies = [
 "pyyaml>=6",
 "scikit-learn>=1.7",
 "nltk>=3.9",
-"psycopg2>2.9",
 ]
 dynamic = ["version"]
 
@@ -43,6 +42,9 @@ dev = [
 "tox>=4.31.0",
 "myst_parser",
 "nbsphinx",
+]
+pg = [
+"psycopg2>2.9",
 ]
 
 [project.urls]

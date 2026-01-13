@@ -50,7 +50,24 @@ def test_suppress_flaky_failures(pytester, flaky_reruns_repo):
     assert result.ret == ExitCode.OK, f"Expected exit code {ExitCode.OK} but was {result.ret}."
 
 
-def test_postprocessing(pytester, flaky_reruns_repo):
+def test_invalid_deflaker(pytester, flaky_reruns_repo):
+    """Test that an incorrectly specified configuration raises an error"""
+
+    with open(os.path.join(flaky_reruns_repo.working_dir, "pyproject.toml"), "w") as f:
+        f.write("[tool.pytest.ini_options.pytest_flakefighters.flakefighters.DeFlaker]\nrun_live=false")
+
+    result = pytester.runpytest(
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+        "-s",
+        "--suppress-flaky-failures-exit-code",
+    )
+    assert result.ret == ExitCode.INTERNAL_ERROR, "No error raised"
+    result.stderr.fnmatch_lines(
+        ["INTERNALERROR> ValueError: Could not load flakefighter DeFlaker:run_live. Did you register its entry point?"]
+    )
+
+
+def test_deflaker_postprocessing(pytester, flaky_reruns_repo):
     """Test that DeFlaker still marks flaky tests when run in postprocessing mode"""
 
     with open(os.path.join(flaky_reruns_repo.working_dir, "pyproject.toml"), "w") as f:

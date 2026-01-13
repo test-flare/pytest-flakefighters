@@ -132,12 +132,13 @@ def pytest_configure(config: pytest.Config):
 
     flakefighters = []
     if flakefighter_configs is not None:
-        if isinstance(flakefighter_configs, str):
-            flakefighter_configs = yaml.safe_load(flakefighter_configs)
-        elif hasattr(flakefighter_configs, "value"):
-            flakefighter_configs = yaml.safe_load(flakefighter_configs.value)
-        else:
-            raise TypeError(f"Unexpected type for config: {type(flakefighter_configs)}")
+        # Can't cover all of these in a single coverage measurement since it's a python version thing
+        if isinstance(flakefighter_configs, str):  # pragma: no cover
+            flakefighter_configs = yaml.safe_load(flakefighter_configs)  # pragma: no cover
+        elif hasattr(flakefighter_configs, "value"):  # pragma: no cover
+            flakefighter_configs = yaml.safe_load(flakefighter_configs.value)  # pragma: no cover
+        else:  # pragma: no cover
+            raise TypeError(f"Unexpected type for config: {type(flakefighter_configs)}")  # pragma: no cover
         for module, classes in flakefighter_configs["flakefighters"].items():
             for class_name, params in classes.items():
                 if class_name in algorithms:

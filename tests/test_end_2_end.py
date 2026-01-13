@@ -54,7 +54,7 @@ def test_postprocessing(pytester, flaky_reruns_repo):
     """Test that DeFlaker still marks flaky tests when run in postprocessing mode"""
 
     with open(os.path.join(flaky_reruns_repo.working_dir, "pyproject.toml"), "w") as f:
-        f.write("[tool.pytest.ini_options.pytest_flakefighters.DeFlaker]\nrun_live=false")
+        f.write("[tool.pytest.ini_options.pytest_flakefighters.flakefighters.deflaker.DeFlaker]\nrun_live=false")
 
     result = pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),

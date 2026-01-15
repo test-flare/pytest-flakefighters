@@ -2,6 +2,7 @@
 This module implements the DeFlaker FlakeFighter.
 """
 
+import ast
 import os
 
 import git
@@ -63,6 +64,18 @@ class DeFlaker(FlakeFighter):
                         range(hunk.target_start, hunk.target_start + hunk.target_length)
                     )
 
+        # Need to know method declaration lines so we can ignore new/changed test methods
+        self.method_declarations = {}
+        for file, lines in self.lines_changed.items():
+            with open(file) as f:
+                tree = ast.parse(f.read())
+
+            self.method_declarations[file] = [
+                node.lineno
+                for node in ast.walk(tree)
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.lineno in lines
+            ]
+
     @classmethod
     def from_config(cls, config: dict):
         """
@@ -82,14 +95,14 @@ class DeFlaker(FlakeFighter):
         """
         return {"root": self.repo_root, "source_commit": self.source_commit, "target_commit": self.target_commit}
 
-    def line_modified_by_target_commit(self, file_path: str, line_number: int) -> bool:
+    def line_modified_by_target_commit(self, file_path: str, line_no: int) -> bool:
         """
         Returns true if the given line in the file has been modified by the present commit.
 
         :param file_path: The file to check.
-        :param line_number: The line number to check.
+        :param line_no: The line number to check.
         """
-        return line_number in self.lines_changed.get(file_path, [])
+        return line_no in self.lines_changed.get(file_path, [])
 
     def _flaky_execution(self, execution):
         """
@@ -97,10 +110,11 @@ class DeFlaker(FlakeFighter):
         :return: Boolean True of the test is classed as flaky and False otherwise.
         """
         return execution.outcome != "passed" and not any(
-            self.line_modified_by_target_commit(file_path, line_number)
+            self.line_modified_by_target_commit(file_path, line_no)
             for file_path in execution.coverage
-            for line_number in execution.coverage[file_path]
+            for line_no in execution.coverage[file_path]
             if file_path in self.lines_changed
+            and (line_no == execution.test.line_no or line_no not in self.method_declarations.get(file_path, []))
         )
 
     def flaky_test_live(self, execution: TestExecution):

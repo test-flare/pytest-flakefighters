@@ -194,9 +194,7 @@ def test_flaky_tests_post_false(deflaker_repo):
     )
     deflaker.flaky_tests_post(run)
     expected = FlakefighterResult(name="DeFlaker", flaky=False)
-    for test in run.tests:
-        print(test.flakefighter_results)
-    assert all(test.flakefighter_results == [expected] for test in run.tests)
+    assert all(execution.flakefighter_results == [expected] for test in run.tests for execution in test.executions)
 
 
 def test_flaky_test_live_true(flaky_reruns_repo):
@@ -238,4 +236,4 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
     expected = FlakefighterResult(name="DeFlaker", flaky=True)
     for test in run.tests:
         print(test.flakefighter_results)
-    assert all(test.flakefighter_results == [expected] for test in run.tests)
+    assert all(execution.flakefighter_results == [expected] for test in run.tests for execution in test.executions)

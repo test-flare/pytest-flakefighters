@@ -87,17 +87,19 @@ class TracebackMatching(FlakeFighter):
             if execution.exception
         ]
 
-    def flaky_test_live(self, execution: TestExecution):
+    def flaky_test_live(self, execution: TestExecution, previous_runs=None):
         """
         Classify executions as flaky if they have the same failure logs as a flaky execution.
         :param execution: Test execution to consider.
         """
+        if previous_runs is None:
+            previous_runs = self.previous_runs
         execution.flakefighter_results.append(
             FlakefighterResult(
                 name=self.__class__.__name__,
                 flaky=self._flaky_execution(
                     execution,
-                    self.previous_flaky_executions(),
+                    self.previous_flaky_executions(previous_runs),
                 ),
             )
         )
@@ -109,14 +111,15 @@ class TracebackMatching(FlakeFighter):
         """
         for test in run.tests:
             for execution in test.executions:
-                execution.flakefighter_results.append(
-                    FlakefighterResult(
-                        name=self.__class__.__name__,
-                        flaky=self._flaky_execution(
-                            execution, self.previous_flaky_executions(self.previous_runs + [run])
-                        ),
-                    )
-                )
+                self.flaky_test_live(execution, self.previous_runs + [run])
+                # execution.flakefighter_results.append(
+                #     FlakefighterResult(
+                #         name=self.__class__.__name__,
+                #         flaky=self._flaky_execution(
+                #             execution, self.previous_flaky_executions(self.previous_runs + [run])
+                #         ),
+                #     )
+                # )
 
 
 class CosineSimilarity(TracebackMatching):

@@ -177,8 +177,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     for ff in filter(lambda ff: ff.run_live, self.flakefighters):
                         ff.flaky_test_live(test_execution)
                     report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
-                    if report.flaky:
-                        report.sections.append(("Custom Extension Info", "Data related to this failure"))
                     if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
                 item.ihook.pytest_runtest_logreport(report=report)

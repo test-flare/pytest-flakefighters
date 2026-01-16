@@ -11,6 +11,10 @@ The CSS below will only work if 'logo_only':True in conf.py, but will require ad
     width:auto;
 }
 
+.wy-side-nav-search > a:hover {
+    background: transparent !important;
+}
+
 .wy-nav-content {
     background-color: white;
 }

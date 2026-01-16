@@ -81,8 +81,8 @@ def test_from_config_params(flaky_reruns_repo, matcher):
     """
     db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
 
-    from_config = matcher.from_config({"run_live": True, "root": flaky_reruns_repo.working_dir, "database": db})
-    init = matcher(run_live=True, previous_runs=db.previous_runs, root=flaky_reruns_repo.working_dir)
+    from_config = matcher.from_config({"run_live": False, "root": flaky_reruns_repo.working_dir, "database": db})
+    init = matcher(run_live=False, previous_runs=db.previous_runs, root=flaky_reruns_repo.working_dir)
     assert from_config.run_live == init.run_live
     assert from_config.root == init.root
     assert from_config.previous_runs == init.previous_runs

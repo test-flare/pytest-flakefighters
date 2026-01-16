@@ -49,7 +49,7 @@ class TracebackMatching(FlakeFighter):
         Convert the key parameters into a dictionary so that the object can be replicated.
         :return A dictionary of the parameters used to create the object.
         """
-        return {"root": self.root}
+        return {"run_live": self.run_live, "root": self.root}
 
     def _flaky_execution(self, execution, previous_executions) -> bool:
         """
@@ -112,14 +112,6 @@ class TracebackMatching(FlakeFighter):
         for test in run.tests:
             for execution in test.executions:
                 self.flaky_test_live(execution, self.previous_runs + [run])
-                # execution.flakefighter_results.append(
-                #     FlakefighterResult(
-                #         name=self.__class__.__name__,
-                #         flaky=self._flaky_execution(
-                #             execution, self.previous_flaky_executions(self.previous_runs + [run])
-                #         ),
-                #     )
-                # )
 
 
 class CosineSimilarity(TracebackMatching):

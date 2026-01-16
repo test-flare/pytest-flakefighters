@@ -232,6 +232,20 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
         CheckConstraint("(test_execution_id IS NOT NULL) + (test_id IS NOT NULL) = 1", name="check_test_id_not_null"),
     )
 
+    @property
+    def classification(self):
+        """
+        Return the classification as a string.
+        "flaky" if the test was classified as flaky, else "genuine".
+        """
+        return "flaky" if self.flaky else "genuine"
+
+    def to_dict(self):
+        """
+        Return the name and classification as a dictionary.
+        """
+        return {"name": self.name, "classification": self.classification}
+
 
 class Database:
     """

@@ -184,8 +184,13 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         ff.flaky_test_live(test_execution)
                     self.test_reports[item.nodeid] = report
                     report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
+                    # Limited pytest-json support
+                    report.stage_metadata = {
+                        "flakefighter_results": [[r.to_dict() for r in x.flakefighter_results] for x in test.executions]
+                    }
                     if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
+
                 item.ihook.pytest_runtest_logreport(report=report)
             else:
                 break  # Skip further reruns
@@ -206,6 +211,32 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None
 
+    @pytest.hookimpl(hookwrapper=True)
+    def pytest_runtestloop(self, session: pytest.Session):  # pylint: disable=unused-argument
+        """
+        Run postprocessing flakefighters.
+        :param session: The pytest session object.
+        """
+        yield
+        for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
+            ff.flaky_tests_post(self.run)
+        for test in self.run.tests:
+            self.test_reports[test.name].flakefighter_results = test.flakefighter_results
+
+    @pytest.hookimpl(optionalhook=True)
+    def pytest_json_modifyreport(self, json_report: dict):
+        """
+        Add flakefighter results to the pytest-json-report report.
+
+        :param json_report: The report dict.
+        """
+        for t in json_report.get("tests", []):
+            t["call"]["metadata"] = self.test_reports[t["nodeid"]].stage_metadata
+
+            t["metadata"] = t.get("metadata", {}) | {
+                "flakefighter_results": [r.to_dict() for r in self.test_reports[t["nodeid"]].flakefighter_results]
+            }
+
     def build_outcome_string(self, test: Test) -> str:
         """
         Construct a string to represent previous flakefighter outcomes for a given test and its associated executions.
@@ -216,9 +247,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         if test.flakefighter_results:
             if self.display_verdicts:
                 result_string.append(
-                    "Overall\n"
-                    + "\n".join(f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in test.flakefighter_results)
-                    + "\n"
+                    "Overall\n" + "\n".join(f"  {f.name}: {f.classification}" for f in test.flakefighter_results) + "\n"
                 )
         for i, execution in enumerate(test.executions):
             if execution.flakefighter_results:
@@ -242,8 +271,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The pytest session object.
         :param exitstatus: The status which pytest will return to the system.
         """
-        for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
-            ff.flaky_tests_post(self.run)
 
         if self.display_outcomes:
             for run in [self.run] + self.database.load_runs(self.display_outcomes):

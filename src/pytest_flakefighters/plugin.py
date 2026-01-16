@@ -49,6 +49,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         flakefighters: list[FlakeFighter],
         save_run: bool = True,
         rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
+        display_outcomes: int = 0,
+        display_verdicts: bool = False,
     ):
         self.root = root
         self.database = database
@@ -57,12 +59,15 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.save_run = save_run
         self.rerun_strategy = rerun_strategy
         self.test_reports = {}
+        self.display_verdicts = display_verdicts
+        self.display_outcomes = display_outcomes
 
         self.run = Run(  # pylint: disable=E1123
             root=root,
             active_flakefighters=[
                 ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
             ],
+            start_time=datetime.now(),
         )
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
@@ -201,6 +206,33 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None
 
+    def build_outcome_string(self, test: Test) -> str:
+        """
+        Construct a string to represent previous flakefighter outcomes for a given test and its associated executions.
+
+        :param test: The test case.
+        """
+        result_string = []
+        if test.flakefighter_results:
+            if self.display_verdicts:
+                result_string.append(
+                    "Overall\n"
+                    + "\n".join(f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in test.flakefighter_results)
+                    + "\n"
+                )
+        for i, execution in enumerate(test.executions):
+            if execution.flakefighter_results:
+                if self.display_verdicts:
+                    result_string.append(
+                        f"Execution {i}: {execution.outcome}\n"
+                        + "\n".join(
+                            f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in execution.flakefighter_results
+                        )
+                    )
+                else:
+                    result_string.append(f"Execution {i}: {execution.outcome}")
+        return "\n".join(result_string)
+
     def pytest_sessionfinish(
         self,
         session: pytest.Session,
@@ -213,26 +245,16 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
             ff.flaky_tests_post(self.run)
 
-        for test in self.run.tests:
-            if test.name not in self.test_reports:
-                continue
-            self.test_reports[test.name].flaky = test.flaky
-            result_string = []
-            if test.flakefighter_results:
-                result_string.append(
-                    "Overall\n"
-                    + "\n".join(f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in test.flakefighter_results)
-                    + "\n"
-                )
-            for i, execution in enumerate(test.executions):
-                if execution.flakefighter_results:
-                    result_string.append(
-                        f"Execution {i}\n"
-                        + "\n".join(
-                            f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in execution.flakefighter_results
+        if self.display_outcomes:
+            for run in [self.run] + self.database.load_runs(self.display_outcomes):
+                for test in run.tests:
+                    if test.name in self.test_reports:
+                        self.test_reports[test.name].sections.append(
+                            (
+                                f"Flakefighter Verdicts {run.start_time if run != self.run else '(Current)'}",
+                                self.build_outcome_string(test),
+                            )
                         )
-                    )
-            self.test_reports[test.name].sections.append(("Flakefighter Results", "\n".join(result_string)))
 
         genuine_failure_observed = any(
             not test.flaky for test in self.run.tests if any(e.outcome != "passed" for e in test.executions)

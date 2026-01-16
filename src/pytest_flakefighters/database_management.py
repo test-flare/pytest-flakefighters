@@ -77,6 +77,8 @@ class Test(Base):
     """
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
+    fspath: Mapped[str] = Column(String)
+    line_no: Mapped[int] = Column(Integer)
     name: Mapped[str] = Column(String)
     skipped: Mapped[bool] = Column(Boolean, default=False)
     executions = relationship(

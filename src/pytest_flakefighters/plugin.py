@@ -5,6 +5,7 @@ This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.31801
 from datetime import datetime
 from enum import Enum
 from typing import Union
+from xml.etree import ElementTree as ET
 
 import coverage
 import pytest
@@ -186,7 +187,15 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
                     # Limited pytest-json support
                     report.stage_metadata = {
-                        "flakefighter_results": [[r.to_dict() for r in x.flakefighter_results] for x in test.executions]
+                        "executions": [
+                            {
+                                "start_time": x.start_time,
+                                "end_time": x.end_time,
+                                "outcome": test_execution.outcome,
+                                "flakefighter_results": {r.name: r.classification for r in x.flakefighter_results},
+                            }
+                            for x in test.executions
+                        ],
                     }
                     if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
@@ -234,7 +243,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             t["call"]["metadata"] = self.test_reports[t["nodeid"]].stage_metadata
 
             t["metadata"] = t.get("metadata", {}) | {
-                "flakefighter_results": [r.to_dict() for r in self.test_reports[t["nodeid"]].flakefighter_results]
+                "flakefighter_results": {
+                    r.name: r.classification for r in self.test_reports[t["nodeid"]].flakefighter_results
+                }
             }
 
     def build_outcome_string(self, test: Test) -> str:
@@ -262,6 +273,37 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     result_string.append(f"Execution {i}: {execution.outcome}")
         return "\n".join(result_string)
 
+    def modify_xml(self, xml_path: str):
+        """
+        Modify the JUnitXML file to add the flakefighter results for each test.
+
+        :param xml_path: The path of the saved XML file.
+        """
+        tree = ET.parse(xml_path)
+        for testsuite in tree.getroot().findall("testsuite"):
+            for testcase in testsuite.findall("testcase"):
+                module, classname = testcase.get("classname").split(".")
+                nodeid = "::".join([f"{module}.py", classname, testcase.get("name")])
+                flakefighter_results = ET.SubElement(testcase, "flakefighterresults")
+                if nodeid in self.test_reports:
+                    for execution in self.test_reports[nodeid].stage_metadata["executions"]:
+                        execution_results = ET.Element(
+                            "execution",
+                            {
+                                "outcome": execution["outcome"],
+                                "starttime": execution["start_time"].isoformat(),
+                                "endtime": execution["end_time"].isoformat(),
+                            },
+                        )
+                        flakefighter_results.append(execution_results)
+                        for name, classification in execution["flakefighter_results"].items():
+                            ET.SubElement(execution_results, name).text = classification
+                    test_results = ET.SubElement(flakefighter_results, "test")
+                    for result in self.test_reports[nodeid].flakefighter_results:
+                        ET.SubElement(test_results, result.name).text = result.classification
+
+        tree.write(xml_path)
+
     def pytest_sessionfinish(
         self,
         session: pytest.Session,
@@ -271,6 +313,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The pytest session object.
         :param exitstatus: The status which pytest will return to the system.
         """
+
+        if hasattr(session.config, "option") and session.config.option.xmlpath:
+            self.modify_xml(session.config.option.xmlpath)
 
         if self.display_outcomes:
             for run in [self.run] + self.database.load_runs(self.display_outcomes):

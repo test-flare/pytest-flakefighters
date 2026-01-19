@@ -87,3 +87,12 @@ The test-level results will be saved in a :code:`<test>` element.
       </test>
     </flakefighterresults>
   </testcase>
+
+Writing to HTML
+---------------
+
+The extension is designed to work with :code:`pytest-html` to export results to HTML when you run :code:`pytest` with the :code:`--html` option.
+Test-level flakefighter results are shown just underneath the summary.
+Execution-level flakefighter results are shown with the details of each individual test.
+
+.. image:: _static/images/html_summary.png

@@ -189,14 +189,44 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     report.stage_metadata = {
                         "executions": [
                             {
-                                "start_time": x.start_time,
-                                "end_time": x.end_time,
+                                "start_time": x.start_time.isoformat(),
+                                "end_time": x.end_time.isoformat(),
                                 "outcome": test_execution.outcome,
                                 "flakefighter_results": {r.name: r.classification for r in x.flakefighter_results},
                             }
                             for x in test.executions
                         ],
                     }
+                    # html
+                    report.extras.append(
+                        {
+                            "content": f"""
+                            <h4>Flakefighter Results</h4>
+                            <div id="ff-{report.nodeid.replace("::", "_")}"></div>
+                            <table style="width:100%"><tbody><tr>"""
+                            + "".join(
+                                [
+                                    f"""
+                                        <td>
+                                        <p><strong>Start time:</strong> {execution.start_time}</p>
+                                        <p><strong>End time:</strong> {execution.end_time}</p>
+                                        <p><strong>Outcome:</strong> {execution.outcome}</p>
+                                        <p><strong>Flakefighter Results:</strong></p>
+                                        <ul>
+                                        {''.join(['<li><strong>'+result.name+':</strong> '+result.classification+'</li>'
+                                        for result in execution.flakefighter_results])}
+                                        </ul>
+                                        </td>
+                                        """
+                                    for execution in test.executions
+                                ]
+                            )
+                            + "</tr></tbody></table>",
+                            "extension": "html",
+                            "format_type": "html",
+                            "mime_type": "text/html",
+                        }
+                    )
                     if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
 
@@ -230,7 +260,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
             ff.flaky_tests_post(self.run)
         for test in self.run.tests:
-            self.test_reports[test.name].flakefighter_results = test.flakefighter_results
+            self.test_reports[test.name].flakefighter_results = [r.to_dict() for r in test.flakefighter_results]
 
     @pytest.hookimpl(optionalhook=True)
     def pytest_json_modifyreport(self, json_report: dict):
@@ -291,8 +321,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                             "execution",
                             {
                                 "outcome": execution["outcome"],
-                                "starttime": execution["start_time"].isoformat(),
-                                "endtime": execution["end_time"].isoformat(),
+                                "starttime": execution["start_time"],
+                                "endtime": execution["end_time"],
                             },
                         )
                         flakefighter_results.append(execution_results)
@@ -300,9 +330,45 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                             ET.SubElement(execution_results, name).text = classification
                     test_results = ET.SubElement(flakefighter_results, "test")
                     for result in self.test_reports[nodeid].flakefighter_results:
-                        ET.SubElement(test_results, result.name).text = result.classification
+                        ET.SubElement(test_results, result["name"]).text = result["classification"]
 
         tree.write(xml_path)
+
+    @pytest.hookimpl(optionalhook=True)
+    def pytest_html_results_summary(
+        self, prefix: list, summary: list, postfix: list
+    ):  # pylint: disable=unused-argument
+        """
+        Add the test-level flakefighter results.
+        :param prefix: The prefix content. UNUSED.
+        :param prefix: The summary content. UNUSED.
+        :param prefix: The postfix content.
+        """
+        postfix.extend(
+            [
+                "<h2>Test-level flakefighter results</h2>",
+                "<table>",
+                "<thead><tr><td>Test</td><td>Flakefighter results</td></tr></thead>",
+                "<tbody>",
+            ]
+            + [
+                f"<tr><td>{nodeid}</td><td>"
+                + "".join(
+                    [
+                        f"""<ul>
+                            {''.join(['<li><strong>'+result['name']+':</strong> '+result['classification']+'</li>'
+                                for result in report.flakefighter_results])}
+                            </ul>"""
+                    ]
+                )
+                + "</td></tr>"
+                for nodeid, report in self.test_reports.items()
+            ]
+            + [
+                "</tbody>",
+                "</table>",
+            ]
+        )
 
     def pytest_sessionfinish(
         self,
@@ -314,7 +380,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param exitstatus: The status which pytest will return to the system.
         """
 
-        if hasattr(session.config, "option") and session.config.option.xmlpath:
+        if session.config.option.xmlpath:
             self.modify_xml(session.config.option.xmlpath)
 
         if self.display_outcomes:

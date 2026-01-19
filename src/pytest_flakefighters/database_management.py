@@ -53,8 +53,8 @@ class Run(Base):
     Class to store attributes of a flakefighters run.
     :ivar start_time: The time the test run was begun.
     :ivar created_at: The time the entry was added to the database.
-                      This is not necessarily equivalent to start_time if the test suite took a long time to run or
-                      if the entry was migrated from a separate database.
+    This is not necessarily equivalent to start_time if the test suite took a long time to run or
+    if the entry was migrated from a separate database.
     :ivar root: The root directory of the project.
     :ivar tests: The test suite.
     :ivar active_flakefighters: The flakefighters that are active on the run.
@@ -96,8 +96,9 @@ class Test(Base):
     :ivar skipped: Boolean true if the test was skipped, else false.
     :ivar executions: List of execution attempts.
     :ivar flakefighter_results: List of test-level flakefighter results.
-          .. note::
-            Execution-level flakefighter results will be stored inside the individual TestExecution objects
+
+    .. note::
+      Execution-level flakefighter results will be stored inside the individual TestExecution objects
     """
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)

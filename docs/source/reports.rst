@@ -22,34 +22,31 @@ The target path to save JSON report can be changed using the :code:`--json-repor
 Each test :code:`call` will be assigned a :code:`metadata` field that records the execution-level flakefighter results for each (repeated) execution.
 Each test will be assigned a :code:`metadata` field to record the test-level results.
 
+In the example below, :code:`pytest` was called with the :code:`DeFlaker`, :code:`TracebackMatching`, and :code:`CoverageIndependence` flakefighters.
+On the first execution of :code:`TestFlaky::test_flaky_example`, :code:`DeFlaker` classified the test failure as flaky, but :code:`TracebackMatching` classified it as genuine.
+On the rerun, the outcome of :code:`DeFlaker` did not change, but :code:`TracebackMatching` classified it as flaky.
+Finally, :code:`CoverageIndependence` classified the overall test as flaky.
+
 ..  code-block:: ini
 
   {
-    "nodeid": "test_flaky_reruns.py::TestFlakyRuns::test_pass",
+    "nodeid": "test_flaky.py::TestFlaky::test_flaky_example",
     "lineno": 5,
-    "outcome": "passed",
-    "keywords": ["test_pass", "TestFlakyRuns", "test_flaky_reruns.py", "flakefighters-test", ""],
+    "outcome": "failed",
     "setup": {"duration": 0.000145464000524953, "outcome": "passed"},
     "call": {
       "duration": 0.00017212499733432196,
-      "outcome": "passed",
+      "outcome": "failed",
       "metadata": {
         "flakefighter_results": [
           [ # First execution
-           {"name": "DeFlaker", "classification": "genuine"},
+           {"name": "DeFlaker", "classification": "flaky"},
            {"name": "TracebackMatching", "classification": "genuine"},
-           {"name": "CosineSimilarity", "classification": "genuine"}
           ],
-          [ # Repeat 1
-           {"name": "DeFlaker", "classification": "genuine"},
-           {"name": "TracebackMatching", "classification": "genuine"},
-           {"name": "CosineSimilarity", "classification": "genuine"}
+          [ # Rerun
+           {"name": "DeFlaker", "classification": "flaky"},
+           {"name": "TracebackMatching", "classification": "flaky"},
           ],
-          [ # Repeat 2
-           {"name": "DeFlaker", "classification": "genuine"},
-           {"name": "TracebackMatching", "classification": "genuine"},
-           {"name": "CosineSimilarity", "classification": "genuine"}
-          ]
         ]
       }
     },
@@ -58,6 +55,6 @@ Each test will be assigned a :code:`metadata` field to record the test-level res
       "outcome": "passed"
     },
     "metadata": {
-      "flakefighter_results": [{"name": "CoverageIndependence","classification": "genuine"}]
+      "flakefighter_results": [{"name": "CoverageIndependence","classification": "flaky"}]
     }
   }

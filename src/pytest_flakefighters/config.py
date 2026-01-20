@@ -75,6 +75,7 @@ options = {
     },
     ("--display-outcomes", "-O"): {
         "action": "store",
+        "type": int,
         "nargs": "?",  # Allows 0 or 1 arguments
         "const": 0,  # Value used if -O is present but no value is provided
         "default": 0,  # Value used if -O is not present at all

@@ -241,12 +241,6 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
         """
         return "flaky" if self.flaky else "genuine"
 
-    def to_dict(self):
-        """
-        Return the name and classification as a dictionary.
-        """
-        return {"name": self.name, "classification": self.classification}
-
 
 class Database:
     """

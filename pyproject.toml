@@ -101,5 +101,5 @@ usedevelop = true
 description = "Run pytest under {base_python}"
 allowlist_externals=["pytest"]
 extras = ["dev","test"]
-deps = ["pytest","pytest-cov"]
+deps = ["pytest","pytest-cov","pytest-html","pytest-json-report"]
 commands = [["pytest","-p","no:flakefighters","--cov=src/pytest_flakefighters","--cov-report=html","{posargs:tests}"]]

@@ -66,15 +66,13 @@ class TracebackMatching(FlakeFighter):
         ]
         return any(e == current_traceback for e in previous_executions)
 
-    def previous_flaky_executions(self, runs: list[Run] = None) -> list:
+    def previous_flaky_executions(self, runs: list[Run]) -> list:
         """
         Extract the relevant information from previous flaky executions and collapse into a single list.
         :param runs: The runs to consider. Defaults to self.previous_runs.
         :return: List containing the relative path, line number, column number, and code statement of all previous
         test executions.
         """
-        if runs is None:
-            runs = self.previous_runs
         return [
             [
                 (os.path.relpath(elem.path, run.root), elem.lineno, elem.colno, elem.statement)
@@ -87,10 +85,11 @@ class TracebackMatching(FlakeFighter):
             if execution.exception
         ]
 
-    def flaky_test_live(self, execution: TestExecution, previous_runs=None):
+    def flaky_test_live(self, execution: TestExecution, previous_runs: list[Run] = None):
         """
         Classify executions as flaky if they have the same failure logs as a flaky execution.
         :param execution: Test execution to consider.
+        :param previous_runs: The previous runs to which the execution will be compared.
         """
         if previous_runs is None:
             previous_runs = self.previous_runs

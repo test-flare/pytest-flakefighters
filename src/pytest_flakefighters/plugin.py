@@ -261,7 +261,10 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
             ff.flaky_tests_post(self.run)
         for test in self.run.tests:
-            self.test_reports[test.name].flakefighter_results = [r.to_dict() for r in test.flakefighter_results]
+            if test.name in self.test_reports:
+                self.test_reports[test.name].flakefighter_results = {
+                    r.name: r.classification for r in test.flakefighter_results
+                }
 
     @pytest.hookimpl(optionalhook=True)
     def pytest_json_modifyreport(self, json_report: dict):
@@ -274,9 +277,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             t["call"]["metadata"] = self.test_reports[t["nodeid"]].stage_metadata
 
             t["metadata"] = t.get("metadata", {}) | {
-                "flakefighter_results": {
-                    r.name: r.classification for r in self.test_reports[t["nodeid"]].flakefighter_results
-                }
+                "flakefighter_results": self.test_reports[t["nodeid"]].flakefighter_results
             }
 
     def build_outcome_string(self, test: Test) -> str:
@@ -313,8 +314,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         tree = ET.parse(xml_path)
         for testsuite in tree.getroot().findall("testsuite"):
             for testcase in testsuite.findall("testcase"):
-                module, classname = testcase.get("classname").split(".")
-                nodeid = "::".join([f"{module}.py", classname, testcase.get("name")])
+                splitname = testcase.get("classname").split(".")
+                splitname[0] = f"{splitname[0]}.py"
+                nodeid = "::".join(splitname + [testcase.get("name")])
                 flakefighter_results = ET.SubElement(testcase, "flakefighterresults")
                 if nodeid in self.test_reports:
                     for execution in self.test_reports[nodeid].stage_metadata["executions"]:
@@ -330,8 +332,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         for name, classification in execution["flakefighter_results"].items():
                             ET.SubElement(execution_results, name).text = classification
                     test_results = ET.SubElement(flakefighter_results, "test")
-                    for result in self.test_reports[nodeid].flakefighter_results:
-                        ET.SubElement(test_results, result["name"]).text = result["classification"]
+                    for name, classification in self.test_reports[nodeid].flakefighter_results.items():
+                        ET.SubElement(test_results, name).text = classification
 
         tree.write(xml_path)
 
@@ -342,8 +344,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         """
         Add the test-level flakefighter results.
         :param prefix: The prefix content. UNUSED.
-        :param prefix: The summary content. UNUSED.
-        :param prefix: The postfix content.
+        :param summary: The summary content. UNUSED.
+        :param postfix: The postfix content.
         """
         postfix.extend(
             [
@@ -384,8 +386,11 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         if session.config.option.xmlpath:
             self.modify_xml(session.config.option.xmlpath)
 
+        runs = [self.run]
         if self.display_outcomes:
-            for run in [self.run] + self.database.load_runs(self.display_outcomes):
+            runs += self.database.load_runs(self.display_outcomes)
+        if self.display_verdicts or self.display_outcomes:
+            for run in runs:
                 for test in run.tests:
                     if test.name in self.test_reports:
                         self.test_reports[test.name].sections.append(

@@ -198,15 +198,16 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         ],
                     }
                     # html
-                    report.extras.append(
-                        {
-                            "content": f"""
-                            <h4>Flakefighter Results</h4>
-                            <div id="ff-{report.nodeid.replace("::", "_")}"></div>
-                            <table style="width:100%"><tbody><tr>"""
-                            + "".join(
-                                [
-                                    f"""
+                    if hasattr(report, "extras"):
+                        report.extras.append(
+                            {
+                                "content": f"""
+                                <h4>Flakefighter Results</h4>
+                                <div id="ff-{report.nodeid.replace("::", "_")}"></div>
+                                <table style="width:100%"><tbody><tr>"""
+                                + "".join(
+                                    [
+                                        f"""
                                         <td>
                                         <p><strong>Start time:</strong> {execution.start_time}</p>
                                         <p><strong>End time:</strong> {execution.end_time}</p>
@@ -218,15 +219,15 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                         </ul>
                                         </td>
                                         """
-                                    for execution in test.executions
-                                ]
-                            )
-                            + "</tr></tbody></table>",
-                            "extension": "html",
-                            "format_type": "html",
-                            "mime_type": "text/html",
-                        }
-                    )
+                                        for execution in test.executions
+                                    ]
+                                )
+                                + "</tr></tbody></table>",
+                                "extension": "html",
+                                "format_type": "html",
+                                "mime_type": "text/html",
+                            }
+                        )
                     if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
 

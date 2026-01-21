@@ -42,7 +42,8 @@ dev = [
 "tox>=4.31.0",
 "myst_parser",
 "nbsphinx",
-"pytest-html"
+"pytest-html",
+"pytest-json-report>=1.5",
 ]
 pg = [
 "psycopg2>2.9",

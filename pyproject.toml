@@ -42,6 +42,7 @@ dev = [
 "tox>=4.31.0",
 "myst_parser",
 "nbsphinx",
+"pytest-html"
 ]
 pg = [
 "psycopg2>2.9",
@@ -63,18 +64,18 @@ CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:Cosine
 [tool.pylint]
 ignore-paths="tests/resources"
 disable=[
-  "raw-checker-failed",
-  "bad-inline-option",
-  "locally-disabled",
-  "file-ignored",
-  "suppressed-message",
-  "useless-suppression",
-  "deprecated-pragma",
-  "use-symbolic-message-instead",
-  "logging-fstring-interpolation",
-  "import-error",
-  "unspecified-encoding",
-  "unexpected-keyword-arg"
+"raw-checker-failed",
+"bad-inline-option",
+"locally-disabled",
+"file-ignored",
+"suppressed-message",
+"useless-suppression",
+"deprecated-pragma",
+"use-symbolic-message-instead",
+"logging-fstring-interpolation",
+"import-error",
+"unspecified-encoding",
+"unexpected-keyword-arg"
 ]
 max-line-length=120
 variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"

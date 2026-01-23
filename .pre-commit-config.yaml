@@ -19,3 +19,7 @@ repos:
       types: [python]
       args: ['--max-line-length=120', '--max-positional-arguments=12']
       files: ^src/|^tests/
+- repo: https://github.com/ComPWA/taplo-pre-commit
+  rev: v0.9.3
+  hooks:
+    - id: taplo-format

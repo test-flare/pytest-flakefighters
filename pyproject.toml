@@ -23,13 +23,20 @@ dependencies = [
 "unidiff>=0.7.5",
 "sqlalchemy>=2.0.43",
 "dotenv>=0.9.9",
-"pandas",
+"pandas>=2.3",
 "scipy<=1.15",
 "pyyaml>=6",
 "scikit-learn>=1.7",
 "nltk>=3.9",
 ]
 dynamic = ["version"]
+classifiers = [
+"Programming Language :: Python :: 3.10",
+"Programming Language :: Python :: 3.11",
+"Programming Language :: Python :: 3.12",
+"Programming Language :: Python :: 3.13",
+"Programming Language :: Python :: 3.14",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -42,10 +49,18 @@ dev = [
 "tox>=4.31.0",
 "myst_parser",
 "nbsphinx",
+"pytest-html",
+"pytest-json-report>=1.5",
+]
+pg = [
+"psycopg2>2.9",
 ]
 
 [project.urls]
+Homepage = "https://test-flare.github.io/"
+Documentation = "https://pytest-flakefighters.readthedocs.io"
 Repository = "https://github.com/test-flare/pytest-flakefighters"
+Issues = "https://github.com/test-flare/pytest-flakefighters/issues"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"
@@ -56,22 +71,21 @@ DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
 CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
 
-
 [tool.pylint]
 ignore-paths="tests/resources"
 disable=[
-  "raw-checker-failed",
-  "bad-inline-option",
-  "locally-disabled",
-  "file-ignored",
-  "suppressed-message",
-  "useless-suppression",
-  "deprecated-pragma",
-  "use-symbolic-message-instead",
-  "logging-fstring-interpolation",
-  "import-error",
-  "unspecified-encoding",
-  "unexpected-keyword-arg"
+"raw-checker-failed",
+"bad-inline-option",
+"locally-disabled",
+"file-ignored",
+"suppressed-message",
+"useless-suppression",
+"deprecated-pragma",
+"use-symbolic-message-instead",
+"logging-fstring-interpolation",
+"import-error",
+"unspecified-encoding",
+"unexpected-keyword-arg"
 ]
 max-line-length=120
 variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
@@ -98,5 +112,5 @@ usedevelop = true
 description = "Run pytest under {base_python}"
 allowlist_externals=["pytest"]
 extras = ["dev","test"]
-deps = ["pytest","pytest-cov"]
+deps = ["pytest","pytest-cov","pytest-html","pytest-json-report"]
 commands = [["pytest","-p","no:flakefighters","--cov=src/pytest_flakefighters","--cov-report=html","{posargs:tests}"]]

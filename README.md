@@ -3,7 +3,7 @@
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![PyPI version](https://img.shields.io/pypi/v/pytest-flakefighters.svg)](https://pypi.org/project/pytest-flakefighters)
-[![Python versions](https://img.shields.io/pypi/pyversions/pytest-flakefighters.svg)](https://pypi.org/project/pytest-flakefighters)
+[![Python versions](https://img.shields.io/pypi/pyversions/pytest-flakefighters.svg)](https://img.shields.io/badge/python-3.10_--_3.13-blue)
 ![Test status](https://github.com/test-flare/pytest-flakefighters/actions/workflows/ci-tests.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/test-flare/pytest-flakefighters/branch/main/graph/badge.svg?token=04ijFVrb4a)](https://codecov.io/gh/test-flare/pytest-flakefighters)
 [![Documentation Status](https://readthedocs.org/projects/causal-testing-framework/badge/?version=latest)](https://causal-testing-framework.readthedocs.io/en/latest/?badge=latest)

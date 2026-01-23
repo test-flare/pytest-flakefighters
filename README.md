@@ -1,4 +1,5 @@
 # Pytest FlakeFighters
+### Pytest plugin implementing flaky test failure detection and classification.
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![PyPI version](https://img.shields.io/pypi/v/pytest-flakefighters.svg)](https://pypi.org/project/pytest-flakefighters)
@@ -9,12 +10,6 @@
 ![GitHub License](https://img.shields.io/github/license/test-flare/pytest-flakefighters)
 
 
-Pytest plugin implementing flaky test failure detection and
-classification.
-
-------------------------------------------------------------------------
-
-This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [\@hackebrot](https://github.com/hackebrot)\'s [cookiecutter-pytest-plugin](https://github.com/pytest-dev/cookiecutter-pytest-plugin) template.
 
 ## Features
 
@@ -67,3 +62,7 @@ Both extend the base class `FlakeFighter` and implement the `flaky_failure` meth
 ## Issues
 
 If you encounter any problems, please [file an issue](https://github.com/test-flare/pytest-flakefighters/issues) along with a detailed description.
+
+------------------------------------------------------------------------
+
+This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [\@hackebrot](https://github.com/hackebrot)\'s [cookiecutter-pytest-plugin](https://github.com/pytest-dev/cookiecutter-pytest-plugin) template.

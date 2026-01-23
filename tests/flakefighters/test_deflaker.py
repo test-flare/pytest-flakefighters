@@ -67,6 +67,42 @@ def test_dirty_repo(flaky_reruns_repo):
     assert deflaker.target_commit is None, f"Expected source commit None but was {deflaker.target_commit}"
 
 
+def test_new_test_preserves_original_results(flaky_reruns_repo):
+    """
+    Test the setup of source and target commits for a dirty repo (uncommitted changes).
+    """
+
+    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
+    test_execution = TestExecution(
+        outcome="failed",
+        coverage={
+            os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): [1, 4, 6, 9, 10, 11, 12],
+        },
+    )
+    Test(  # pylint: disable=E1123
+        name="test_create_or_delete",
+        fspath=os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+        line_no=9,
+        executions=[test_execution],
+    )
+    deflaker.flaky_test_live(test_execution)
+    expected = FlakefighterResult(name="DeFlaker", flaky=True)
+    assert test_execution.flakefighter_results == [
+        expected
+    ], "Expected original run of test_create_or_delete to be flaky"
+
+    # Add a new test and check that test_create_or_delete is still flaky
+    with open(os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"), "w") as f:
+        print("def test_fail(self):\n    assert False", file=f)
+
+    test_execution.flakefighter_results = []
+    test_execution.coverage = {
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): [1, 4, 6, 9, 10, 11, 12, 14],
+    }
+    deflaker.flaky_test_live(test_execution)
+    assert test_execution.flakefighter_results == [expected], "Expected second run of test_create_or_delete to be flaky"
+
+
 def test_named_source_target(flaky_reruns_repo):
     """
     Test the setup of source and target commits when both are named.
@@ -125,6 +161,12 @@ def test_flaky_test_live_false(deflaker_repo):
         coverage={
             os.path.join(deflaker_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
+    )
+    Test(  # pylint: disable=E1123
+        name="test_app",
+        fspath=os.path.join(deflaker_repo.working_dir, "deflaker_example.py"),
+        line_no=15,
+        executions=[test_execution],
     )
     deflaker.flaky_test_live(test_execution)
     expected = FlakefighterResult(name="DeFlaker", flaky=False)

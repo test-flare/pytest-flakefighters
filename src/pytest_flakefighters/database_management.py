@@ -77,6 +77,8 @@ class Test(Base):
     """
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
+    fspath: Mapped[str] = Column(String)
+    line_no: Mapped[int] = Column(Integer)
     name: Mapped[str] = Column(String)
     skipped: Mapped[bool] = Column(Boolean, default=False)
     executions = relationship(
@@ -177,7 +179,7 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
     flaky: Mapped[bool] = Column(Boolean)
 
     __table_args__ = (
-        CheckConstraint("(test_execution_id IS NOT NULL) + (test_id IS NOT NULL) = 1", name="check_test_id_not_null"),
+        CheckConstraint("NOT (test_execution_id IS NULL AND test_id IS NULL)", name="check_test_id_not_null"),
     )
 
 

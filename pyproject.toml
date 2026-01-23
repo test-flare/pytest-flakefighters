@@ -30,13 +30,6 @@ dependencies = [
 "nltk>=3.9",
 ]
 dynamic = ["version"]
-classifiers = [
-"Programming Language :: Python :: 3.10",
-"Programming Language :: Python :: 3.11",
-"Programming Language :: Python :: 3.12",
-"Programming Language :: Python :: 3.13",
-"Programming Language :: Python :: 3.14",
-]
 
 [project.optional-dependencies]
 dev = [
@@ -57,10 +50,7 @@ pg = [
 ]
 
 [project.urls]
-Homepage = "https://test-flare.github.io/"
-Documentation = "https://pytest-flakefighters.readthedocs.io"
 Repository = "https://github.com/test-flare/pytest-flakefighters"
-Issues = "https://github.com/test-flare/pytest-flakefighters/issues"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"
@@ -70,6 +60,7 @@ CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence
 DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
 CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
+
 
 [tool.pylint]
 ignore-paths="tests/resources"

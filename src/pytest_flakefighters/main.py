@@ -108,21 +108,6 @@ def pytest_addoption(parser: pytest.Parser):
         help="How long to store flakefighters runs for, specified as `days:hours:minutes`. "
         "E.g. to store tests for one week, use 7:0:0.",
     )
-    group.addoption(
-        "--record",
-        action="store_true",
-        default=False,
-        help="Enable recording/replay of network interactions.",
-    )
-
-    group.addoption(
-        "--record-mode",
-        action="store",
-        default="once",
-        choices=["once", "all", "new_episodes", "none"],
-        help="Recording mode for network interactions.",
-    )
-
 
 def pytest_configure(config: pytest.Config):
     """

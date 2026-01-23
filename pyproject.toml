@@ -16,6 +16,7 @@ dependencies = [
   "scipy<=1.15",
   "sqlalchemy>=2.0.43",
   "unidiff>=0.7.5",
+  "pytest-recording>=0.13.0"
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 dynamic = ["version"]
@@ -89,6 +90,8 @@ variable-rgx = "^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests"]
+addopts = "--record-mode=once"
+
 
 [tool.setuptools_scm]
 write_to = "src/_version.py"

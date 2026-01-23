@@ -68,6 +68,8 @@ class DeFlaker(FlakeFighter):
         self.method_declarations = {}
         for file, lines in self.lines_changed.items():
             with open(file) as f:
+                if not file.endswith(".py"):
+                    continue
                 tree = ast.parse(f.read())
 
             self.method_declarations[file] = [

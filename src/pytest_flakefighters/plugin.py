@@ -9,6 +9,7 @@ from typing import Union
 import coverage
 import pytest
 from _pytest.runner import runtestprotocol
+from pytest_flakefighters.vcr_config import create_vcr
 
 from pytest_flakefighters.database_management import (
     ActiveFlakeFighter,
@@ -93,7 +94,17 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
         self.cov.switch_context(item.nodeid)  # pragma: no cover
-        yield  # pragma: no cover
+        
+        config = item.session.config
+
+        if config.option.record:
+            vcr = create_vcr(config.option.record_mode)
+            cassette_name = item.nodeid.replace("/", "_").replace("::", "__")
+            
+            with vcr.use_cassette(f"{cassette_name}.yaml"):
+                yield   
+        else:
+            yield  # pragma: no cover
         self.cov.stop()  # pragma: no cover
         item.stop = datetime.now().timestamp()
 

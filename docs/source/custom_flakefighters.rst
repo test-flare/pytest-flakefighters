@@ -33,7 +33,7 @@ For example, see below
       def params(self):
           """
           Convert the key parameters into a dictionary so that the object can be replicated.
-          :return A dictionary of all the parameters used to create the object.
+          :return A dictionary of the parameters used to create the object.
           """
           return {"custom_arg": self.custom_arg}
 

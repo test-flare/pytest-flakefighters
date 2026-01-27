@@ -1,4 +1,4 @@
-name: Continuous Integration Tests Draft PR (pytest)
+name: CI Tests Draft
 # This duplicate ci workflow is required so the badge in the README.md is not effected by draft PRs
 on:
   pull_request:

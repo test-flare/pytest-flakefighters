@@ -1,4 +1,4 @@
-name: Continuous Integration Tests (pytest)
+name: CI Tests
 
 on:
   pull_request:

@@ -1,107 +1,117 @@
 [build-system]
-requires = [
-"setuptools>=64",
-"setuptools_scm[toml]>=8",
-"wheel"
-]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
-write_to = "src/_version.py"
+requires = ["setuptools>=64", "setuptools_scm[toml]>=6.2", "wheel"]
 
 [project]
-name = "pytest-flakefighters"
-authors = [{ name = "TestFLARE Team" },]
+authors = [{ name = "TestFLARE Team" }]
+dependencies = [
+  "GitPython>=3.1.45",
+  "coverage>=7.10.6",
+  "dotenv>=0.9.9",
+  "nltk>=3.9",
+  "pandas>=2.3",
+  "pytest>=6.2.0",
+  "pyyaml>=6",
+  "scikit-learn>=1.7",
+  "scipy<=1.15",
+  "sqlalchemy>=2.0.43",
+  "unidiff>=0.7.5",
+]
 description = "Pytest plugin implementing flaky test failure detection and classification."
+dynamic = ["version"]
+license-files = ["LICENSE"]
+name = "pytest-flakefighters"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
-license-files = ["LICENSE"]
-dependencies = [
-"pytest>=6.2.0",
-"coverage>=7.10.6",
-"GitPython>=3.1.45",
-"unidiff>=0.7.5",
-"sqlalchemy>=2.0.43",
-"dotenv>=0.9.9",
-"pandas>=2.3",
-"scipy<=1.15",
-"pyyaml>=6",
-"scikit-learn>=1.7",
-"nltk>=3.9",
-]
-dynamic = ["version"]
-
-[project.optional-dependencies]
-dev = [
-"black",
-"pytest-cov",
-"pylint",
-"pre_commit",
-"sphinx-autoapi",
-"sphinx_rtd_theme",
-"tox>=4.31.0",
-"myst_parser",
-"nbsphinx",
-"pytest-html",
-"pytest-json-report>=1.5",
-]
-pg = [
-"psycopg2>2.9",
-]
-
-[project.urls]
-Repository = "https://github.com/test-flare/pytest-flakefighters"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"
 
 [project.entry-points."pytest_flakefighters"]
+CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
 CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
 DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
-CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
 
-
-[tool.pylint]
-ignore-paths="tests/resources"
-disable=[
-"raw-checker-failed",
-"bad-inline-option",
-"locally-disabled",
-"file-ignored",
-"suppressed-message",
-"useless-suppression",
-"deprecated-pragma",
-"use-symbolic-message-instead",
-"logging-fstring-interpolation",
-"import-error",
-"unspecified-encoding",
-"unexpected-keyword-arg"
+[project.optional-dependencies]
+dev = [
+  "black",
+  "myst_parser",
+  "nbsphinx",
+  "pre_commit",
+  "pylint",
+  "pytest-cov",
+  "pytest-html",
+  "pytest-json-report>=1.5",
+  "sphinx-autoapi",
+  "sphinx_rtd_theme",
+  "tox>=4.31.0",
 ]
-max-line-length=120
-variable-rgx="^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
+pg = ["psycopg2>2.9"]
+
+[project.urls]
+Documentation = "https://pytest-flakefighters.readthedocs.io"
+Homepage = "https://test-flare.github.io/"
+Issues = "https://github.com/test-flare/pytest-flakefighters/issues"
+Repository = "https://github.com/test-flare/pytest-flakefighters"
+
+[tool.taplo]
+reorder_keys = true
+reorder_arrays = true
 
 [tool.black]
 # https://github.com/psf/black
 line-length = 120
 target-version = ["py310"]
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-testpaths = ["tests"]
 [tool.isort]
 profile = "black"
 
+[tool.pylint]
+disable = [
+  "bad-inline-option",
+  "deprecated-pragma",
+  "file-ignored",
+  "import-error",
+  "locally-disabled",
+  "logging-fstring-interpolation",
+  "raw-checker-failed",
+  "suppressed-message",
+  "unexpected-keyword-arg",
+  "unspecified-encoding",
+  "use-symbolic-message-instead",
+  "useless-suppression",
+]
+ignore-paths = "tests/resources"
+max-line-length = 120
+variable-rgx = "^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+
+[tool.setuptools_scm]
+write_to = "src/_version.py"
+
 [tool.tox]
+env_list = ["3.10", "3.11", "3.12", "3.13"]
 requires = ["tox>=4.19"]
-env_list = ["3.10","3.11","3.12","3.13"]
-skip_missing_interpreters = false  # fail if devs don’t have all required Python versions
+skip_missing_interpreters = false           # fail if devs don’t have all required Python versions
 
 # Base configuration for all test environments
 [tool.tox.env_run_base]
-usedevelop = true
+allowlist_externals = ["pytest"]
+commands = [
+  [
+    "--cov-report=html",
+    "--cov=src/pytest_flakefighters",
+    "-p",
+    "no:flakefighters",
+    "pytest",
+    "{posargs:tests}",
+  ],
+]
+deps = ["pytest", "pytest-cov", "pytest-html", "pytest-json-report"]
 description = "Run pytest under {base_python}"
-allowlist_externals=["pytest"]
-extras = ["dev","test"]
-deps = ["pytest","pytest-cov","pytest-html","pytest-json-report"]
-commands = [["pytest","-p","no:flakefighters","--cov=src/pytest_flakefighters","--cov-report=html","{posargs:tests}"]]
+extras = ["dev", "test"]
+usedevelop = true

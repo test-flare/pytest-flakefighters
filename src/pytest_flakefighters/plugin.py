@@ -137,8 +137,17 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :return: The return value is not used, but only stops further processing.
         """
         item.execution_count = 0
-        executions = []
         skipped = False
+
+        fspath, line_inx, _ = item.location
+
+        test = Test(  # pylint: disable=E1123
+            name=item.nodeid,
+            fspath=fspath,
+            line_no=line_inx + 1,  # need to add one to the line index because this indexes from zero
+            skipped=skipped,
+        )
+        self.run.tests.append(test)
 
         for _ in range(self.rerun_strategy.max_reruns + 1):
             item.execution_count += 1
@@ -164,8 +173,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         },
                         exception=report.exception,
                     )
-                    item.test_execution = test_execution
-                    executions.append(test_execution)
+                    test.executions.append(test_execution)
                     for ff in filter(lambda ff: ff.run_live, self.flakefighters):
                         ff.flaky_test_live(test_execution)
                     report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
@@ -176,12 +184,6 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 break  # Skip further reruns
 
         item.ihook.pytest_runtest_logfinish(nodeid=item.nodeid, location=item.location)
-        test = Test(  # pylint: disable=E1123
-            name=item.nodeid,
-            skipped=skipped,
-            executions=executions,
-        )
-        self.run.tests.append(test)
         return True
 
     def pytest_report_teststatus(

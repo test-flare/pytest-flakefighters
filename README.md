@@ -1,20 +1,15 @@
 # Pytest FlakeFighters
+### Pytest plugin implementing flaky test failure detection and classification.
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![PyPI version](https://img.shields.io/pypi/v/pytest-flakefighters.svg)](https://pypi.org/project/pytest-flakefighters)
-[![Python versions](https://img.shields.io/pypi/pyversions/pytest-flakefighters.svg)](https://pypi.org/project/pytest-flakefighters)
+[![Python versions](https://img.shields.io/badge/python-3.10_--_3.13-blue)](https://pypi.org/project/pytest-flakefighters)
 ![Test status](https://github.com/test-flare/pytest-flakefighters/actions/workflows/ci-tests.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/test-flare/pytest-flakefighters/branch/main/graph/badge.svg?token=04ijFVrb4a)](https://codecov.io/gh/test-flare/pytest-flakefighters)
 [![Documentation Status](https://readthedocs.org/projects/causal-testing-framework/badge/?version=latest)](https://causal-testing-framework.readthedocs.io/en/latest/?badge=latest)
 ![GitHub License](https://img.shields.io/github/license/test-flare/pytest-flakefighters)
 
 
-Pytest plugin implementing flaky test failure detection and
-classification.
-
-------------------------------------------------------------------------
-
-This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [\@hackebrot](https://github.com/hackebrot)\'s [cookiecutter-pytest-plugin](https://github.com/pytest-dev/cookiecutter-pytest-plugin) template.
 
 ## Features
 
@@ -67,3 +62,7 @@ Both extend the base class `FlakeFighter` and implement the `flaky_failure` meth
 ## Issues
 
 If you encounter any problems, please [file an issue](https://github.com/test-flare/pytest-flakefighters/issues) along with a detailed description.
+
+------------------------------------------------------------------------
+
+This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [\@hackebrot](https://github.com/hackebrot)\'s [cookiecutter-pytest-plugin](https://github.com/pytest-dev/cookiecutter-pytest-plugin) template.

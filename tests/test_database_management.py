@@ -129,3 +129,80 @@ def test_time_immemorial(pytester, deflaker_repo):
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
     db.engine.dispose()
+
+
+def test_display_outcomes(pytester, flaky_reruns_repo):
+    """
+    Test that historical verdicts are displayed to terminal.
+    """
+
+    # run pytest with the following cmd args
+    for _ in range(4):
+        pytester.runpytest(
+            os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+            "-s",
+        )
+
+    result = pytester.runpytest(
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+        "--display-outcomes=2",
+        "-s",
+    )
+
+    # Test original functionality is unchanged
+    result.assert_outcomes(failed=1)
+
+    # Check we're not displaying the verdicts
+    for line in result.stdout.lines:
+        assert "DeFlaker" not in line
+
+    db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
+    runs = db.load_runs()
+    result.stdout.fnmatch_lines(["*Flakefighter Verdicts (Current)*", "Execution 0: failed"], consecutive=True)
+    for i, run in enumerate(runs[1:3]):
+        expected = "passed" if i % 2 == 0 else "failed"
+        result.stdout.fnmatch_lines(
+            [f"*Flakefighter Verdicts {run.start_time}*", f"Execution 0: {expected}"], consecutive=True
+        )
+
+    for run in [runs[0]] + runs[3:]:
+        assert f"Flakefighter Verdicts {run.start_time}" not in result.stdout.str()
+
+
+def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
+    """
+    Test that historical verdicts are displayed to terminal.
+    """
+
+    # run pytest with the following cmd args
+    for _ in range(4):
+        pytester.runpytest(
+            os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+            "-s",
+        )
+
+    result = pytester.runpytest(
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+        "--display-outcomes=2",
+        "--display-verdicts",
+        "-s",
+    )
+
+    # Test original functionality is unchanged
+    result.assert_outcomes(failed=1)
+
+    db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
+    runs = db.load_runs()
+    result.stdout.fnmatch_lines(
+        ["*Flakefighter Verdicts (Current)*", "Execution 0: failed", "*DeFlaker: flaky"], consecutive=True
+    )
+    for i, run in enumerate(runs[1:3]):
+        expected = "passed" if i % 2 == 0 else "failed"
+        flaky = "genuine" if i % 2 == 0 else "flaky"
+        result.stdout.fnmatch_lines(
+            [f"*Flakefighter Verdicts {run.start_time}*", f"Execution 0: {expected}", f"*DeFlaker: {flaky}"],
+            consecutive=True,
+        )
+
+    for run in [runs[0]] + runs[3:]:
+        assert f"Flakefighter Verdicts {run.start_time}" not in result.stdout.str()

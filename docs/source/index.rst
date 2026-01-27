@@ -42,6 +42,7 @@ Flaky tests are then reported separately in the test report, and can be optional
    installation
    configuration
    custom_flakefighters
+   reports
    ci_cd
 
 

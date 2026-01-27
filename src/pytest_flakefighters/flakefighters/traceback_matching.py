@@ -49,7 +49,7 @@ class TracebackMatching(FlakeFighter):
         Convert the key parameters into a dictionary so that the object can be replicated.
         :return A dictionary of the parameters used to create the object.
         """
-        return {"root": self.root}
+        return {"run_live": self.run_live, "root": self.root}
 
     def _flaky_execution(self, execution, previous_executions) -> bool:
         """
@@ -66,15 +66,13 @@ class TracebackMatching(FlakeFighter):
         ]
         return any(e == current_traceback for e in previous_executions)
 
-    def previous_flaky_executions(self, runs: list[Run] = None) -> list:
+    def previous_flaky_executions(self, runs: list[Run]) -> list:
         """
         Extract the relevant information from previous flaky executions and collapse into a single list.
         :param runs: The runs to consider. Defaults to self.previous_runs.
         :return: List containing the relative path, line number, column number, and code statement of all previous
         test executions.
         """
-        if runs is None:
-            runs = self.previous_runs
         return [
             [
                 (os.path.relpath(elem.path, run.root), elem.lineno, elem.colno, elem.statement)
@@ -87,17 +85,20 @@ class TracebackMatching(FlakeFighter):
             if execution.exception
         ]
 
-    def flaky_test_live(self, execution: TestExecution):
+    def flaky_test_live(self, execution: TestExecution, previous_runs: list[Run] = None):
         """
         Classify executions as flaky if they have the same failure logs as a flaky execution.
         :param execution: Test execution to consider.
+        :param previous_runs: The previous runs to which the execution will be compared.
         """
+        if previous_runs is None:
+            previous_runs = self.previous_runs
         execution.flakefighter_results.append(
             FlakefighterResult(
                 name=self.__class__.__name__,
                 flaky=self._flaky_execution(
                     execution,
-                    self.previous_flaky_executions(),
+                    self.previous_flaky_executions(previous_runs),
                 ),
             )
         )
@@ -109,14 +110,7 @@ class TracebackMatching(FlakeFighter):
         """
         for test in run.tests:
             for execution in test.executions:
-                execution.flakefighter_results.append(
-                    FlakefighterResult(
-                        name=self.__class__.__name__,
-                        flaky=self._flaky_execution(
-                            execution, self.previous_flaky_executions(self.previous_runs + [run])
-                        ),
-                    )
-                )
+                self.flaky_test_live(execution, self.previous_runs + [run])
 
 
 class CosineSimilarity(TracebackMatching):

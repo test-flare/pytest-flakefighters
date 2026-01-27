@@ -33,8 +33,6 @@ For example, see below
       def params(self):
           """
           Convert the key parameters into a dictionary so that the object can be replicated.
-          You do not need to include the value of self.run_live here as that is recorded
-          separately.
           :return A dictionary of the parameters used to create the object.
           """
           return {"custom_arg": self.custom_arg}

@@ -5,6 +5,7 @@ This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.31801
 from datetime import datetime
 from enum import Enum
 from typing import Union
+from xml.etree import ElementTree as ET
 
 import coverage
 import pytest
@@ -49,6 +50,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         flakefighters: list[FlakeFighter],
         save_run: bool = True,
         rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
+        display_outcomes: int = 0,
+        display_verdicts: bool = False,
     ):
         self.root = root
         self.database = database
@@ -56,12 +59,16 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.flakefighters = flakefighters
         self.save_run = save_run
         self.rerun_strategy = rerun_strategy
+        self.test_reports = {}
+        self.display_verdicts = display_verdicts
+        self.display_outcomes = display_outcomes
 
         self.run = Run(  # pylint: disable=E1123
             root=root,
             active_flakefighters=[
                 ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
             ],
+            start_time=datetime.now(),
         )
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
@@ -176,9 +183,54 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     test.executions.append(test_execution)
                     for ff in filter(lambda ff: ff.run_live, self.flakefighters):
                         ff.flaky_test_live(test_execution)
+                    self.test_reports[item.nodeid] = report
                     report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
+                    # Limited pytest-json support
+                    report.stage_metadata = {
+                        "executions": [
+                            {
+                                "start_time": x.start_time.isoformat(),
+                                "end_time": x.end_time.isoformat(),
+                                "outcome": test_execution.outcome,
+                                "flakefighter_results": {r.name: r.classification for r in x.flakefighter_results},
+                            }
+                            for x in test.executions
+                        ],
+                    }
+                    # html
+                    if hasattr(report, "extras"):
+                        report.extras.append(
+                            {
+                                "content": f"""
+                                <h4>Flakefighter Results</h4>
+                                <div id="ff-{report.nodeid.replace("::", "_")}"></div>
+                                <table style="width:100%"><tbody><tr>"""
+                                + "".join(
+                                    [
+                                        f"""
+                                        <td>
+                                        <p><strong>Start time:</strong> {execution.start_time}</p>
+                                        <p><strong>End time:</strong> {execution.end_time}</p>
+                                        <p><strong>Outcome:</strong> {execution.outcome}</p>
+                                        <p><strong>Flakefighter Results:</strong></p>
+                                        <ul>
+                                        {''.join(['<li><strong>'+result.name+':</strong> '+result.classification+'</li>'
+                                        for result in execution.flakefighter_results])}
+                                        </ul>
+                                        </td>
+                                        """
+                                        for execution in test.executions
+                                    ]
+                                )
+                                + "</tr></tbody></table>",
+                                "extension": "html",
+                                "format_type": "html",
+                                "mime_type": "text/html",
+                            }
+                        )
                     if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
+
                 item.ihook.pytest_runtest_logreport(report=report)
             else:
                 break  # Skip further reruns
@@ -199,6 +251,128 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             return report.outcome, "F", ("FLAKY", {"yellow": True})
         return None
 
+    @pytest.hookimpl(hookwrapper=True)
+    def pytest_runtestloop(self, session: pytest.Session):  # pylint: disable=unused-argument
+        """
+        Run postprocessing flakefighters.
+        :param session: The pytest session object.
+        """
+        yield
+        for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
+            ff.flaky_tests_post(self.run)
+        for test in self.run.tests:
+            if test.name in self.test_reports:
+                self.test_reports[test.name].flakefighter_results = {
+                    r.name: r.classification for r in test.flakefighter_results
+                }
+
+    @pytest.hookimpl(optionalhook=True)
+    def pytest_json_modifyreport(self, json_report: dict):
+        """
+        Add flakefighter results to the pytest-json-report report.
+
+        :param json_report: The report dict.
+        """
+        for t in json_report.get("tests", []):
+            t["call"]["metadata"] = self.test_reports[t["nodeid"]].stage_metadata
+
+            t["metadata"] = t.get("metadata", {}) | {
+                "flakefighter_results": self.test_reports[t["nodeid"]].flakefighter_results
+            }
+
+    def build_outcome_string(self, test: Test) -> str:
+        """
+        Construct a string to represent previous flakefighter outcomes for a given test and its associated executions.
+
+        :param test: The test case.
+        """
+        result_string = []
+        if test.flakefighter_results:
+            if self.display_verdicts:
+                result_string.append(
+                    "Overall\n" + "\n".join(f"  {f.name}: {f.classification}" for f in test.flakefighter_results) + "\n"
+                )
+        for i, execution in enumerate(test.executions):
+            if execution.flakefighter_results:
+                if self.display_verdicts:
+                    result_string.append(
+                        f"Execution {i}: {execution.outcome}\n"
+                        + "\n".join(
+                            f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in execution.flakefighter_results
+                        )
+                    )
+                else:
+                    result_string.append(f"Execution {i}: {execution.outcome}")
+        return "\n".join(result_string)
+
+    def modify_xml(self, xml_path: str):
+        """
+        Modify the JUnitXML file to add the flakefighter results for each test.
+
+        :param xml_path: The path of the saved XML file.
+        """
+        tree = ET.parse(xml_path)
+        for testsuite in tree.getroot().findall("testsuite"):
+            for testcase in testsuite.findall("testcase"):
+                splitname = testcase.get("classname").split(".")
+                splitname[0] = f"{splitname[0]}.py"
+                nodeid = "::".join(splitname + [testcase.get("name")])
+                flakefighter_results = ET.SubElement(testcase, "flakefighterresults")
+                if nodeid in self.test_reports:
+                    for execution in self.test_reports[nodeid].stage_metadata["executions"]:
+                        execution_results = ET.Element(
+                            "execution",
+                            {
+                                "outcome": execution["outcome"],
+                                "starttime": execution["start_time"],
+                                "endtime": execution["end_time"],
+                            },
+                        )
+                        flakefighter_results.append(execution_results)
+                        for name, classification in execution["flakefighter_results"].items():
+                            ET.SubElement(execution_results, name).text = classification
+                    test_results = ET.SubElement(flakefighter_results, "test")
+                    for name, classification in self.test_reports[nodeid].flakefighter_results.items():
+                        ET.SubElement(test_results, name).text = classification
+
+        tree.write(xml_path)
+
+    @pytest.hookimpl(optionalhook=True)
+    def pytest_html_results_summary(
+        self, prefix: list, summary: list, postfix: list
+    ):  # pylint: disable=unused-argument
+        """
+        Add the test-level flakefighter results.
+        :param prefix: The prefix content. UNUSED.
+        :param summary: The summary content. UNUSED.
+        :param postfix: The postfix content.
+        """
+        postfix.extend(
+            [
+                "<h2>Test-level flakefighter results</h2>",
+                "<table>",
+                "<thead><tr><td>Test</td><td>Flakefighter results</td></tr></thead>",
+                "<tbody>",
+            ]
+            + [
+                f"<tr><td>{nodeid}</td><td>"
+                + "".join(
+                    [
+                        f"""<ul>
+                            {''.join(['<li><strong>'+result['name']+':</strong> '+result['classification']+'</li>'
+                                for result in report.flakefighter_results])}
+                            </ul>"""
+                    ]
+                )
+                + "</td></tr>"
+                for nodeid, report in self.test_reports.items()
+            ]
+            + [
+                "</tbody>",
+                "</table>",
+            ]
+        )
+
     def pytest_sessionfinish(
         self,
         session: pytest.Session,
@@ -208,8 +382,23 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param session: The pytest session object.
         :param exitstatus: The status which pytest will return to the system.
         """
-        for ff in filter(lambda ff: not ff.run_live, self.flakefighters):
-            ff.flaky_tests_post(self.run)
+
+        if session.config.option.xmlpath:
+            self.modify_xml(session.config.option.xmlpath)
+
+        runs = [self.run]
+        if self.display_outcomes:
+            runs += self.database.load_runs(self.display_outcomes)
+        if self.display_verdicts or self.display_outcomes:
+            for run in runs:
+                for test in run.tests:
+                    if test.name in self.test_reports:
+                        self.test_reports[test.name].sections.append(
+                            (
+                                f"Flakefighter Verdicts {run.start_time if run != self.run else '(Current)'}",
+                                self.build_outcome_string(test),
+                            )
+                        )
 
         genuine_failure_observed = any(
             not test.flaky for test in self.run.tests if any(e.outcome != "passed" for e in test.executions)

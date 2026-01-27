@@ -3,13 +3,13 @@ This module adds all the FlakeFighter configuration options to pytest.
 """
 
 import logging
-import os
 from importlib.metadata import entry_points
 
 import coverage
 import pytest
 import yaml
 
+from pytest_flakefighters.config import options
 from pytest_flakefighters.database_management import Database
 from pytest_flakefighters.flakefighters.deflaker import DeFlaker
 from pytest_flakefighters.function_coverage import Profiler
@@ -35,79 +35,45 @@ def pytest_addoption(parser: pytest.Parser):
     Add extra pytest options.
     :param parser: The argument parser.
     """
+    # Allows users to specify flakefighter configurations in their pyproject.toml file without pytest throwing out
+    # "unknown configuration option" warnings
+    parser.addini("pytest_flakefighters", type="args", help="Configuration for the pytest-flakefighters extension")
+
+    def datatype(details):
+        if "type" not in details:
+            return None
+        if details["type"] is str:
+            return "string"
+        return str(details["type"].__name__)
+
     group = parser.getgroup("flakefighters")
-    group.addoption(
-        "--root",
-        dest="root",
-        action="store",
-        default=os.getcwd(),
-        help="The root directory of the project. Defaults to the current working directory.",
-    )
-    group.addoption(
-        "--suppress-flaky-failures-exit-code",
-        dest="suppress_flaky",
-        action="store_true",
-        default=False,
-        help="Return OK exit code if the only failures are flaky failures.",
-    )
-    group.addoption(
-        "--no-save",
-        action="store_true",
-        default=False,
-        help="Do not save this run to the database of previous flakefighters runs.",
-    )
-    group.addoption(
-        "--function-coverage",
-        action="store_true",
-        default=False,
-        help="Use function-level coverage instead of line coverage.",
-    )
-    group.addoption(
-        "--load-max-runs",
-        "-M",
-        action="store",
-        default=None,
-        help="The maximum number of previous runs to consider.",
-    )
-    group.addoption(
-        "--database-url",
-        "-D",
-        action="store",
-        default="sqlite:///flakefighters.db",
-        help="The database URL. Defaults to 'flakefighters.db' in current working directory.",
-    )
-    group.addoption(
-        "--store-max-runs",
-        action="store",
-        default=None,
-        type=int,
-        help="The maximum number of previous flakefighters runs to store. Default is to store all.",
-    )
-    group.addoption(
-        "--max-reruns",
-        action="store",
-        default=0,
-        type=int,
-        help="The maximum number of times to rerun tests. "
-        "By default, only failing tests marked as flaky will be rerun. "
-        "This can be changed with the --rerun-strategy parameter.",
-    )
-    group.addoption(
-        "--rerun-strategy",
-        action="store",
-        type=str,
-        choices=list(rerun_strategies),
-        default="FLAKY_FAILURE",
-        help="The strategy used to determine which tests to rerun. Supported options are:\n  "
-        + "\n  ".join(f"{name} - {strat.help()}" for name, strat in rerun_strategies.items()),
-    )
-    group.addoption(
-        "--time-immemorial",
-        action="store",
-        default=None,
-        help="How long to store flakefighters runs for, specified as `days:hours:minutes`. "
-        "E.g. to store tests for one week, use 7:0:0.",
-    )
+    for name, details in options.items():
+        # Add a commandline option with short name if provided, e.g. "--custom-option"
+        # We need the default to be None here so that we can test if the user has provided it
+        group.addoption(*name, **(details | {"default": None}))
+        # Add configuration file option with no "--" and "-" replaced by "_"
+        parser.addini(
+            name[0][2:].replace("-", "_"),
+            help=details["help"],
+            default=details.get("default"),
+            type=datatype(details),
+        )
+
+
+def get_config_value(config, name):
+    """
+    Get the configuration value.
+    Options specified on the commandline will override those specified in configuration files.
+    If neither is specified, the default value specified in `options.py` will be used.
+    """
+    cli_val = config.getoption(name)
+    if cli_val is not None:
+        return cli_val
+
+    try:
+        return config.getini(name)
+    except ValueError:
+        return None
 
 
 def pytest_configure(config: pytest.Config):
@@ -116,13 +82,13 @@ def pytest_configure(config: pytest.Config):
     :param config: The config options.
     """
     database = Database(
-        config.option.database_url,
-        config.option.load_max_runs,
-        config.option.store_max_runs,
-        config.option.time_immemorial,
+        get_config_value(config, "database_url"),
+        get_config_value(config, "load_max_runs"),
+        get_config_value(config, "store_max_runs"),
+        get_config_value(config, "time_immemorial"),
     )
 
-    if config.option.function_coverage:
+    if get_config_value(config, "function_coverage"):
         cov = Profiler()
     else:
         cov = coverage.Coverage()
@@ -132,7 +98,7 @@ def pytest_configure(config: pytest.Config):
 
     flakefighters = []
     if flakefighter_configs is not None:
-        # Can't cover all of these in a single coverage measurement since it's a python version thing
+        # Can't measure coverage since the branch taken depends on the python version
         if isinstance(flakefighter_configs, str):  # pragma: no cover
             flakefighter_configs = yaml.safe_load(flakefighter_configs)  # pragma: no cover
         elif hasattr(flakefighter_configs, "value"):  # pragma: no cover
@@ -143,7 +109,13 @@ def pytest_configure(config: pytest.Config):
             for class_name, params in classes.items():
                 if class_name in algorithms:
                     flakefighters.append(
-                        algorithms[class_name].load().from_config(vars(config.option) | {"database": database} | params)
+                        algorithms[class_name]
+                        .load()
+                        .from_config(
+                            {k: get_config_value(config, k) for k in vars(config.option)}
+                            | {"database": database}
+                            | params
+                        )
                     )
                 else:
                     raise ValueError(
@@ -155,17 +127,21 @@ def pytest_configure(config: pytest.Config):
         flakefighters.append(
             DeFlaker(
                 run_live=True,
-                root=config.option.root,
+                root=get_config_value(config, "root"),
             )
         )
 
     config.pluginmanager.register(
         FlakeFighterPlugin(
-            root=config.option.root,
+            root=get_config_value(config, "root"),
             database=database,
             cov=cov,
             flakefighters=flakefighters,
-            rerun_strategy=rerun_strategy(config.option.rerun_strategy, config.option.max_reruns, database=database),
-            save_run=not config.option.no_save,
+            rerun_strategy=rerun_strategy(
+                get_config_value(config, "rerun_strategy"), get_config_value(config, "max_reruns"), database=database
+            ),
+            save_run=not get_config_value(config, "no_save"),
+            display_outcomes=get_config_value(config, "display_outcomes"),
+            display_verdicts=get_config_value(config, "display_verdicts"),
         )
     )

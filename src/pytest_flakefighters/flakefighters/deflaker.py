@@ -68,7 +68,10 @@ class DeFlaker(FlakeFighter):
         self.method_declarations = {}
         for file, lines in self.lines_changed.items():
             with open(file) as f:
-                tree = ast.parse(f.read())
+                try:
+                    tree = ast.parse(f.read())
+                except SyntaxError:
+                    continue
 
             self.method_declarations[file] = [
                 node.lineno
@@ -133,9 +136,5 @@ class DeFlaker(FlakeFighter):
         :param run: Run object representing the pytest run, with tests accessible through run.tests.
         """
         for test in run.tests:
-            test.flakefighter_results.append(
-                FlakefighterResult(
-                    name=self.__class__.__name__,
-                    flaky=any(self._flaky_execution(execution) for execution in test.executions),
-                )
-            )
+            for execution in test.executions:
+                self.flaky_test_live(execution)

@@ -34,10 +34,12 @@ from sqlalchemy.orm import (
 class Base(DeclarativeBase):
     """
     Declarative base class for data objects.
+
+    :ivar id: Unique autoincrementing ID for the object.
     """
 
     id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
-    # @pytest, these are not the tests you're looking for...
+    # Explicitly flag that we don't want pytest to collect our Test, TestExecution, etc. classes.
     __test__ = False  # pylint: disable=C0103
 
     @declared_attr
@@ -49,8 +51,16 @@ class Base(DeclarativeBase):
 class Run(Base):
     """
     Class to store attributes of a flakefighters run.
+    :ivar start_time: The time the test run was begun.
+    :ivar created_at: The time the entry was added to the database.
+    This is not necessarily equivalent to start_time if the test suite took a long time to run or
+    if the entry was migrated from a separate database.
+    :ivar root: The root directory of the project.
+    :ivar tests: The test suite.
+    :ivar active_flakefighters: The flakefighters that are active on the run.
     """
 
+    start_time = Column(DateTime)
     created_at = Column(DateTime, default=func.now())
     root: Mapped[str] = Column(String)
     tests = relationship("Test", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True)
@@ -63,6 +73,10 @@ class Run(Base):
 class ActiveFlakeFighter(Base):
     """
     Store relevant information about the active flakefighters.
+
+    :ivar run_id: Foreign key of the related run.
+    :ivar name: Class name of the flakefighter.
+    :ivar params: The parameterss of the flakefighter.
     """
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
@@ -74,6 +88,17 @@ class ActiveFlakeFighter(Base):
 class Test(Base):
     """
     Class to store attributes of a test case.
+
+    :ivar run_id: Foreign key of the related run.
+    :ivar fspath: File system path of the file containing the test definition.
+    :ivar line_no: Line number of the test definition.
+    :ivar name: Name of the test case.
+    :ivar skipped: Boolean true if the test was skipped, else false.
+    :ivar executions: List of execution attempts.
+    :ivar flakefighter_results: List of test-level flakefighter results.
+
+    .. note::
+      Execution-level flakefighter results will be stored inside the individual TestExecution objects
     """
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
@@ -104,6 +129,16 @@ class Test(Base):
 class TestExecution(Base):  # pylint: disable=R0902
     """
     Class to store attributes of a test outcome.
+
+    :ivar test_id: Foreign key of the related test.
+    :ivar outcome: Outcome of the test. One of "passed", "failed", or "skipped".
+    :ivar stdout: The captured stdout string.
+    :ivar stedrr: The captured stderr string.
+    :ivar start_time: The start time of the test.
+    :ivar end_time: The end time of the test.
+    :ivar coverage: The line coverage of the test.
+    :ivar flakefighter_results: The execution-level flakefighter results.
+    :ivar exception: The exception associated with the test if one was thrown.
     """
 
     __tablename__ = "test_execution"
@@ -140,6 +175,10 @@ class TestExecution(Base):  # pylint: disable=R0902
 class TestException(Base):  # pylint: disable=R0902
     """
     Class to store information about the exceptions that cause tests to fail.
+
+    :ivar execution_id: Foreign key of the related execution.
+    :ivar name: Name of the exception.
+    :traceback: The full stack of traceback entries.
     """
 
     __tablename__ = "test_exception"
@@ -155,6 +194,13 @@ class TestException(Base):  # pylint: disable=R0902
 class TracebackEntry(Base):  # pylint: disable=R0902
     """
     Class to store attributes of entries in the stack trace.
+
+    :ivar exception_id: Foreign key of the related exception.
+    :ivar path: Filepath of the source file.
+    :ivar lineno: Line number of the executed statement.
+    :ivar colno: Column number of the executed statement.
+    :ivar statement: The executed statement.
+    :ivar source: The surrounding source code.
     """
 
     exception_id: Mapped[int] = Column(Integer, ForeignKey("test_exception.id"), nullable=False)
@@ -169,6 +215,11 @@ class TracebackEntry(Base):  # pylint: disable=R0902
 class FlakefighterResult(Base):  # pylint: disable=R0902
     """
     Class to store flakefighter results.
+
+    :ivar test_execution_id: Foreign key of the related test execution. Should not be set if test_id is present.
+    :ivar test_id: Foreign key of the related test. Should not be set if test_execution_id is present.
+    :ivar name: Name of the flakefighter.
+    :ivar flaky: Boolean true if the test (execution) was classified as flaky.
     """
 
     __tablename__ = "flakefighter_result"
@@ -182,10 +233,25 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
         CheckConstraint("NOT (test_execution_id IS NULL AND test_id IS NULL)", name="check_test_id_not_null"),
     )
 
+    @property
+    def classification(self):
+        """
+        Return the classification as a string.
+        "flaky" if the test was classified as flaky, else "genuine".
+        """
+        return "flaky" if self.flaky else "genuine"
+
 
 class Database:
     """
     Class to handle database setup and interaction.
+
+    :ivar engine: The database engine.
+    :ivar store_max_runs: The maximum number of previous runs that should be stored. If the database exceeds this size,
+                          older runs will be pruned to make space for newer ones.
+    :ivar time_immemorial: Time before which runs should not be considered. Runs before this date will be pruned when
+                           saving new runs.
+    :ivar previous_runs: List of previous flakefighter runs with most recent first.
     """
 
     def __init__(
@@ -230,4 +296,4 @@ class Database:
         :param limit: The maximum number of runs to return (these will be most recent runs).
         """
         with Session(self.engine) as session:
-            return session.scalars(select(Run).order_by(desc(Run.id)).limit(limit)).all()
+            return session.scalars(select(Run).order_by(desc(Run.start_time)).limit(limit)).all()

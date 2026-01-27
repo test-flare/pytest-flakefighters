@@ -5,14 +5,14 @@ Installation
 -----------------
 * We currently support Python versions 3.10, 3.11, 3.12, and 3.13.
 
-* The Flakefighters plugin can be installed through the `Python Package Index (PyPI)`_ (recommended), or directly from source (recommended for contributors).
+* The Flakefighters plugin can be installed through the `Python Package Index (PyPI)`_ (recommended for normal use), or directly from source (recommended for contributors).
 
 .. _Python Package Index (PyPI): https://pypi.org/project/pytest-flakefighters
 
 Method 1: Installing via pip
 ..............................
 
-To install the Causal Testing Framework using :code:`pip` for the latest stable version::
+To install the extension using :code:`pip` for the latest stable version::
 
     pip install pytest-flakefighters
 
@@ -21,6 +21,16 @@ The plugin will then automatically run as part of `pytest`.
 If you also want to install the framework with (optional) development packages/tools::
 
     pip install pytest-flakefighters[dev]
+
+
+.. note::
+  If you plan to use the extension using a PostgreSQL database (see :ref:`remote-databases`), then you will need to install PostgreSQL on your system, have :code:`pg_config` on your path, and then install using the :code:`pg` option.
+
+  ..  code-block:: python
+
+    pip install pytest-flakefighters[pg]
+
+  If you wish to use `other dialects <https://docs.sqlalchemy.org/en/20/dialects/>`_, you may need to install additional packages to support this.
 
 
 Method 2: Installing via Source (For Developers/Contributors)

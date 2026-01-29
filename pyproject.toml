@@ -22,7 +22,7 @@ dynamic = ["version"]
 license-files = ["LICENSE"]
 name = "pytest-flakefighters"
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"
@@ -94,20 +94,20 @@ testpaths = ["tests"]
 write_to = "src/_version.py"
 
 [tool.tox]
-env_list = ["3.10", "3.11", "3.12", "3.13"]
+env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 requires = ["tox>=4.19"]
-skip_missing_interpreters = false           # fail if devs don’t have all required Python versions
+skip_missing_interpreters = false                   # fail if devs don’t have all required Python versions
 
 # Base configuration for all test environments
 [tool.tox.env_run_base]
 allowlist_externals = ["pytest"]
 commands = [
   [
+    "pytest",
     "--cov-report=html",
     "--cov=src/pytest_flakefighters",
     "-p",
     "no:flakefighters",
-    "pytest",
     "{posargs:tests}",
   ],
 ]

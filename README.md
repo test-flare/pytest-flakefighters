@@ -1,5 +1,4 @@
 # Pytest FlakeFighters
-### Pytest plugin implementing flaky test failure detection and classification.
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![PyPI version](https://img.shields.io/pypi/v/pytest-flakefighters.svg)](https://pypi.org/project/pytest-flakefighters)
@@ -9,12 +8,17 @@
 [![Documentation Status](https://readthedocs.org/projects/causal-testing-framework/badge/?version=latest)](https://causal-testing-framework.readthedocs.io/en/latest/?badge=latest)
 ![GitHub License](https://img.shields.io/github/license/test-flare/pytest-flakefighters)
 
-
+### Pytest plugin implementing flaky test failure detection and classification.
+Read more about flaky tests [here](https://docs.pytest.org/en/stable/explanation/flaky.html).
 
 ## Features
 
--   Implements the [DeFlaker algorithm](https://deflaker.com/) for pytest
-
+- Implements the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/) for pytest
+- Implements two traceback-matching classifiers from [Alshammari et al. (2024)](https://doi.org/10.1109/ICST60714.2024.00031).
+- Implements a novel coverage-independence classifier that classifies tests as flaky if they fail independently of passing test cases that exercise overlapping code.
+- Optionally rerun flaky failures
+- Output results to JSON, HTML, or JUnitXML
+- Save test outcome history to a remote or local database
 
 ## Installation
 

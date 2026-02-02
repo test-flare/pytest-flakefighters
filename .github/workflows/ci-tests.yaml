@@ -25,6 +25,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install Fortran (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install gcc gfortran
+        echo "FC=gfortran" >> $GITHUB_ENV
     - name: Install dependencies
       run: |
           python --version

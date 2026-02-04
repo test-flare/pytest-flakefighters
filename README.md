@@ -92,6 +92,22 @@ Yes! pytest-flakefighters can be combined with other plugins:
 You can install \"pytest-flakefighters\" by cloning this repo and running `pip install .` from the root directory.
 If you intend to develop the plugin, run `pip install -e .[dev]` instead.
 
+### Installation with uv
+
+If you use [uv](https://github.com/astral-sh/uv) for Python package management, you can install pytest-flakefighters with:
+
+```bash
+# Clone the repository
+git clone https://github.com/test-flare/pytest-flakefighters.git
+cd pytest-flakefighters
+
+# Install with uv
+uv pip install .
+
+# For development
+uv pip install -e .[dev]
+```
+
 We eventually intend to distribute our tool on PyPI.
 
 ## Usage

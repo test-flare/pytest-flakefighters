@@ -136,6 +136,24 @@ FlakeFighter has the following arguments.
                         tests for one week, use 7:0:0.
 ```
 
+### Enabling/Disabling the Plugin
+
+By default, pytest-flakefighters runs whenever it is installed. To disable it for a specific test run, use:
+
+```bash
+pytest --no-flakefighters
+```
+
+This is useful when you have the plugin installed but want to run quick tests without flaky test detection.
+
+You can also configure this in your `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+addopts = "--no-flakefighters"
+```
+
+
 ## Contributing
 
 Contributions are very welcome.

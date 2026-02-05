@@ -13,7 +13,6 @@ dependencies = [
   "pytest>=6.2.0",
   "pyyaml>=6",
   "scikit-learn>=1.7",
-  "scipy<=1.15",
   "sqlalchemy>=2.0.43",
   "unidiff>=0.7.5",
 ]
@@ -35,6 +34,7 @@ TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:Trace
 
 [project.optional-dependencies]
 dev = [
+  "astroid==3.3.8",
   "black",
   "myst_parser",
   "nbsphinx",
@@ -45,9 +45,11 @@ dev = [
   "pytest-json-report>=1.5",
   "sphinx-autoapi",
   "sphinx_rtd_theme",
+  "autoclasstoc",
   "tox>=4.31.0",
 ]
 pg = ["psycopg2>2.9"]
+scipy = ["scipy"]
 
 [project.urls]
 Documentation = "https://pytest-flakefighters.readthedocs.io"

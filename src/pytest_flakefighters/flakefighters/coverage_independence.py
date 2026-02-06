@@ -18,6 +18,11 @@ class CoverageIndependence(FlakeFighter):
     """
     Classify tests as flaky if they fail independently of passing test cases that exercise overlapping code.
 
+    .. note::
+      To use this flakefighter, you will need to install scipy. We do not include this by default as it can be
+      problematic to install on Windows. You can do this by running :code:`pip install pytest-flakefighers[scipy]` or
+      :code:`pip install scipy` from within your virtual environment.
+
     :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
                     This is always False as live classification is not supported.
     :ivar threshold: The minimum distance to consider as "similar", expressed as a proportion 0 <= threshold < 1 where 0

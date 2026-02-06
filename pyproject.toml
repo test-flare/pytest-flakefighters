@@ -13,7 +13,6 @@ dependencies = [
   "pytest>=6.2.0",
   "pyyaml>=6",
   "scikit-learn>=1.7",
-  "scipy<=1.15",
   "sqlalchemy>=2.0.43",
   "unidiff>=0.7.5",
 ]
@@ -22,7 +21,7 @@ dynamic = ["version"]
 license-files = ["LICENSE"]
 name = "pytest-flakefighters"
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"
@@ -35,6 +34,7 @@ TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:Trace
 
 [project.optional-dependencies]
 dev = [
+  "astroid==3.3.8",
   "black",
   "myst_parser",
   "nbsphinx",
@@ -45,9 +45,11 @@ dev = [
   "pytest-json-report>=1.5",
   "sphinx-autoapi",
   "sphinx_rtd_theme",
+  "autoclasstoc",
   "tox>=4.31.0",
 ]
 pg = ["psycopg2>2.9"]
+scipy = ["scipy"]
 
 [project.urls]
 Documentation = "https://pytest-flakefighters.readthedocs.io"
@@ -94,20 +96,20 @@ testpaths = ["tests"]
 write_to = "src/_version.py"
 
 [tool.tox]
-env_list = ["3.10", "3.11", "3.12", "3.13"]
+env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 requires = ["tox>=4.19"]
-skip_missing_interpreters = false           # fail if devs don’t have all required Python versions
+skip_missing_interpreters = false                   # fail if devs don’t have all required Python versions
 
 # Base configuration for all test environments
 [tool.tox.env_run_base]
 allowlist_externals = ["pytest"]
 commands = [
   [
+    "pytest",
     "--cov-report=html",
     "--cov=src/pytest_flakefighters",
     "-p",
     "no:flakefighters",
-    "pytest",
     "{posargs:tests}",
   ],
 ]

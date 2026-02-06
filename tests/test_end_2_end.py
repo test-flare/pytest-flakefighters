@@ -8,6 +8,33 @@ import os
 from pytest import ExitCode
 
 
+def test_flakefighters(pytester, deflaker_repo):
+    """
+    Test that flakefighters is registered when the --no-flakefighters argument is not passed.
+    """
+    reprec = pytester.runpytest(
+        os.path.join(deflaker_repo.working_dir, "app.py"),
+        "-s",
+    ).reprec
+    assert any(
+        call.plugin_name == "flakefighters" for call in reprec.getcalls("pytest_plugin_registered")
+    ), "Flakefighters should be registered when --no-flakefighters is not passed"
+
+
+def test_no_flakefighters(pytester, deflaker_repo):
+    """
+    Test that flakefighters is not registered when the --no-flakefighters argument is passed.
+    """
+    reprec = pytester.runpytest(
+        os.path.join(deflaker_repo.working_dir, "app.py"),
+        "--no-flakefighters",
+        "-s",
+    ).reprec
+    assert any(
+        call.plugin_name == "flakefighters" for call in reprec.getcalls("pytest_plugin_registered")
+    ), "Flakefighters should not be registered when --no-flakefighters is passed"
+
+
 def test_real_failures(pytester, deflaker_repo):
     """Make sure that genuine failures are labelled as such."""
 

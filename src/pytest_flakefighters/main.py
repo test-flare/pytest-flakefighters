@@ -81,6 +81,10 @@ def pytest_configure(config: pytest.Config):
     Initialise the FlakeFighterPlugin class.
     :param config: The config options.
     """
+    # Skip plugin registration if disabled
+    if get_config_value(config, "no_flakefighters"):
+        return
+
     database = Database(
         get_config_value(config, "database_url"),
         get_config_value(config, "load_max_runs"),

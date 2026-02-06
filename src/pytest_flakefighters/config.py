@@ -87,4 +87,9 @@ options = {
         "default": False,
         "help": "Display the flaky classification verdicts alongside test outcomes.",
     },
+    ("--no-flakefighters",): {
+        "action": "store_true",
+        "default": False,
+        "help": "Disable the flakefighters plugin for this test run.",
+    },
 }

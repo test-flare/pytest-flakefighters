@@ -21,13 +21,72 @@ Motivation
 :term:`Flaky tests` intermittently pass and fail without changes to test or project source code, often without an obvious cause.
 When flaky tests proliferate, developers may loose faith in their test suites, potentially exposing end-users to the consequences of software failures.
 
-Pytest Extension
+Pytest Plugin
 ----------------
 
-Flakefighters is a pytest extension developed as part of the `TestFLARE <https://test-flare.github.io/>`__ project.
-The extension provides a "Swiss army knife" of techniques (called flakefighters) to detect flaky tests.
-The extension incorporates several cutting edge flaky test detection techniques from research to automatically classify test failures as either genuine: indicating either a fault in the code or a mis-specified test case, or flaky: indicating a test with a nondeterministic outcome.
-Flaky tests are then reported separately in the test report, and can be optionally suppressed so they don't block CI/CD pipelines.
+.. _pytest-flakefighters: https://github.com/test-flare/pytest-flakefighters
+.. _pytest-rerunfailures: https://github.com/pytest-dev/pytest-rerunfailures
+.. _pytest-flaky: https://github.com/box/flaky
+.. _pytest-flakefinder: https://github.com/dropbox/pytest-flakefinder
+.. _pytest-replay: https://github.com/ESSS/pytest-replay
+.. _pytest-xdist: https://github.com/pytest-dev/pytest-xdist
+
+Flakefighters is a pytest plugin developed as part of the `TestFLARE <https://test-flare.github.io/>`__ project.
+The plugin provides a "Swiss army knife" of techniques (called flakefighters) to detect flaky tests.
+Where existing flaky test plugins such as `pytest-rerunfailures`_, `pytest-flaky`_ are primarily focused on rerunning (potentially) flaky tests until they pass, our main aim is to identify flaky tests by classifying test failures as genuine or flaky.
+The `pytest-flakefinder`_ plugin does this by simply rerunning tests multiple times and observing the result.
+By contrast, Flakefighters incorporates several cutting edge flaky test detection techniques from research to automatically classify test failures as either genuine: indicating either a fault in the code or a mis-specified test case, or flaky: indicating a test with a nondeterministic outcome.
+Flaky tests are then reported separately in the test report, and can be optionally rerun or suppressed so they don't block CI/CD pipelines.
+
++------------------------+--------------------------------------------------------------+---------------------------------------------+------------------------+--------------------------------------------------+----------------------------------------------------------------+
+| Feature                | `pytest-flakefighters`_                                      | `pytest-rerunfailures`_                     | `pytest-flaky`_        | `pytest-flakefinder`_                            | `pytest-replay`_                                               |
++========================+==============================================================+=============================================+========================+==================================================+================================================================+
+| **Purpose**            | Clasify test failures as genuine or flaky                    | Rerun failing tests in case they are flaky  | Decorator-based reruns | Copy tests to observe nondeterministic outcomes  | Reproduce flaky failures from CI when running tests with xdist |
++------------------------+--------------------------------------------------------------+---------------------------------------------+---------------------------------------------------------------------------+----------------------------------------------------------------+
+| **Detection Method**   | DeFlaker algorithm + coverage analysis                       | None                                        | None                   | Reruns                                           | None                                                           |
++------------------------+--------------------------------------------------------------+---------------------------------------------+---------------------------------------------------------------------------+----------------------------------------------------------------+
+| **Reporting**          | Terminal, HTML, JSON, JUnitXML                               | Terminal                                    | Terminal               | Terminal                                         | Terminal                                                       |
++------------------------+--------------------------------------------------------------+---------------------------------------------+---------------------------------------------------------------------------+----------------------------------------------------------------+
+| **History Tracking**   | Database of test outcomes over commits                       | None                                        | None                   | None                                             | None                                                           |
++------------------------+--------------------------------------------------------------+---------------------------------------------+---------------------------------------------------------------------------+----------------------------------------------------------------+
+| **Rerun Option**       | Optional                                                     | Required                                    | Required               | Required                                         | Required                                                       |
++------------------------+--------------------------------------------------------------+---------------------------------------------+---------------------------------------------------------------------------+----------------------------------------------------------------+
+| **Suppression Option** | Optional                                                     | None                                        | None                   | None                                             | None                                                           |
++------------------------+--------------------------------------------------------------+---------------------------------------------+---------------------------------------------------------------------------+----------------------------------------------------------------+
+| **Debugging support**  | Flakefighter results give insight into *why* tests are flaky | None                                        | None                   | None                                             | Reliable reproduction of flaky failures                        |
++------------------------+--------------------------------------------------------------+---------------------------------------------+---------------------------------------------------------------------------+----------------------------------------------------------------+
+
+Key features of pytest-flakefighters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use pytest-flakefighters when you want to:
+
+* **Understand WHY** tests are flaky, not just hide the symptoms
+* **Classify** flaky tests by root cause (coverage-independent, traceback-matched, etc.)
+* **Track** test flakiness over time and across commits
+* **Make informed decisions** about whether failures are legitimate
+
+When to use alternatives
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+* `pytest-rerunfailures`_ Quick fix for CI builds
+* `pytest-flaky`_ A few tests are known to be flaky
+* `pytest-flakefinder`_ Brute force search for flaky tests
+* `pytest-replay`_ Debugging specific flaky failures
+
+Can They Work Together?
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Yes! pytest-flakefighters can be combined with other flaky test plugins:
+
+* Use `pytest-flakefighters` to identify and classify flaky tests
+* Use `pytest-rerunfailures`_ or **pytest-flaky** as a temporary measure while fixing them
+* Use `pytest-replay`_ to debug specific instances identified by flakefighters
+* Use `pytest-xdist` to randomise the order or your test cases
+
+----
+
+*For more information on flaky test management best practices, see the* `pytest documentation <https://docs.pytest.org/en/stable/explanation/flaky.html>`_.
 
 
 .. toctree::

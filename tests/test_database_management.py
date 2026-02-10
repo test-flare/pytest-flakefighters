@@ -24,6 +24,7 @@ def test_run_saving(pytester, flaky_triangle_repo):
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         "-s",
+        "--flakefighters",
         "--max-reruns=2",
     )
 
@@ -63,6 +64,7 @@ def test_max_load_runs(pytester, deflaker_repo):
         pytester.runpytest(
             os.path.join(deflaker_repo.working_dir, "app.py"),
             "-s",
+            "--flakefighters",
         )
     db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
     assert len(db.load_runs()) == 5, "Should have saved 5 pytest runs"
@@ -81,7 +83,9 @@ def test_store_max_runs(pytester, deflaker_repo):
         os.path.join(deflaker_repo.working_dir, "flakefighters.db")
     ), "Database file should not exist in advance of running pytest"
     for _ in range(5):
-        pytester.runpytest(os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--store-max-runs=4")
+        pytester.runpytest(
+            os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--flakefighters", "--store-max-runs=4"
+        )
     db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
 
     # Check first run with ID=1 was cleared
@@ -106,7 +110,7 @@ def test_time_immemorial(pytester, deflaker_repo):
 
     # Run pytest 5 times to fill up the database
     for _ in range(5):
-        pytester.runpytest(os.path.join(deflaker_repo.working_dir, "app.py"), "-s")
+        pytester.runpytest(os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--flakefighters")
 
     # Spoof the first run as being from 2 days ago
     db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
@@ -117,7 +121,9 @@ def test_time_immemorial(pytester, deflaker_repo):
         session.flush()
 
     # Run pytest again to clear the "old" entry with ID=1
-    pytester.runpytest(os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--time-immemorial=1:0:0")
+    pytester.runpytest(
+        os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--flakefighters", "--time-immemorial=1:0:0"
+    )
 
     # Check it was cleared
     with Session(db.engine) as session:
@@ -141,12 +147,14 @@ def test_display_outcomes(pytester, flaky_reruns_repo):
         pytester.runpytest(
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
             "-s",
+            "--flakefighters",
         )
 
     result = pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         "--display-outcomes=2",
         "-s",
+        "--flakefighters",
     )
 
     # Test original functionality is unchanged
@@ -179,6 +187,7 @@ def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
         pytester.runpytest(
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
             "-s",
+            "--flakefighters",
         )
 
     result = pytester.runpytest(
@@ -186,6 +195,7 @@ def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
         "--display-outcomes=2",
         "--display-verdicts",
         "-s",
+        "--flakefighters",
     )
 
     # Test original functionality is unchanged

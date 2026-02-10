@@ -17,6 +17,7 @@ def test_flaky_reruns(pytester, flaky_reruns_repo):
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         f"--root={flaky_reruns_repo.working_dir}",
         "-s",
+        "--flakefighters",
         "--max-reruns=2",
     )
     db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
@@ -36,6 +37,7 @@ def test_flaky_reruns_second_time_lucky(pytester, flaky_reruns_repo):
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         f"--root={flaky_reruns_repo.working_dir}",
         "-s",
+        "--flakefighters",
         "--max-reruns=3",
     )
 
@@ -56,12 +58,14 @@ def test_previously_flaky(pytester, flaky_reruns_repo):
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         f"--root={flaky_reruns_repo.working_dir}",
         "-s",
+        "--flakefighters",
     )
 
     pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         f"--root={flaky_reruns_repo.working_dir}",
         "-s",
+        "--flakefighters",
         "--max-reruns=1",
         "--rerun-strategy=PREVIOUSLY_FLAKY",
     )
@@ -88,12 +92,14 @@ def test_previously_flaky_no_rerun(pytester, deflaker_repo):
         os.path.join(deflaker_repo.working_dir, "app.py"),
         f"--root={deflaker_repo.working_dir}",
         "-s",
+        "--flakefighters",
     )
 
     pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
         f"--root={deflaker_repo.working_dir}",
         "-s",
+        "--flakefighters",
         "--max-reruns=1",
         "--rerun-strategy=PREVIOUSLY_FLAKY",
     )
@@ -123,6 +129,7 @@ def test_rerun_all(pytester, flaky_reruns_repo):
         os.path.join(flaky_reruns_repo.working_dir, "pass_fail_flaky.py"),
         f"--root={flaky_reruns_repo.working_dir}",
         "-s",
+        "--flakefighters",
         "--max-reruns=1",
         "--rerun-strategy=ALL",
     )

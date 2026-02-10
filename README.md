@@ -16,71 +16,54 @@ Read more about flaky tests [here](https://docs.pytest.org/en/stable/explanation
 - Implements the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/) for pytest
 - Implements two traceback-matching classifiers from [Alshammari et al. (2024)](https://doi.org/10.1109/ICST60714.2024.00031).
 - Implements a novel coverage-independence classifier that classifies tests as flaky if they fail independently of passing test cases that exercise overlapping code.
-- Optionally rerun flaky failures
+- Optionally rerun or suppress flaky failures
 - Output results to JSON, HTML, or JUnitXML
 - Save test outcome history to a remote or local database
 
 ## Comparison with Other Plugins
 
-pytest-flakefighters takes a fundamentally different approach to flaky tests compared to other popular pytest plugins.
+Flakefighters is a pytest plugin developed as part of the [TestFLARE](https://test-flare.github.io/) project.
+The plugin provides a "Swiss army knife" of techniques (called flakefighters) to detect flaky tests.
+Where existing flaky test plugins such as [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) and [pytest-flaky](https://github.com/box/flaky) are primarily focused on rerunning (potentially) flaky tests until they pass, our main aim is to identify flaky tests by classifying test failures as genuine or flaky.
+The [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder) plugin does this by simply rerunning tests multiple times and observing the result.
 
-### How pytest-flakefighters Differs
+By contrast, Flakefighters incorporates several cutting edge flaky test detection techniques from research to automatically classify test failures as either genuine: indicating either a fault in the code or a mis-specified test case, or flaky: indicating a test with a nondeterministic outcome.
+Flaky tests are then reported separately in the test report, and can be optionally rerun or suppressed so they don't block CI/CD pipelines.
 
-| Feature | pytest-flakefighters | pytest-rerunfailures | pytest-flaky |
-|---------|---------------------|---------------------|--------------|
-| **Approach** | Intelligent classification using algorithms | Simple rerun mechanism | Decorator-based reruns |
-| **Detection Method** | DeFlaker algorithm + coverage analysis | None (only reruns) | None (only reruns) |
-| **Classification** | Yes - identifies *why* test is flaky | No | No |
-| **History Tracking** | Database of test outcomes over commits | No | No |
-| **Academic Basis** | Research-backed algorithms | N/A | N/A |
-| **Git Integration** | Yes - compares commits | No | No |
-| **Rerun Option** | Optional | Required | Required |
-
-### Popular Alternatives
-
-#### [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures)
-- **Purpose:** Rerun failed tests to work around temporary failures
-- **Usage:** `pytest --reruns 3 --reruns-delay 2`
-- **Best for:** Quick CI fixes when you just need passing builds
-- **Limitation:** Doesn't identify *why* tests are flaky
-
-#### [pytest-flaky](https://github.com/box/flaky)
-- **Purpose:** Mark specific tests as flaky and rerun them
-- **Usage:** `@flaky(max_runs=3, min_passes=2)`
-- **Best for:** Known flaky tests that you want to pass "most of the time"
-- **Limitation:** Manual marking required, no automatic detection
-
-#### [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder)
-- **Purpose:** Identify flaky tests by running them multiple times
-- **Best for:** Discovery phase - finding which tests are flaky
-- **Limitation:** Doesn't classify or explain flakiness
-
-#### [pytest-replay](https://github.com/ESSS/pytest-replay)
-- **Purpose:** Reproduce flaky failures from CI in local environment
-- **Best for:** Debugging specific flaky test instances
-- **Limitation:** Requires failure already occurred
+| Feature | [pytest-flakefighters](https://github.com/test-flare/pytest-flakefighters) | [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) | [pytest-flaky](https://github.com/box/flaky) | [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder) | [pytest-replay](https://github.com/ESSS/pytest-replay) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Purpose** | Classify test failures as genuine or flaky | Rerun failing tests in case they are flaky | Decorator-based reruns | Copy tests to observe nondeterministic outcomes | Reproduce flaky failures from CI when running with [xdist](https://github.com/pytest-dev/pytest-xdist) |
+| **Detection Method** | DeFlaker algorithm + coverage analysis | None | None | Reruns | None |
+| **Reporting** | Terminal, HTML, JSON, JUnitXML | Terminal | Terminal | Terminal | Terminal |
+| **History Tracking** | Database of test outcomes over commits | None | None | None | None |
+| **Rerun Option** | Optional | Required | Required | Required | Required |
+| **Suppression Option** | Optional | None | None | None | None |
+| **Debugging support** | Insight into *why* tests are flaky | None | None | None | Reliable reproduction of flaky failures |
 
 ### When to Use pytest-flakefighters
 
 Use pytest-flakefighters when you want to:
-- **Understand WHY** tests are flaky, not just hide the symptoms
-- **Classify** flaky tests by root cause (coverage-independent, traceback-matched, etc.)
-- **Track** test flakiness over time and across commits
-- **Make informed decisions** about whether failures are legitimate
 
-### When to Use Alternatives
+* **Understand WHY** tests are flaky, not just hide the symptoms
+* **Classify** flaky tests by root cause (coverage-independent, traceback-matched, etc.)
+* **Track** test flakiness over time and across commits
+* **Make informed decisions** about whether failures are legitimate
 
-- **pytest-rerunfailures:** Quick fix for CI builds, don't care about root cause
-- **pytest-flaky:** You've already identified flaky tests manually
-- **pytest-flakefinder:** Just want to discover which tests are flaky
-- **pytest-replay:** Debugging a specific flaky failure instance
+### When to use alternatives
+
+* [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures): Quick fix for CI builds
+* [pytest-flaky](https://github.com/box/flaky): A few tests are known to be flaky
+* [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder): Brute force search for flaky tests
+* [pytest-replay](https://github.com/ESSS/pytest-replay): Debugging specific flaky failures
 
 ### Can They Work Together?
 
-Yes! pytest-flakefighters can be combined with other plugins:
-- Use **pytest-flakefighters** to identify and classify flaky tests
-- Use **pytest-rerunfailures** as a temporary measure while fixing them
-- Use **pytest-replay** to debug specific instances identified by flakefighters
+Yes! pytest-flakefighters can be combined with other flaky test plugins:
+
+* Use **pytest-flakefighters** to identify and classify flaky tests
+* Use [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) or [pytest-flaky](https://github.com/box/flaky) as a temporary measure while fixing them
+* Use [pytest-replay](https://github.com/ESSS/pytest-replay) to debug specific instances identified by flakefighters
+* Use [pytest-xdist](https://github.com/pytest-dev/pytest-xdist) to randomise the order of your test cases
 
 ---
 

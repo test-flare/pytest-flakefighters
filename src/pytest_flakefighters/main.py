@@ -82,7 +82,7 @@ def pytest_configure(config: pytest.Config):
     :param config: The config options.
     """
     # Skip plugin registration if disabled
-    if get_config_value(config, "no_flakefighters"):
+    if not get_config_value(config, "flakefighters"):
         return
 
     database = Database(

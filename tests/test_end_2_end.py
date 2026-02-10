@@ -10,11 +10,13 @@ from pytest import ExitCode
 
 def test_flakefighters(pytester, deflaker_repo):
     """
-    Test that flakefighters is registered when the --no-flakefighters argument is not passed.
+    Test that flakefighters is registered when the --flakefighters argument is passed.
     """
     reprec = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
+        "--flakefighters",
         "-s",
+        "--flakefighters",
     ).reprec
     assert any(
         call.plugin_name == "flakefighters" for call in reprec.getcalls("pytest_plugin_registered")
@@ -23,12 +25,12 @@ def test_flakefighters(pytester, deflaker_repo):
 
 def test_no_flakefighters(pytester, deflaker_repo):
     """
-    Test that flakefighters is not registered when the --no-flakefighters argument is passed.
+    Test that flakefighters is not registered when the --flakefighters argument is not passed.
     """
     reprec = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
-        "--no-flakefighters",
         "-s",
+        "--flakefighters",
     ).reprec
     assert any(
         call.plugin_name == "flakefighters" for call in reprec.getcalls("pytest_plugin_registered")
@@ -41,6 +43,7 @@ def test_real_failures(pytester, deflaker_repo):
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "-s",
+        "--flakefighters",
     )
 
     result.assert_outcomes(failed=1)
@@ -69,6 +72,7 @@ def test_real_failures_non_py_file_changed(pytester, deflaker_repo):
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "-s",
+        "--flakefighters",
     )
 
     result.assert_outcomes(failed=1)
@@ -86,6 +90,7 @@ def test_rerun_flaky_failures(pytester, flaky_reruns_repo):
     result = pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         "-s",
+        "--flakefighters",
         "--max-reruns=3",
     )
 
@@ -99,6 +104,7 @@ def test_suppress_flaky_failures(pytester, flaky_reruns_repo):
     result = pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         "-s",
+        "--flakefighters",
         "--suppress-flaky-failures-exit-code",
     )
 
@@ -115,6 +121,7 @@ def test_invalid_deflaker(pytester, flaky_reruns_repo):
     result = pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         "-s",
+        "--flakefighters",
         "--suppress-flaky-failures-exit-code",
     )
     assert result.ret == ExitCode.INTERNAL_ERROR, "No error raised"
@@ -132,6 +139,7 @@ def test_deflaker_postprocessing(pytester, flaky_reruns_repo):
     result = pytester.runpytest(
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         "-s",
+        "--flakefighters",
         "--suppress-flaky-failures-exit-code",
     )
 
@@ -146,6 +154,7 @@ def test_deflaker_example(pytester, deflaker_repo):
     result = pytester.runpytest(
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "-s",
+        "--flakefighters",
     )
 
     result.assert_outcomes(failed=1)
@@ -163,6 +172,7 @@ def test_deflaker_example_function_coverage(pytester, deflaker_repo):
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "--function-coverage",
         "-s",
+        "--flakefighters",
     )
 
     result.assert_outcomes(failed=1)
@@ -179,6 +189,7 @@ def test_html_report(pytester, deflaker_repo):
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "--html=report.html",
         "-s",
+        "--flakefighters",
     )
 
     # Test original functionality is unchanged
@@ -214,6 +225,7 @@ def test_xml_report(pytester, deflaker_repo):
         "--max-reruns=2",
         "--rerun-strategy=ALL",
         "-s",
+        "--flakefighters",
     )
 
     # Test original functionality is unchanged
@@ -241,6 +253,7 @@ def test_json_report(pytester, deflaker_repo):
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "--json-report",
         "-s",
+        "--flakefighters",
     )
 
     # Test original functionality is unchanged
@@ -269,6 +282,7 @@ def test_display_verdicts(pytester, deflaker_repo):
         os.path.join(deflaker_repo.working_dir, "app.py"),
         "--display-verdicts",
         "-s",
+        "--flakefighters",
     )
 
     # Test original functionality is unchanged
@@ -296,6 +310,7 @@ def test_display_test_level_verdicts(pytester, deflaker_repo):
         "--max-reruns=2",
         "--rerun-strategy=ALL",
         "-s",
+        "--flakefighters",
     )
 
     # Test original functionality is unchanged

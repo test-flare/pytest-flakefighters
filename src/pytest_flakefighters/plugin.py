@@ -4,6 +4,7 @@ This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.31801
 
 from datetime import datetime
 from enum import Enum
+from re import escape
 from typing import Union
 from xml.etree import ElementTree as ET
 
@@ -99,7 +100,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         item.start = datetime.now().timestamp()
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
-        self.cov.switch_context(item.nodeid)  # pragma: no cover
+        self.cov.switch_context(escape(item.nodeid))  # pragma: no cover
         yield  # pragma: no cover
         self.cov.stop()  # pragma: no cover
         item.stop = datetime.now().timestamp()
@@ -166,7 +167,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
-                    line_coverage.set_query_contexts(["collection", item.nodeid])
+                    line_coverage.set_query_contexts(["collection", escape(item.nodeid)])
                     captured_output = dict(report.sections)
                     test_execution = TestExecution(  # pylint: disable=E1123
                         outcome=report.outcome,

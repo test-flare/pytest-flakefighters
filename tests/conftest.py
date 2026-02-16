@@ -39,10 +39,8 @@ def fixture_gatorgrade_repo(tmpdir_factory):
     repo_root = tmpdir_factory.mktemp("gatorgrade_repo")
     repo = git.Repo.init(repo_root, initial_branch="main")
 
-    shutil.copy(
-        os.path.join(CURRENT_DIR, "resources", "test_gatorgrade.py"), os.path.join(repo_root, "test_gatorgrade.py")
-    )
-    repo.index.add(["test_gatorgrade.py"])
+    shutil.copy(os.path.join(CURRENT_DIR, "resources", "gatorgrade.py"), os.path.join(repo_root, "gatorgrade.py"))
+    repo.index.add(["gatorgrade.py"])
     repo.index.commit("Initial commit of test file.")
     os.chdir(repo_root)
     os.mkdir("test_assignment")

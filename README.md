@@ -78,7 +78,20 @@ You can install the extension by running `pip install pytest-flakefighters` from
 
 ### With uv
 
-If you use [uv](https://github.com/astral-sh/uv) for Python package management, you can install pytest-flakefighters with `uv pip install pytest-flakefighters`.
+If you use [uv](https://github.com/astral-sh/uv) for Python package management, you can install pytest-flakefighters with `uv add pytest-flakefighters`.
+This will add the plugin to your main dependencies.
+```
+dependencies = [
+    "pytest-flakefighters>=x.y.z",
+]
+```
+However, pytest is typically a [development dependency](https://docs.astral.sh/uv/concepts/projects/dependencies/#development-dependencies), and so should be added with `uv add --dev pytest-flakefighters`.
+```
+[dependency-groups]
+dev = [
+    "pytest-flakefighters>=x.y.z",
+]
+```
 
 
 ### From source (for development)

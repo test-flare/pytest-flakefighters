@@ -137,19 +137,17 @@ FlakeFighter has the following arguments.
 
 ### Enabling/Disabling the Plugin
 
-By default, pytest-flakefighters runs whenever it is installed. To disable it for a specific test run, use:
+To enable the plugin, run pytest with the `--flakefighters` argument
 
 ```bash
-pytest --no-flakefighters
+pytest --flakefighters
 ```
-
-This is useful when you have the plugin installed but want to run quick tests without flaky test detection.
 
 You can also configure this in your `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
-addopts = "--no-flakefighters"
+addopts = "--flakefighters"
 ```
 
 

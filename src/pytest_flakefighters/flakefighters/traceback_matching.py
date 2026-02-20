@@ -120,6 +120,10 @@ class CosineSimilarity(TracebackMatching):
     Test executions are classified as flaky if the stack trace is sufficiently similar to a previous flaky execution.
 
     :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
+    :ivar previous_runs: List of previous FlakeFighters runs.
+    :ivar root: The root directory of the code repository.
+    :ivar threshold: The minimum distance to consider as "similar", expressed as a proportion 0 <= threshold < 1 where 0
+        represents no difference and 1 represents complete difference.
     """
 
     def __init__(self, run_live: bool, previous_runs: list[Run], root: str = ".", threshold: float = 1):

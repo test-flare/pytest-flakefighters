@@ -137,21 +137,46 @@ FlakeFighter has the following arguments.
 
 ### Enabling/Disabling the Plugin
 
-By default, pytest-flakefighters runs whenever it is installed. To disable it for a specific test run, use:
+To enable the plugin, run pytest with the `--flakefighters` argument
 
 ```bash
-pytest --no-flakefighters
+pytest --flakefighters
 ```
-
-This is useful when you have the plugin installed but want to run quick tests without flaky test detection.
 
 You can also configure this in your `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
-addopts = "--no-flakefighters"
+addopts = "--flakefighters"
 ```
 
+### Configuration
+By default, the plugin will only use the DeFlaker algorithm to classify flaky tests.
+If you would like to use other algorithms as well (or instead), you need to configure these.
+This can be done by adding appropriate fields in your pyproject.toml or pytest.ini file.
+For example, you could add the following to your pyproject.toml.
+
+```
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.deflaker.DeFlaker]
+run_live=true # run the classifier immediately after each test
+
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.traceback_matching.TracebackMatching]
+run_live=false # run the classifier at the end of the test suite
+
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.traceback_matching.CosineSimilarity]
+run_live=false # run the classifier at the end of the test suite
+threshold=0.8 # Cosine similarity >= 0.8 is classed as a match
+
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.coverage_independence.CoverageIndependence]
+run_live=false # run the classifier at the end of the test suite
+threshold=0.1 # Distance <= 0.1 is classed as "similar"
+metric=hamming # Use Hamming distance
+linkage_method=complete # Use complete linkage for clustering
+```
+
+> [!NOTE]
+> The above configuration is just an example meant to demonstrate the various parameters that can be supplied, and is not a recommendation or "default".
+> You should choose the parameter values that are appropriate for your project, especially threshold values for CosineSimilarity and CoverageIndependence.
 
 ## Contributing
 

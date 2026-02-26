@@ -6,7 +6,7 @@ requires = ["setuptools>=64", "setuptools_scm[toml]>=6.2", "wheel"]
 authors = [{ name = "TestFLARE Team" }]
 dependencies = [
   "GitPython>=3.1.45",
-  "coverage>=7.10.6",
+  "coverage>=7",
   "dotenv>=0.9.9",
   "nltk>=3.9",
   "pandas>=2.3",

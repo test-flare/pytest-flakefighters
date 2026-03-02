@@ -92,26 +92,38 @@ def pytest_configure(config: pytest.Config):
         get_config_value(config, "time_immemorial"),
     )
 
-    if get_config_value(config, "function_coverage"):
-        cov = Profiler()
-    else:
-        cov = coverage.Coverage()
+    cov = Profiler() if get_config_value(config, "function_coverage") else coverage.Coverage()
 
     algorithms = {ff.name: ff for ff in entry_points(group="pytest_flakefighters")}
     flakefighter_configs = config.inicfg.get("pytest_flakefighters")
+
+    active_flakefighters = get_config_value(config, "active_flakefighters")
 
     flakefighters = []
     if flakefighter_configs is not None:
         # Can't measure coverage since the branch taken depends on the python version
         if isinstance(flakefighter_configs, str):  # pragma: no cover
-            flakefighter_configs = yaml.safe_load(flakefighter_configs)  # pragma: no cover
+            flakefighter_configs = yaml.safe_load(flakefighter_configs)["flakefighters"]  # pragma: no cover
         elif hasattr(flakefighter_configs, "value"):  # pragma: no cover
-            flakefighter_configs = yaml.safe_load(flakefighter_configs.value)  # pragma: no cover
+            flakefighter_configs = yaml.safe_load(flakefighter_configs.value)["flakefighters"]  # pragma: no cover
         else:  # pragma: no cover
             raise TypeError(f"Unexpected type for config: {type(flakefighter_configs)}")  # pragma: no cover
-        for module, classes in flakefighter_configs["flakefighters"].items():
+
+        if active_flakefighters is not None:
+            flakefighter_configs = {
+                module: {
+                    class_name: config for class_name, config in configs.items() if class_name in active_flakefighters
+                }
+                for module, configs in flakefighter_configs.items()
+            }
+
+        for module, classes in flakefighter_configs.items():
             for class_name, params in classes.items():
-                if class_name in algorithms:
+                if class_name not in algorithms:
+                    raise ValueError(
+                        f"Could not load flakefighter {module}:{class_name}. Did you register its entry point?"
+                    )
+                if params.get("active", True):
                     flakefighters.append(
                         algorithms[class_name]
                         .load()
@@ -120,10 +132,6 @@ def pytest_configure(config: pytest.Config):
                             | {"database": database}
                             | params
                         )
-                    )
-                else:
-                    raise ValueError(
-                        f"Could not load flakefighter {module}:{class_name}. Did you register its entry point?"
                     )
 
     else:

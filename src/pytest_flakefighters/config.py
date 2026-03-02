@@ -92,4 +92,11 @@ options = {
         "default": False,
         "help": "Enable the flakefighters plugin.",
     },
+    ("--active-flakefighters", "-A"): {
+        "action": "store",
+        "nargs": "+",
+        "help": "The names of the active flakefighters. "
+        "If unspecified flakefighters with a specified configuration will be used."
+        "Flakefighters can also be turned on and off individually with the `active` configuration parameter",
+    },
 }

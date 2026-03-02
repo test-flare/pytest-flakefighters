@@ -4,11 +4,11 @@ This module adds all the FlakeFighter configuration options to pytest.
 
 import logging
 from importlib.metadata import entry_points
+from typing import Any
 
 import coverage
 import pytest
 import yaml
-from Typing import Any
 
 from pytest_flakefighters.config import options
 from pytest_flakefighters.database_management import Database

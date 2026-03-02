@@ -13,7 +13,7 @@ dependencies = [
   "pytest>=6.2.0",
   "pyyaml>=6",
   "scikit-learn>=1.7",
-  "sqlalchemy>=2.0.43",
+  "sqlalchemy>=2",
   "unidiff>=0.7.5",
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."

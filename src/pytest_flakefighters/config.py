@@ -5,8 +5,6 @@ Options can then be specified on the commandline as `--long-name` or in a config
 Options specified on the commandline will override those specified in configuration files.
 """
 
-import os
-
 from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyFlaky
 
 rerun_strategies = {"ALL": All, "FLAKY_FAILURE": FlakyFailure, "PREVIOUSLY_FLAKY": PreviouslyFlaky}
@@ -16,7 +14,6 @@ options = {
     ("--root",): {
         "dest": "root",
         "action": "store",
-        "default": os.getcwd(),
         "help": "The root directory of the project. Defaults to the current working directory.",
     },
     ("--suppress-flaky-failures-exit-code",): {

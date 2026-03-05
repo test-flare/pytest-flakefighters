@@ -141,7 +141,15 @@ class CosineSimilarity(TracebackMatching):
             run_live=config.get("run_live", True),
             previous_runs=config["database"].previous_runs,
             root=config.get("root", "."),
+            threshold=config.get("threshold", 1),
         )
+
+    def params(self):
+        """
+        Convert the key parameters into a dictionary so that the object can be replicated.
+        :return A dictionary of the parameters used to create the object.
+        """
+        return super().params() | {"threshold": self.threshold}
 
     def _tf_idf_matrix(self, executions):
         corpus = [

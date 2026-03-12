@@ -3,11 +3,12 @@ This module adds all the FlakeFighter configuration options to pytest.
 """
 
 import logging
-from importlib.metadata import entry_points
+from importlib.metadata import entry_points, version
 
 import coverage
 import pytest
 import yaml
+from packaging.version import Version
 
 from pytest_flakefighters.config import options
 from pytest_flakefighters.database_management import Database
@@ -40,9 +41,10 @@ def pytest_addoption(parser: pytest.Parser):
     parser.addini("pytest_flakefighters", type="args", help="Configuration for the pytest-flakefighters extension")
 
     def datatype(details):
+
         if "type" not in details:
             return None
-        if details["type"] is str:
+        if details["type"] is str or (Version(version("pytest")) <= Version("9.0.0") and details["type"] is int):
             return "string"
         return str(details["type"].__name__)
 

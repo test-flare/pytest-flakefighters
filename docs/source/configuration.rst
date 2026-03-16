@@ -11,6 +11,7 @@ Here, :code:`<FlakeFighterClass>` is the class of the flakefighter you wish to c
 
    [tool.pytest.ini_options.pytest_flakefighters.flakefighters.deflaker.DeFlaker]
    run_live=true # run the classifier immediately after each test
+   active=false # turn off the flakefighter (use active=true, or leave unspecified to turn it on)
 
    [tool.pytest.ini_options.pytest_flakefighters.flakefighters.traceback_matching.TracebackMatching]
    run_live=false # run the classifier at the end of the test suite
@@ -29,6 +30,12 @@ Here, :code:`<FlakeFighterClass>` is the class of the flakefighter you wish to c
    The above configuration is just an example meant to demonstrate the various parameters that can be supplied, and is not a recommendation or "default".
 
    You should choose the parameter values that are appropriate for your project, especially threshold values for **CosineSimilarity** and **CoverageIndependence**.
+
+The default behaviour of the plugin is to run every flakefigher with a specified configuration.
+However, there are two ways to toggle flakefighters on and off.
+Firstly, you can add  :code:`active=false` to the configuration, as for :code:`DeFlaker` in the above example configuration.
+Secondly, you can use the :code:`--active-flakefighters` commandline argument, e.g. :code:`--active-flakefighters DeFlaker CosineSimilarity` would run just the :code:`DeFlaker` and :code:`CosineSimilarity` flakefighers.
+Note that the commandline argument overides the value of :code:`active` specified in the configuration file.
 
 Every flakefighter has a :code:`run_live` option, which can be set to :code:`true` to classify each test execution as flaky immediately after it is run, or :code:`false` to clasify all tests at once at the end, although individual flakefighters may only support one of these.
 Individual flakefighters have their own configurable options.

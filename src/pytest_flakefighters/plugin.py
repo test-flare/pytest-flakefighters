@@ -266,6 +266,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 self.test_reports[test.name].flakefighter_results = {
                     r.name: r.classification for r in test.flakefighter_results
                 }
+                self.test_reports[test.name].flaky = test.flaky
 
     @pytest.hookimpl(optionalhook=True)
     def pytest_json_modifyreport(self, json_report: dict):

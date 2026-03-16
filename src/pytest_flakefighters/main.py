@@ -4,6 +4,7 @@ This module adds all the FlakeFighter configuration options to pytest.
 
 import logging
 from importlib.metadata import entry_points, version
+from typing import Any
 
 import coverage
 import pytest
@@ -79,6 +80,21 @@ def get_config_value(config, name):
         return None
 
 
+def setup_flakefighter_configs(flakefighter_configs: Any):
+    """
+    Parse the flakefighter configurations from string, or initialise to empty if None.
+    :param flakefighter_configs: The flakefighter config object.
+    """
+    # Can't measure coverage since the branch taken depends on the python version
+    if isinstance(flakefighter_configs, str):  # pragma: no cover
+        return yaml.safe_load(flakefighter_configs)["flakefighters"]  # pragma: no cover
+    if hasattr(flakefighter_configs, "value"):  # pragma: no cover
+        return yaml.safe_load(flakefighter_configs.value)["flakefighters"]  # pragma: no cover
+    if flakefighter_configs is None:
+        return {}
+    raise TypeError(f"Unexpected type for config: {type(flakefighter_configs)}")  # pragma: no cover
+
+
 def pytest_configure(config: pytest.Config):
     """
     Initialise the FlakeFighterPlugin class.
@@ -88,6 +104,9 @@ def pytest_configure(config: pytest.Config):
     if not get_config_value(config, "flakefighters"):
         return
 
+    if get_config_value(config, "root") is None:
+        config.option.root = str(config.rootdir)
+
     database = Database(
         get_config_value(config, "database_url"),
         get_config_value(config, "load_max_runs"),
@@ -95,26 +114,46 @@ def pytest_configure(config: pytest.Config):
         get_config_value(config, "time_immemorial"),
     )
 
-    if get_config_value(config, "function_coverage"):
-        cov = Profiler()
-    else:
-        cov = coverage.Coverage()
+    cov = Profiler() if get_config_value(config, "function_coverage") else coverage.Coverage()
 
     algorithms = {ff.name: ff for ff in entry_points(group="pytest_flakefighters")}
     flakefighter_configs = config.inicfg.get("pytest_flakefighters")
 
+    active_flakefighters = get_config_value(config, "active_flakefighters")
+
     flakefighters = []
-    if flakefighter_configs is not None:
-        # Can't measure coverage since the branch taken depends on the python version
-        if isinstance(flakefighter_configs, str):  # pragma: no cover
-            flakefighter_configs = yaml.safe_load(flakefighter_configs)  # pragma: no cover
-        elif hasattr(flakefighter_configs, "value"):  # pragma: no cover
-            flakefighter_configs = yaml.safe_load(flakefighter_configs.value)  # pragma: no cover
-        else:  # pragma: no cover
-            raise TypeError(f"Unexpected type for config: {type(flakefighter_configs)}")  # pragma: no cover
-        for module, classes in flakefighter_configs["flakefighters"].items():
+    if flakefighter_configs is None and active_flakefighters is None:
+        logger.warning("No flakefighters specified. Using basic DeFlaker only.")
+        flakefighters.append(
+            DeFlaker(
+                run_live=True,
+                root=get_config_value(config, "root"),
+            )
+        )
+    else:
+        flakefighter_configs = setup_flakefighter_configs(flakefighter_configs)
+        if active_flakefighters is not None:
+            flakefighter_configs = {
+                module: {
+                    # Commandline --active-flakefighers overrides file options
+                    class_name: config | {"active": class_name in active_flakefighters}
+                    for class_name, config in configs.items()
+                    if class_name in active_flakefighters
+                }
+                for module, configs in flakefighter_configs.items()
+            }
+            for class_name in active_flakefighters:
+                module = algorithms[class_name].value.split(":")[0].split(".")[-1]
+                flakefighter_configs[module] = flakefighter_configs.get(module, {})
+                flakefighter_configs[module][class_name] = flakefighter_configs[module].get(class_name, {})
+
+        for module, classes in flakefighter_configs.items():
             for class_name, params in classes.items():
-                if class_name in algorithms:
+                if class_name not in algorithms:
+                    raise ValueError(
+                        f"Could not load flakefighter {module}:{class_name}. Did you register its entry point?"
+                    )
+                if params.get("active", True):
                     flakefighters.append(
                         algorithms[class_name]
                         .load()
@@ -124,19 +163,6 @@ def pytest_configure(config: pytest.Config):
                             | params
                         )
                     )
-                else:
-                    raise ValueError(
-                        f"Could not load flakefighter {module}:{class_name}. Did you register its entry point?"
-                    )
-
-    else:
-        logger.warning("No flakefighters specified. Using basic DeFlaker only.")
-        flakefighters.append(
-            DeFlaker(
-                run_live=True,
-                root=get_config_value(config, "root"),
-            )
-        )
 
     config.pluginmanager.register(
         FlakeFighterPlugin(
@@ -150,5 +176,6 @@ def pytest_configure(config: pytest.Config):
             save_run=not get_config_value(config, "no_save"),
             display_outcomes=get_config_value(config, "display_outcomes"),
             display_verdicts=get_config_value(config, "display_verdicts"),
-        )
+        ),
+        name="flakefighter_plugin",
     )

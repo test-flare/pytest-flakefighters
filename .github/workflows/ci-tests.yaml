@@ -21,11 +21,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         include:
         - python-version: "3.10"
-          pytest-version: "7"
+          pytest-version: "==7"
         - python-version: "3.11"
-          pytest-version: "8"
-        - python-version: "3.12"
-          pytest-version: "latest"
+          pytest-version: "==8"
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -34,7 +32,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-          pip install "pytest==${{ matrix.pytest-version }}"
+          pip install "pytest${{ matrix.pytest-version }}"
           pip install -e .[dev]
     - name: Test with pytest
       run: |

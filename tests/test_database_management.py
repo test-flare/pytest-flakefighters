@@ -100,6 +100,32 @@ def test_store_max_runs(pytester, deflaker_repo):
     db.engine.dispose()
 
 
+def test_store_max_runs_ini(pytester, deflaker_repo):
+    """Test that we only load the specified number of runs"""
+
+    with open(os.path.join(deflaker_repo.working_dir, "pyproject.toml"), "w") as f:
+        f.write("[tool.pytest.ini_options.pytest_flakefighters]\nstore_max_runs=4")
+
+    # run pytest with the following cmd args
+    assert not os.path.exists(
+        os.path.join(deflaker_repo.working_dir, "flakefighters.db")
+    ), "Database file should not exist in advance of running pytest"
+    for _ in range(5):
+        pytester.runpytest(os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--flakefighters")
+    db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
+
+    # Check first run with ID=1 was cleared
+    with Session(db.engine) as session:
+        run = session.get(Run, 1)
+        assert run is None, "Run with ID 1 should have been deleted"
+
+    # Check it's associated Tests were cleared
+    with Session(db.engine) as session:
+        tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
+        assert len(list(tests)) == 0
+    db.engine.dispose()
+
+
 def test_time_immemorial(pytester, deflaker_repo):
     """Test that we only load the specified number of runs"""
 

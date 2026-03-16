@@ -44,6 +44,7 @@ def pytest_addoption(parser: pytest.Parser):
 
         if "type" not in details:
             return None
+        # Support for ini int was only added in pytest>=3.9, but it seems to handle them fine as strings
         if details["type"] is str or (Version(version("pytest")) <= Version("9.0.0") and details["type"] is int):
             return "string"
         return str(details["type"].__name__)

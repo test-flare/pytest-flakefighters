@@ -75,7 +75,8 @@ def get_config_value(config, name):
         return cli_val
 
     try:
-        return config.getini(name)
+        ini_value = config.getini(name)
+        return None if ini_value in ["", []] else ini_value
     except ValueError:
         return None
 

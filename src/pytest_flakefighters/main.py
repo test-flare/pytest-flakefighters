@@ -107,9 +107,10 @@ def pytest_configure(config: pytest.Config):
     if get_config_value(config, "root") is None:
         config.option.root = str(config.rootdir)
 
+    max_runs = get_config_value(config, "load_max_runs")
     database = Database(
         get_config_value(config, "database_url"),
-        get_config_value(config, "load_max_runs"),
+        max_runs if max_runs != "" else None,
         get_config_value(config, "store_max_runs"),
         get_config_value(config, "time_immemorial"),
     )

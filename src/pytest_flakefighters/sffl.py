@@ -8,12 +8,10 @@ from math import sqrt
 
 import pandas as pd
 
-from pytest_flakefighters.database_management import (
-    Test,
-)
+from pytest_flakefighters.database_management import Test
 
 
-def total_coverage(test: Test) -> dict[str, set[int]]:
+def total_coverage(root, test: Test) -> dict[str, set[int]]:
     """
     Merge lines covered by all test executions into a single dictionary.
     :param test: The test to be processed.
@@ -23,7 +21,8 @@ def total_coverage(test: Test) -> dict[str, set[int]]:
     reduce = set.intersection if test.flaky else set.union
     for execution in test.executions:
         for file, lines in execution.coverage.items():
-            coverage[file] = coverage.get(file, []) + [set(lines)]
+            if file.startswith(root):
+                coverage[file] = coverage.get(file, []) + [set(lines)]
     return {file: reduce(*lines) for file, lines in coverage.items()}
 
 
@@ -60,7 +59,7 @@ class SFFL:
     This class implements Spectrum-based Flaky Fault Localization ranking.
     """
 
-    def __init__(self, tests: list[Test]):
+    def __init__(self, root: str, tests: list[Test]):
         """
         Go through each test in the test suite and calculate a suspiciousness score for each code statement.
         :param tests: The test suite.
@@ -71,20 +70,28 @@ class SFFL:
         stable = defaultdict(int)
         all_covered_lines = {}
         for test in tests:
+            print(test.name, test.flaky)
             for execution in test.executions:
                 for file, lines in execution.coverage.items():
-                    all_covered_lines[file] = set.union(all_covered_lines.get(file, set()), lines)
+                    if file.startswith(root):
+                        all_covered_lines[file] = set.union(all_covered_lines.get(file, set()), lines)
             if test.flaky:
                 total_flaky += 1
-                update_covered(flaky, total_coverage(test))
+                update_covered(flaky, total_coverage(root, test))
             else:
                 total_stable += 1
-                update_covered(stable, total_coverage(test))
+                update_covered(stable, total_coverage(root, test))
         self.total_flaky = total_flaky
         self.total_stable = total_stable
         self.flaky = flaky
         self.stable = stable
         self.all_covered_lines = all_covered_lines
+
+        print("total_flaky", self.total_flaky)
+        print("total_stable", self.total_stable)
+        print("flaky", {k[1]: v for k, v in self.flaky.items()})
+        print("stable", {k[1]: v for k, v in self.stable.items()})
+        print("all_covered_lines", self.all_covered_lines)
 
     def _tarantula(self, s: tuple[str, int]) -> float:
         """
@@ -132,7 +139,11 @@ class SFFL:
 
     def _rank(self, metric):
         flat = [(file, line, metric((file, line))) for file, lines in self.all_covered_lines.items() for line in lines]
-        return pd.DataFrame(flat, columns=["file", "line", "suspiciousness"]).sort_values("suspiciousness")
+        return (
+            pd.DataFrame(flat, columns=["file", "line", "suspiciousness"])
+            .sort_values(["suspiciousness", "line", "file"], ascending=[False, True, True])
+            .reset_index(drop=True)
+        )
 
     def tarantula(self):
         """

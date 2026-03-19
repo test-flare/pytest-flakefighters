@@ -83,3 +83,27 @@ def fixture_flaky_reruns_repo(tmpdir_factory):
 
     os.chdir(repo_root)
     return repo
+
+
+@pytest.fixture(scope="function", name="sffl_repo")
+def fixture_sffl_repo(tmpdir_factory):
+    """
+    Fixture for the SFFL example.
+    """
+    repo_root = tmpdir_factory.mktemp("sffl_repo")
+    repo = git.Repo.init(repo_root, initial_branch="main")
+
+    shutil.copy(
+        os.path.join(Path(__file__).parent, "resources", "sffl_example.py"), os.path.join(repo_root, "sffl_example.py")
+    )
+    shutil.copy(
+        os.path.join(Path(__file__).parent, "resources", "test_sffl_example.py"),
+        os.path.join(repo_root, "test_sffl_example.py"),
+    )
+    repo.index.add(["sffl_example.py"])
+    repo.index.add(["test_sffl_example.py"])
+    repo.index.commit("Initial commit of test file.")
+    repo.index.commit("This is an empty commit")
+
+    os.chdir(repo_root)
+    return repo

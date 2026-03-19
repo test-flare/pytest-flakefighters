@@ -113,7 +113,13 @@ commands = [
     "{posargs:tests}",
   ],
 ]
-deps = ["pytest", "pytest-cov", "pytest-html", "pytest-json-report"]
+deps = [
+  "pytest",
+  "pytest-cov",
+  "pytest-html",
+  "pytest-json-report",
+  "pytest-mock",
+]
 description = "Run pytest under {base_python}"
 extras = ["dev", "test"]
 usedevelop = true

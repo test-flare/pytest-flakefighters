@@ -4,7 +4,9 @@ Test DeFlaker algorithm.
 
 import json
 import os
+from math import sqrt
 
+import pandas as pd
 from pytest import ExitCode
 
 
@@ -288,6 +290,30 @@ def test_display_test_level_verdicts(pytester, deflaker_repo):
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["FAILED app.py::test_app - assert False"])
     result.stdout.fnmatch_lines(["  CoverageIndependence: genuine"])
+
+
+def test_sffl(mocker, pytester, sffl_repo):
+    """
+    Test sffl creates a results file.
+    """
+
+    mocked_randint = mocker.patch("random.randint")
+    mocked_randint.side_effect = [1, 100, 1, 100]
+    pytester.runpytest(
+        # os.path.join(sffl_repo.working_dir, "sffl_example.py"),
+        "--max-reruns=1",
+        "--rerun-strategy=ALL",
+        "-s",
+        "--sffl-rank",
+        "--sffl-results=sffl_results.csv",
+        "--flakefighters",
+    )
+    expected = pd.DataFrame(
+        {"file": ["file1"] * 6, "line": range(1, 7), "suspiciousness": [1 / sqrt(2), 1 / sqrt(2), 1 / sqrt(2), 0, 0, 0]}
+    )
+
+    print(pd.read_csv(os.path.join(sffl_repo.working_dir, "sffl_results.csv"), index_col=0))
+    pd.testing.assert_frame_equal(pd.read_csv(os.path.join(sffl_repo.working_dir, "sffl_results.csv")), expected)
 
 
 def test_gatorgrade_parameterised(pytester, gatorgrade_repo):

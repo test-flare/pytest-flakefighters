@@ -273,7 +273,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 }
                 self.test_reports[test.name].flaky = test.flaky
         if self.sffl_rank:
-            df = getattr(SFFL(self.run.tests), self.sffl_rank)()
+            df = getattr(SFFL(self.root, self.run.tests), self.sffl_rank)()
             df.to_csv(self.sffl_results)
 
     @pytest.hookimpl(optionalhook=True)

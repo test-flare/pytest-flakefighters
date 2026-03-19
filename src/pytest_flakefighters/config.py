@@ -77,8 +77,8 @@ options = {
         "action": "store",
         "type": int,
         "nargs": "?",  # Allows 0 or 1 arguments
-        "const": 0,  # Value used if -O is present but no value is provided
-        "default": 0,  # Value used if -O is not present at all
+        "const": 0,  # Value used if present but no value is provided
+        "default": 0,  # Value used if not present at all
         "help": "Display historical test outcomes of the specified number of previous runs."
         "If no value is specified, then display only the current verdict.",
     },
@@ -91,5 +91,20 @@ options = {
         "action": "store_true",
         "default": False,
         "help": "Enable the flakefighters plugin.",
+    },
+    ("--sffl-rank",): {
+        "action": "store",
+        "type": str,
+        "nargs": "?",  # Allows 0 or 1 arguments
+        "choices": ["tarantula", "ochiai", "dstar", "op2", "barinel"],
+        "const": "ochiai",  # Value used if present but no value is provided
+        "default": None,  # Value used if not present at all
+        "help": "The metric used to calculate spectrum-based flaky fault localisation (defaults to ochiai).",
+    },
+    ("--sffl-results",): {
+        "action": "store",
+        "type": str,
+        "default": "sffl.csv",
+        "help": "The location to save the SFFL suspiciousness scores (defaults to sffl.csv).",
     },
 }

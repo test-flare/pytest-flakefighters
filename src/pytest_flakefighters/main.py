@@ -147,5 +147,7 @@ def pytest_configure(config: pytest.Config):
             save_run=not get_config_value(config, "no_save"),
             display_outcomes=get_config_value(config, "display_outcomes"),
             display_verdicts=get_config_value(config, "display_verdicts"),
+            sffl_rank=get_config_value(config, "sffl_rank"),
+            sffl_results=get_config_value(config, "sffl_results"),
         )
     )

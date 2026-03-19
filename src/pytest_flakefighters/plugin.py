@@ -23,6 +23,7 @@ from pytest_flakefighters.database_management import (
 )
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 from pytest_flakefighters.function_coverage import Profiler
+from pytest_flakefighters.sffl import SFFL
 
 
 class RerunStrategy(Enum):
@@ -53,6 +54,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
         display_outcomes: int = 0,
         display_verdicts: bool = False,
+        sffl_rank: str = False,
+        sffl_results: str = "sffl.csv",
     ):
         self.root = root
         self.database = database
@@ -71,6 +74,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             ],
             start_time=datetime.now(),
         )
+        self.sffl_rank = sffl_rank
+        self.sffl_results = sffl_results
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -266,6 +271,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 self.test_reports[test.name].flakefighter_results = {
                     r.name: r.classification for r in test.flakefighter_results
                 }
+        if self.sffl_rank:
+            df = getattr(SFFL(self.run.tests), self.sffl_rank)()
+            df.to_csv(self.sffl_results)
 
     @pytest.hookimpl(optionalhook=True)
     def pytest_json_modifyreport(self, json_report: dict):

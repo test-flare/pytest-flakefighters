@@ -178,6 +178,8 @@ linkage_method=complete # Use complete linkage for clustering
 > The above configuration is just an example meant to demonstrate the various parameters that can be supplied, and is not a recommendation or "default".
 > You should choose the parameter values that are appropriate for your project, especially threshold values for CosineSimilarity and CoverageIndependence.
 
+Further details can be found in the [configuration documentation](https://pytest-flakefighters.readthedocs.io/en/latest/configuration.html).
+
 ## Contributing
 
 Contributions are very welcome.

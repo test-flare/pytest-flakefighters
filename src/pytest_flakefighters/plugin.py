@@ -271,6 +271,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 self.test_reports[test.name].flakefighter_results = {
                     r.name: r.classification for r in test.flakefighter_results
                 }
+                self.test_reports[test.name].flaky = test.flaky
         if self.sffl_rank:
             df = getattr(SFFL(self.run.tests), self.sffl_rank)()
             df.to_csv(self.sffl_results)

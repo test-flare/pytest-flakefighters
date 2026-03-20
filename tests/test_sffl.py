@@ -51,7 +51,7 @@ def test_total_coverage():
             TestExecution(coverage={"file1": [3, 4]}),
         ]
     )
-    assert total_coverage(test) == {"file1": {1, 2, 3, 4}, "file2": {3, 5}}
+    assert total_coverage("", test) == {"file1": {1, 2, 3, 4}, "file2": {3, 5}}
 
 
 def test_update_covered():
@@ -90,7 +90,7 @@ def test_initialisation(tests):
     """
     Test that SFFL initialises as expected (taken from [10.1109/TR.2013.2285319, table 2]).
     """
-    sffl = SFFL(tests)
+    sffl = SFFL("", tests)
     assert sffl.total_flaky == 1
     assert sffl.total_flaky == 1
     assert sffl.flaky == {("file1", i): 1 for i in range(1, 4)}
@@ -112,6 +112,6 @@ def test_suspiciousness_scores(tests, metric, suspiciousness):
     """
     Test all the suspiciousness metrics work as expected.
     """
-    sffl = SFFL(tests)
+    sffl = SFFL("", tests)
     expected = pd.DataFrame({"file": ["file1"] * 6, "line": range(1, 7), "suspiciousness": suspiciousness})
     pd.testing.assert_frame_equal(getattr(sffl, metric)(), expected)

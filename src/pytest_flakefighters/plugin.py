@@ -2,9 +2,9 @@
 This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
 """
 
+import os
 from datetime import datetime
 from enum import Enum
-from re import escape
 from typing import Union
 from xml.etree import ElementTree as ET
 
@@ -24,6 +24,13 @@ from pytest_flakefighters.database_management import (
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 from pytest_flakefighters.function_coverage import Profiler
 from pytest_flakefighters.sffl import SFFL
+
+
+def context(item: pytest.Item) -> str:
+    """
+    Escape [] characters.
+    """
+    return item.nodeid.replace("[", r"\[").replace("]", r"\]") + "__" + str(item.execution_count)
 
 
 class RerunStrategy(Enum):
@@ -105,7 +112,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         item.start = datetime.now().timestamp()
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
-        self.cov.switch_context(escape(item.nodeid))  # pragma: no cover
+        self.cov.switch_context(context(item))  # pragma: no cover
         yield  # pragma: no cover
         self.cov.stop()  # pragma: no cover
         item.stop = datetime.now().timestamp()
@@ -156,7 +163,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         test = Test(  # pylint: disable=E1123
             name=item.nodeid,
-            fspath=fspath,
+            fspath=os.path.join(self.root, fspath),
             line_no=line_inx + 1,  # need to add one to the line index because this indexes from zero
             skipped=skipped,
         )
@@ -172,7 +179,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
-                    line_coverage.set_query_contexts(["collection", escape(item.nodeid)])
+                    line_coverage.set_query_contexts(["collection", context(item)])
                     captured_output = dict(report.sections)
                     test_execution = TestExecution(  # pylint: disable=E1123
                         outcome=report.outcome,

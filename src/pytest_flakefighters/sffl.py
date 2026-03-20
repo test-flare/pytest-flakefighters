@@ -11,9 +11,10 @@ import pandas as pd
 from pytest_flakefighters.database_management import Test
 
 
-def total_coverage(root, test: Test) -> dict[str, set[int]]:
+def total_coverage(root: str, test: Test) -> dict[str, set[int]]:
     """
     Merge lines covered by all test executions into a single dictionary.
+    :param root: The root directory of the repo.
     :param test: The test to be processed.
     :returns: Dictionary mapping filename to lines covered.
     """
@@ -70,10 +71,9 @@ class SFFL:
         stable = defaultdict(int)
         all_covered_lines = {}
         for test in tests:
-            print(test.name, test.flaky)
             for execution in test.executions:
                 for file, lines in execution.coverage.items():
-                    if file.startswith(root):
+                    if file.startswith(root) and file != test.fspath:
                         all_covered_lines[file] = set.union(all_covered_lines.get(file, set()), lines)
             if test.flaky:
                 total_flaky += 1
@@ -86,12 +86,6 @@ class SFFL:
         self.flaky = flaky
         self.stable = stable
         self.all_covered_lines = all_covered_lines
-
-        print("total_flaky", self.total_flaky)
-        print("total_stable", self.total_stable)
-        print("flaky", {k[1]: v for k, v in self.flaky.items()})
-        print("stable", {k[1]: v for k, v in self.stable.items()})
-        print("all_covered_lines", self.all_covered_lines)
 
     def _tarantula(self, s: tuple[str, int]) -> float:
         """

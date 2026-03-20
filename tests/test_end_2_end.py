@@ -294,13 +294,12 @@ def test_display_test_level_verdicts(pytester, deflaker_repo):
 
 def test_sffl(mocker, pytester, sffl_repo):
     """
-    Test sffl creates a results file.
+    Test sffl gives correct results.
     """
 
     mocked_randint = mocker.patch("random.randint")
     mocked_randint.side_effect = [1, 100, 1, 100]
     pytester.runpytest(
-        # os.path.join(sffl_repo.working_dir, "sffl_example.py"),
         "--max-reruns=1",
         "--rerun-strategy=ALL",
         "-s",
@@ -309,11 +308,15 @@ def test_sffl(mocker, pytester, sffl_repo):
         "--flakefighters",
     )
     expected = pd.DataFrame(
-        {"file": ["file1"] * 6, "line": range(1, 7), "suspiciousness": [1 / sqrt(2), 1 / sqrt(2), 1 / sqrt(2), 0, 0, 0]}
+        {
+            "file": [os.path.join(sffl_repo.working_dir, "sffl_example.py")] * 5,
+            "line": [1, 2, 3, 4, 6],
+            "suspiciousness": [1 / sqrt(2), 1 / sqrt(2), 1 / sqrt(2), 0, 0],
+        }
     )
 
-    print(pd.read_csv(os.path.join(sffl_repo.working_dir, "sffl_results.csv"), index_col=0))
-    pd.testing.assert_frame_equal(pd.read_csv(os.path.join(sffl_repo.working_dir, "sffl_results.csv")), expected)
+    df = pd.read_csv(os.path.join(sffl_repo.working_dir, "sffl_results.csv"), index_col=0)
+    pd.testing.assert_frame_equal(df.round(4), expected.round(4))
 
 
 def test_gatorgrade_parameterised(pytester, gatorgrade_repo):

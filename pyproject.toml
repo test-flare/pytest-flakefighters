@@ -47,6 +47,7 @@ dev = [
   "sphinx_rtd_theme",
   "autoclasstoc",
   "tox>=4.31.0",
+  "pytest-mock",
 ]
 pg = ["psycopg2>2.9"]
 scipy = ["scipy"]

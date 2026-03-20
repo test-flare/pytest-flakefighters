@@ -92,6 +92,7 @@ variable-rgx = "^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
 minversion = "6.0"
 testpaths = ["tests"]
 
+
 [tool.setuptools_scm]
 write_to = "src/_version.py"
 

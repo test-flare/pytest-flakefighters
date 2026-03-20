@@ -300,6 +300,7 @@ def test_sffl(mocker, pytester, sffl_repo):
     mocked_randint = mocker.patch("random.randint")
     mocked_randint.side_effect = [1, 100, 1, 100]
     pytester.runpytest(
+        os.path.join(sffl_repo.working_dir, "sffl_example_test.py"),
         "--max-reruns=1",
         "--rerun-strategy=ALL",
         "-s",

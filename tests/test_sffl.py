@@ -3,6 +3,7 @@ This module implements tests for the SFFL module.
 """
 
 import os
+import pathlib
 from tempfile import TemporaryDirectory
 
 import pandas as pd
@@ -117,7 +118,7 @@ def test_suspiciousness_scores(tests, metric, include_test_code):
         assert os.path.exists(output_file)
         expected = pd.read_csv(
             os.path.join(
-                "tests",
+                pathlib.Path(__file__).parent.resolve(),
                 "resources",
                 "expected_sffl_results",
                 f"{metric}_{'test' if include_test_code else 'source'}.csv",

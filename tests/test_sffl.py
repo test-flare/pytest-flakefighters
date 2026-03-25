@@ -2,7 +2,9 @@
 This module implements tests for the SFFL module.
 """
 
+import os
 from math import sqrt
+from tempfile import TemporaryDirectory
 
 import pandas as pd
 import pytest
@@ -86,18 +88,6 @@ def test_safe_div(x, y, expected):
     assert safe_div(x, y) == expected
 
 
-def test_initialisation(tests):
-    """
-    Test that SFFL initialises as expected (taken from [10.1109/TR.2013.2285319, table 2]).
-    """
-    sffl = SFFL("", tests)
-    assert sffl.total_flaky == 1
-    assert sffl.total_flaky == 1
-    assert sffl.flaky == {("file1", i): 1 for i in range(1, 4)}
-    assert sffl.stable == {("file1", i): 1 for i in range(1, 7)}
-    assert sffl.all_covered_lines == {"file1": set(range(1, 7))}
-
-
 @pytest.mark.parametrize(
     ("metric, suspiciousness"),
     [
@@ -112,6 +102,10 @@ def test_suspiciousness_scores(tests, metric, suspiciousness):
     """
     Test all the suspiciousness metrics work as expected.
     """
-    sffl = SFFL("", tests)
-    expected = pd.DataFrame({"file": ["file1"] * 6, "line": range(1, 7), "suspiciousness": suspiciousness})
-    pd.testing.assert_frame_equal(getattr(sffl, metric)(), expected)
+    with TemporaryDirectory() as tempdir:
+        output_file = os.path.join(tempdir, f"{metric}.csv")
+        sffl = SFFL(root="", metric=metric, output_file=output_file)
+        expected = pd.DataFrame({"file": ["file1"] * 6, "line": range(1, 7), "suspiciousness": suspiciousness})
+        sffl.rank(tests)
+        assert os.path.exists(output_file)
+        pd.testing.assert_frame_equal(pd.read_csv(output_file, index_col=0), expected)

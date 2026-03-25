@@ -55,39 +55,32 @@ def safe_div(x: float, y: float) -> float:
     return x / y
 
 
-class SFFL:
+class SFFL:  # pylint: disable=R0902
     """
     This class implements Spectrum-based Flaky Fault Localization ranking.
     """
 
-    def __init__(self, root: str, tests: list[Test]):
+    def __init__(
+        self, root: str, metric: str = "ochiai", output_file: str = "sffl.csv", include_test_code: bool = False
+    ):
         """
         Go through each test in the test suite and calculate a suspiciousness score for each code statement.
-        :param tests: The test suite.
+        :param root: The root directory of the project.
+        :param metric: The metric to use [tarantula, ochiai, dstar, barinel, op2]. (defaults to ochiai)
+        :param output_file: Where to save the suspiciousness results. (defaults to sffl.csv)
+        :param include_test_code: Whether to include test code in the suspiciousness ranking. (defaults to False)
         """
-        total_flaky = 0
-        total_stable = 0
-        flaky = defaultdict(int)
-        stable = defaultdict(int)
-        all_covered_lines = {}
-        for test in tests:
-            for execution in test.executions:
-                for file, lines in execution.coverage.items():
-                    if file.startswith(root) and file != test.fspath:
-                        all_covered_lines[file] = set.union(all_covered_lines.get(file, set()), lines)
-            if test.flaky:
-                total_flaky += 1
-                update_covered(flaky, total_coverage(root, test))
-            else:
-                total_stable += 1
-                update_covered(stable, total_coverage(root, test))
-        self.total_flaky = total_flaky
-        self.total_stable = total_stable
-        self.flaky = flaky
-        self.stable = stable
-        self.all_covered_lines = all_covered_lines
+        self.root = root
+        self.output_file = output_file
+        self.metric = getattr(self, metric.lower())
+        self.include_test_code = include_test_code
 
-    def _tarantula(self, s: tuple[str, int]) -> float:
+        self.total_flaky = 0
+        self.total_stable = 0
+        self.flaky = defaultdict(int)
+        self.stable = defaultdict(int)
+
+    def tarantula(self, s: tuple[str, int]) -> float:
         """
         The formula to calculate the Tarantula suspiciousness score.
         :param s: The current statement (file, line).
@@ -99,7 +92,7 @@ class SFFL:
         )
         return result
 
-    def _ochiai(self, s: tuple[str, int]):
+    def ochiai(self, s: tuple[str, int]):
         """
         The formula to calculate the Ochiai suspiciousness score.
         :param s: The current statement (file, line).
@@ -107,7 +100,7 @@ class SFFL:
         """
         return safe_div(self.flaky[s], (sqrt(self.total_flaky * (self.flaky[s] + self.stable[s]))))
 
-    def _dstar(self, s: tuple[str, int], exponent: float = 2):
+    def dstar(self, s: tuple[str, int], exponent: float = 2):
         """
         The formula to calculate the DStar suspiciousness score.
         :param s: The current statement (file, line).
@@ -115,7 +108,7 @@ class SFFL:
         """
         return safe_div(self.flaky[s] ** exponent, (self.stable[s] + (self.total_flaky - self.flaky[s])))
 
-    def _barinel(self, s: tuple[str, int]) -> float:
+    def barinel(self, s: tuple[str, int]) -> float:
         """
         The formula to calculate the Barinel suspiciousness score.
         :param s: The current statement (file, line).
@@ -123,7 +116,7 @@ class SFFL:
         """
         return 1 - safe_div(self.stable[s], self.stable[s] + self.flaky[s])
 
-    def _op2(self, s: tuple[str, int]) -> float:
+    def op2(self, s: tuple[str, int]) -> float:
         """
         The formula to calculate the OP2 suspiciousness score.
         :param s: The current statement (file, line).
@@ -131,40 +124,25 @@ class SFFL:
         """
         return self.flaky[s] - safe_div(self.stable[s], self.total_stable + 1)
 
-    def _rank(self, metric):
-        flat = [(file, line, metric((file, line))) for file, lines in self.all_covered_lines.items() for line in lines]
-        return (
-            pd.DataFrame(flat, columns=["file", "line", "suspiciousness"])
-            .sort_values(["suspiciousness", "line", "file"], ascending=[False, True, True])
-            .reset_index(drop=True)
-        )
+    def rank(self, tests: list[Test]):
+        """
+        Calculate the supiciousness score of each code statement and rank them most to least suspicious.
+        :param tests: The test suite.
+        """
+        all_covered_lines = {}
+        for test in tests:
+            for execution in test.executions:
+                for file, lines in execution.coverage.items():
+                    if file.startswith(self.root) and (file != test.fspath or self.include_test_code):
+                        all_covered_lines[file] = set.union(all_covered_lines.get(file, set()), lines)
+            if test.flaky:
+                self.total_flaky += 1
+                update_covered(self.flaky, total_coverage(self.root, test))
+            else:
+                self.total_stable += 1
+                update_covered(self.stable, total_coverage(self.root, test))
 
-    def tarantula(self):
-        """
-        Rank the covered statements using the Tarantula metric.
-        """
-        return self._rank(self._tarantula)
-
-    def ochiai(self):
-        """
-        Rank the covered statements using the Ochiai metric.
-        """
-        return self._rank(self._ochiai)
-
-    def dstar(self):
-        """
-        Rank the covered statements using the DStar metric.
-        """
-        return self._rank(self._dstar)
-
-    def barinel(self):
-        """
-        Rank the covered statements using the Barinel metric.
-        """
-        return self._rank(self._barinel)
-
-    def op2(self):
-        """
-        Rank the covered statements using the OP2 metric.
-        """
-        return self._rank(self._op2)
+        flat = [(file, line, self.metric((file, line))) for file, lines in all_covered_lines.items() for line in lines]
+        pd.DataFrame(flat, columns=["file", "line", "suspiciousness"]).sort_values(
+            ["suspiciousness", "line", "file"], ascending=[False, True, True]
+        ).reset_index(drop=True).to_csv(self.output_file)

@@ -61,8 +61,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
         display_outcomes: int = 0,
         display_verdicts: bool = False,
-        sffl_rank: str = False,
-        sffl_results: str = "sffl.csv",
+        sffl: SFFL = None,
     ):
         self.root = root
         self.database = database
@@ -81,8 +80,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             ],
             start_time=datetime.now(),
         )
-        self.sffl_rank = sffl_rank
-        self.sffl_results = sffl_results
+        self.sffl = sffl
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -279,9 +277,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     r.name: r.classification for r in test.flakefighter_results
                 }
                 self.test_reports[test.name].flaky = test.flaky
-        if self.sffl_rank:
-            df = getattr(SFFL(self.root, self.run.tests), self.sffl_rank)()
-            df.to_csv(self.sffl_results)
+        if self.sffl:
+            self.sffl.rank(self.run.tests)
 
     @pytest.hookimpl(optionalhook=True)
     def pytest_json_modifyreport(self, json_report: dict):

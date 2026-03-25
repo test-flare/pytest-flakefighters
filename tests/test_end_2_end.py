@@ -303,8 +303,8 @@ def test_sffl(mocker, pytester, sffl_repo):
         "--max-reruns=1",
         "--rerun-strategy=ALL",
         "-s",
-        "--sffl-rank",
-        "--sffl-results=sffl_results.csv",
+        "--sffl",
+        "--sffl-output-file=sffl_results.csv",
         "--flakefighters",
     )
     expected = pd.DataFrame(

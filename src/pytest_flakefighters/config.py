@@ -89,20 +89,26 @@ options = {
         "default": False,
         "help": "Enable the flakefighters plugin.",
     },
-    ("--sffl-rank",): {
+    ("--sffl",): {
         "action": "store",
         "type": str,
         "nargs": "?",  # Allows 0 or 1 arguments
         "choices": ["tarantula", "ochiai", "dstar", "op2", "barinel"],
         "const": "ochiai",  # Value used if present but no value is provided
         "default": None,  # Value used if not present at all
-        "help": "The metric used to calculate spectrum-based flaky fault localisation (defaults to ochiai).",
+        "help": "The metric used to calculate spectrum-based flaky fault localisation "
+        "(defaults to ochiai if no value supplied).",
     },
-    ("--sffl-results",): {
+    ("--sffl-output-file",): {
         "action": "store",
         "type": str,
         "default": "sffl.csv",
         "help": "The location to save the SFFL suspiciousness scores (defaults to sffl.csv).",
+    },
+    ("--sffl-include-test-code",): {
+        "action": "store_true",
+        "default": False,
+        "help": "Include suspiciousness scores for test code in SFFL ranking.",
     },
     ("--active-flakefighters", "-A"): {
         "action": "store",

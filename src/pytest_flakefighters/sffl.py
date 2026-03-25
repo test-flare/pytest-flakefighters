@@ -133,7 +133,7 @@ class SFFL:  # pylint: disable=R0902
         for test in tests:
             for execution in test.executions:
                 for file, lines in execution.coverage.items():
-                    if file.startswith(self.root) and (file != test.fspath or self.include_test_code):
+                    if file.startswith(self.root) and (self.include_test_code or file != test.fspath):
                         all_covered_lines[file] = set.union(all_covered_lines.get(file, set()), lines)
             if test.flaky:
                 self.total_flaky += 1

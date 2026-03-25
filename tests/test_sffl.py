@@ -3,7 +3,6 @@ This module implements tests for the SFFL module.
 """
 
 import os
-from math import sqrt
 from tempfile import TemporaryDirectory
 
 import pandas as pd
@@ -24,21 +23,23 @@ def tests_fixture():
     """
     test_1 = Test(
         executions=[
-            TestExecution(coverage={"file1": [1, 2, 3, 5, 6]}),
-            TestExecution(coverage={"file1": [1, 2, 3, 4]}),
+            TestExecution(coverage={"file1.py": [1, 2, 3, 5, 6], "test_file1.py": [2, 3, 4]}),
+            TestExecution(coverage={"file1.py": [1, 2, 3, 4], "test_file1.py": [2, 3, 4]}),
         ],
         flakefighter_results=[
             FlakefighterResult(name="dummy", flaky=True),
         ],
+        fspath="test_file1.py",
     )
     test_2 = Test(
         executions=[
-            TestExecution(coverage={"file1": [1, 2, 3, 5, 6]}),
-            TestExecution(coverage={"file1": [1, 2, 3, 4]}),
+            TestExecution(coverage={"file1.py": [1, 2, 3, 5, 6], "test_file1.py": [5, 6, 7]}),
+            TestExecution(coverage={"file1.py": [1, 2, 3, 4], "test_file1.py": [5, 6, 7]}),
         ],
         flakefighter_results=[
             FlakefighterResult(name="dummy", flaky=False),
         ],
+        fspath="test_file1.py",
     )
     return [test_1, test_2]
 
@@ -89,23 +90,39 @@ def test_safe_div(x, y, expected):
 
 
 @pytest.mark.parametrize(
-    ("metric, suspiciousness"),
+    ("metric, include_test_code"),
     [
-        pytest.param("tarantula", [0.5, 0.5, 0.5, 0, 0, 0], id="tarantula"),
-        pytest.param("ochiai", [1 / sqrt(2), 1 / sqrt(2), 1 / sqrt(2), 0, 0, 0], id="ochiai"),
-        pytest.param("dstar", [1.0, 1.0, 1.0, 0, 0, 0], id="dstar"),
-        pytest.param("op2", [0.5, 0.5, 0.5, -0.5, -0.5, -0.5], id="op2"),
-        pytest.param("barinel", [0.5, 0.5, 0.5, 0, 0, 0], id="barinel"),
+        # Source code only
+        pytest.param("tarantula", False, id="tarantula-source-only"),
+        pytest.param("ochiai", False, id="ochiai-source-only"),
+        pytest.param("dstar", False, id="dstar-source-only"),
+        pytest.param("op2", False, id="op2-source-only"),
+        pytest.param("barinel", False, id="barinel-source-only"),
+        # Include test code
+        pytest.param("tarantula", True, id="tarantula-source-test"),
+        pytest.param("ochiai", True, id="ochiai-source-test"),
+        pytest.param("dstar", True, id="dstar-source-test"),
+        pytest.param("op2", True, id="op2-source-test"),
+        pytest.param("barinel", True, id="barinel-source-test"),
     ],
 )
-def test_suspiciousness_scores(tests, metric, suspiciousness):
+def test_suspiciousness_scores(tests, metric, include_test_code):
     """
     Test all the suspiciousness metrics work as expected.
     """
     with TemporaryDirectory() as tempdir:
         output_file = os.path.join(tempdir, f"{metric}.csv")
-        sffl = SFFL(root="", metric=metric, output_file=output_file)
-        expected = pd.DataFrame({"file": ["file1"] * 6, "line": range(1, 7), "suspiciousness": suspiciousness})
+        sffl = SFFL(root="", metric=metric, output_file=output_file, include_test_code=include_test_code)
         sffl.rank(tests)
         assert os.path.exists(output_file)
-        pd.testing.assert_frame_equal(pd.read_csv(output_file, index_col=0), expected)
+        expected = pd.read_csv(
+            os.path.join(
+                "tests",
+                "resources",
+                "expected_sffl_results",
+                f"{metric}_{'test' if include_test_code else 'source'}.csv",
+            ),
+            index_col=0,
+        )
+        calculated = pd.read_csv(output_file, index_col=0)
+        pd.testing.assert_frame_equal(calculated, expected)

@@ -112,6 +112,7 @@ commands = [
     "--cov=src/pytest_flakefighters",
     "-p",
     "no:flakefighters",
+    "-x",
     "{posargs:tests}",
   ],
 ]

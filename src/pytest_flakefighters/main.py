@@ -3,12 +3,12 @@ This module adds all the FlakeFighter configuration options to pytest.
 """
 
 import logging
-from importlib.metadata import entry_points, version
 from typing import Any
 
 import coverage
 import pytest
 import yaml
+from importlib_metadata import entry_points, version
 from packaging.version import Version
 
 from pytest_flakefighters.config import options

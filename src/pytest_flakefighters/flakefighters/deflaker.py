@@ -130,7 +130,7 @@ class DeFlaker(FlakeFighter):
             FlakefighterResult(name=self.__class__.__name__, flaky=self._flaky_execution(execution))
         )
 
-    def flaky_tests_post(self, run: Run) -> list[bool | None]:
+    def flaky_tests_post(self, run: Run):
         """
         Classify failing tests as flaky if any of their executions are flaky.
         :param run: Run object representing the pytest run, with tests accessible through run.tests.

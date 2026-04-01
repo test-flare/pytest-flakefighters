@@ -47,7 +47,7 @@ dev = [
   "sphinx-autoapi",
   "sphinx_rtd_theme",
   "autoclasstoc",
-  "tox>=4.31.0",
+  "tox",
 ]
 pg = ["psycopg2>2.9"]
 scipy = ["scipy"]

@@ -116,23 +116,38 @@ Once you have installed FlakeFighter, you can run it from the root directory of 
 FlakeFighter has the following arguments.
 
 ```
-  --target-commit=TARGET_COMMIT
-                        The target (newer) commit hash. Defaults to HEAD (the most recent commit).
-  --source-commit=SOURCE_COMMIT
-                        The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).
-  --repo=REPO_ROOT      The commit hash to compare against.
+  --flakefighters       Enable the flakefighters plugin.
+  --root=ROOT           The root directory of the project. Defaults to the current working directory.
   --suppress-flaky-failures-exit-code
                         Return OK exit code if the only failures are flaky failures.
   --no-save             Do not save this run to the database of previous flakefighters runs.
+  --function-coverage   Use function-level coverage instead of line coverage.
   -M LOAD_MAX_RUNS, --load-max-runs=LOAD_MAX_RUNS
                         The maximum number of previous runs to consider.
   -D DATABASE_URL, --database-url=DATABASE_URL
-                        The database URL. Defaults to 'flakefighter.db' in current working directory.
+                        The database URL. Defaults to 'flakefighters.db' in current working directory.
   --store-max-runs=STORE_MAX_RUNS
                         The maximum number of previous flakefighters runs to store. Default is to store all.
+  --max-reruns=MAX_RERUNS
+                        The maximum number of times to rerun tests. By default, only failing tests marked as flaky
+                        will be rerun. This can be changed with the --rerun-strategy parameter.
+  --rerun-strategy={ALL,FLAKY_FAILURE,PREVIOUSLY_FLAKY}
+                        The strategy used to determine which tests to rerun. Supported options are:
+                        ALL - Trivially rerun all tests, regardless of outcome.
+                        FLAKY_FAILURE - Rerun failing tests that have been merked as flaky by live FlakeFighters.
+                        PREVIOUSLY_FLAKY - Rerun failing tests marked as flaky, and tests that have previously been
+                        marked as flaky.
   --time-immemorial=TIME_IMMEMORIAL
                         How long to store flakefighters runs for, specified as `days:hours:minutes`. E.g. to store
                         tests for one week, use 7:0:0.
+  -O [DISPLAY_OUTCOMES], --display-outcomes=[DISPLAY_OUTCOMES]
+                        Display historical test outcomes of the specified number of previous runs.If no value is
+                        specified, then display only the current verdict.
+  --display-verdicts    Display the flaky classification verdicts alongside test outcomes.
+  -A ACTIVE_FLAKEFIGHTERS [ACTIVE_FLAKEFIGHTERS ...], --active-flakefighters=ACTIVE_FLAKEFIGHTERS [ACTIVE_FLAKEFIGHTERS ...]
+                        The names of the active flakefighters. If unspecified flakefighters with a specified
+                        configuration will be used.Flakefighters can also be turned on and off individually with the
+                        `active` configuration parameter
 ```
 
 ### Enabling/Disabling the Plugin

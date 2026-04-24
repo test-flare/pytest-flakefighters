@@ -85,26 +85,26 @@ def test_previously_flaky(pytester, flaky_reruns_repo):
     db.engine.dispose()
 
 
-def test_previously_flaky_no_rerun(pytester, deflaker_repo):
+def test_previously_flaky_no_rerun(pytester, diff_cov_repo):
     """Make sure that flaky failures are correctly rerun"""
 
     pytester.runpytest(
-        os.path.join(deflaker_repo.working_dir, "app.py"),
-        f"--root={deflaker_repo.working_dir}",
+        os.path.join(diff_cov_repo.working_dir, "app.py"),
+        f"--root={diff_cov_repo.working_dir}",
         "-s",
         "--flakefighters",
     )
 
     pytester.runpytest(
-        os.path.join(deflaker_repo.working_dir, "app.py"),
-        f"--root={deflaker_repo.working_dir}",
+        os.path.join(diff_cov_repo.working_dir, "app.py"),
+        f"--root={diff_cov_repo.working_dir}",
         "-s",
         "--flakefighters",
         "--max-reruns=1",
         "--rerun-strategy=PREVIOUSLY_FLAKY",
     )
 
-    db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
+    db = Database(f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}")
     runs = db.load_runs()
     assert len(runs) == 2, f"Should have saved 2 pytest runs, saved {len(runs)}"
 

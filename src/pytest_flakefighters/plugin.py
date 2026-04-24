@@ -1,5 +1,5 @@
 """
-This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
+This module implements the pytest hooks to run the extension.
 """
 
 from datetime import datetime

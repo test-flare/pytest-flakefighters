@@ -13,7 +13,7 @@ from packaging.version import Version
 
 from pytest_flakefighters.config import options
 from pytest_flakefighters.database_management import Database
-from pytest_flakefighters.flakefighters.deflaker import DeFlaker
+from pytest_flakefighters.flakefighters.diff_cov import DiffCov
 from pytest_flakefighters.function_coverage import Profiler
 from pytest_flakefighters.plugin import FlakeFighterPlugin
 from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyFlaky
@@ -125,9 +125,9 @@ def pytest_configure(config: pytest.Config):
 
     flakefighters = []
     if flakefighter_configs is None and active_flakefighters is None:
-        logger.warning("No flakefighters specified. Using basic DeFlaker only.")
+        logger.warning("No flakefighters specified. Using basic differential coverage only.")
         flakefighters.append(
-            DeFlaker(
+            DiffCov(
                 run_live=True,
                 root=get_config_value(config, "root"),
             )

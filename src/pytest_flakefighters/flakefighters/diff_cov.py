@@ -1,5 +1,5 @@
 """
-This module implements the DeFlaker FlakeFighter.
+This module implements the differential coverage FlakeFighter, inspired by the DeFlaker algorithm.
 """
 
 import ast
@@ -16,9 +16,9 @@ from pytest_flakefighters.database_management import (
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
 
-class DeFlaker(FlakeFighter):
+class DiffCov(FlakeFighter):
     """
-    A python equivalent of the DeFlaker algorithm from `Bell et al. (2019) <https://doi.org/10.1145/3180155.3180164>`_.
+    Inspired by the DeFlaker algorithm from `Bell et al. (2019) <https://doi.org/10.1145/3180155.3180164>`_.
     Given the subtle differences between JUnit and pytest, this is not intended to be an exact port, but it follows
     the same general methodology of checking whether covered code has been changed between commits.
 
@@ -84,7 +84,7 @@ class DeFlaker(FlakeFighter):
         """
         Factory method to create a new instance from a pytest configuration.
         """
-        return DeFlaker(
+        return DiffCov(
             run_live=config.get("run_live", True),
             root=config.get("root", "."),
             source_commit=config.get("source_commit"),

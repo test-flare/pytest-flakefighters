@@ -13,7 +13,7 @@ Read more about flaky tests [here](https://docs.pytest.org/en/stable/explanation
 
 ## Features
 
-- Implements the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/) for pytest
+- Implements differential coverage, inspired by the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/), for pytest
 - Implements two traceback-matching classifiers from [Alshammari et al. (2024)](https://doi.org/10.1109/ICST60714.2024.00031).
 - Implements a novel coverage-independence classifier that classifies tests as flaky if they fail independently of passing test cases that exercise overlapping code.
 - Optionally rerun or suppress flaky failures
@@ -33,7 +33,7 @@ Flaky tests are then reported separately in the test report, and can be optional
 | Feature | [pytest-flakefighters](https://github.com/test-flare/pytest-flakefighters) | [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) | [pytest-flaky](https://github.com/box/flaky) | [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder) | [pytest-replay](https://github.com/ESSS/pytest-replay) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Purpose** | Classify test failures as genuine or flaky | Rerun failing tests in case they are flaky | Decorator-based reruns | Copy tests to observe nondeterministic outcomes | Reproduce flaky failures from CI when running with [xdist](https://github.com/pytest-dev/pytest-xdist) |
-| **Detection Method** | DeFlaker algorithm + coverage analysis | None | None | Reruns | None |
+| **Detection Method** | Differential coverage | None | None | Reruns | None |
 | **Reporting** | Terminal, HTML, JSON, JUnitXML | Terminal | Terminal | Terminal | Terminal |
 | **History Tracking** | Database of test outcomes over commits | None | None | None | None |
 | **Rerun Option** | Optional | Required | Required | Required | Required |
@@ -166,13 +166,13 @@ addopts = "--flakefighters"
 ```
 
 ### Configuration
-By default, the plugin will only use the DeFlaker algorithm to classify flaky tests.
+By default, the plugin will only use differential coverage to classify flaky tests.
 If you would like to use other algorithms as well (or instead), you need to configure these.
 This can be done by adding appropriate fields in your pyproject.toml or pytest.ini file.
 For example, you could add the following to your pyproject.toml.
 
 ```
-[tool.pytest.ini_options.pytest_flakefighters.flakefighters.deflaker.DeFlaker]
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.diff_cov.DiffCov]
 run_live=true # run the classifier immediately after each test
 
 [tool.pytest.ini_options.pytest_flakefighters.flakefighters.traceback_matching.TracebackMatching]

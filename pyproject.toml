@@ -30,7 +30,7 @@ flakefighters = "pytest_flakefighters.main"
 [project.entry-points."pytest_flakefighters"]
 CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
 CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
-DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
+DiffCov = "pytest_flakefighters.flakefighters.diff_cov:DiffCov"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
 
 [project.optional-dependencies]

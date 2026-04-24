@@ -8,12 +8,12 @@ from pytest_flakefighters.flakefighters.traceback_matching import CosineSimilari
 from pytest_flakefighters.main import pytest_configure
 
 
-def test_flakefighters(pytester, deflaker_repo):
+def test_flakefighters(pytester, diff_cov_repo):
     """
     Test that flakefighters is registered when the --flakefighters argument is passed.
     """
     config = pytester.parseconfig(
-        os.path.join(deflaker_repo.working_dir, "flaky_reruns.py"),
+        os.path.join(diff_cov_repo.working_dir, "flaky_reruns.py"),
         "--flakefighters",
     )
     pytest_configure(config)
@@ -22,12 +22,12 @@ def test_flakefighters(pytester, deflaker_repo):
     assert plugin is not None
 
 
-def test_no_flakefighters(pytester, deflaker_repo):
+def test_no_flakefighters(pytester, diff_cov_repo):
     """
     Test that flakefighters is not registered when the --flakefighters argument is not passed.
     """
     config = pytester.parseconfig(
-        os.path.join(deflaker_repo.working_dir, "flaky_reruns.py"),
+        os.path.join(diff_cov_repo.working_dir, "flaky_reruns.py"),
     )
     pytest_configure(config)
 

@@ -1,5 +1,5 @@
 """
-This module tests the DeFlaker flakefighter.
+This module tests the differential coverage flakefighter.
 """
 
 import os
@@ -12,7 +12,7 @@ from pytest_flakefighters.database_management import (
     Test,
     TestExecution,
 )
-from pytest_flakefighters.flakefighters.deflaker import DeFlaker
+from pytest_flakefighters.flakefighters.diff_cov import DiffCov
 
 
 @pytest.mark.parametrize("run_live", [True, False])
@@ -22,7 +22,7 @@ def test_from_config_params(flaky_reruns_repo, run_live):
     """
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
 
-    from_config = DeFlaker.from_config(
+    from_config = DiffCov.from_config(
         {
             "run_live": run_live,
             "root": flaky_reruns_repo.working_dir,
@@ -30,7 +30,7 @@ def test_from_config_params(flaky_reruns_repo, run_live):
             "target_commit": commits[0],
         }
     )
-    init = DeFlaker(
+    init = DiffCov(
         run_live=run_live, root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[0]
     )
     assert from_config.run_live == init.run_live
@@ -46,10 +46,10 @@ def test_clean_repo(flaky_reruns_repo):
     """
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
 
-    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
 
-    assert deflaker.source_commit == commits[1], f"Expected source commit {commits[1]} but was {deflaker.source_commit}"
-    assert deflaker.target_commit == commits[0], f"Expected source commit {commits[0]} but was {deflaker.target_commit}"
+    assert diff_cov.source_commit == commits[1], f"Expected source commit {commits[1]} but was {diff_cov.source_commit}"
+    assert diff_cov.target_commit == commits[0], f"Expected source commit {commits[0]} but was {diff_cov.target_commit}"
 
 
 def test_dirty_repo(flaky_reruns_repo):
@@ -61,10 +61,10 @@ def test_dirty_repo(flaky_reruns_repo):
     with open(os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"), "w") as f:
         print("print()", file=f)
 
-    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
 
-    assert deflaker.source_commit == commits[0], f"Expected source commit {commits[0]} but was {deflaker.source_commit}"
-    assert deflaker.target_commit is None, f"Expected source commit None but was {deflaker.target_commit}"
+    assert diff_cov.source_commit == commits[0], f"Expected source commit {commits[0]} but was {diff_cov.source_commit}"
+    assert diff_cov.target_commit is None, f"Expected source commit None but was {diff_cov.target_commit}"
 
 
 def test_new_test_preserves_original_results(flaky_reruns_repo):
@@ -72,7 +72,7 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
     Test the setup of source and target commits for a dirty repo (uncommitted changes).
     """
 
-    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -85,8 +85,8 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
         line_no=9,
         executions=[test_execution],
     )
-    deflaker.flaky_test_live(test_execution)
-    expected = FlakefighterResult(name="DeFlaker", flaky=True)
+    diff_cov.flaky_test_live(test_execution)
+    expected = FlakefighterResult(name="DiffCov", flaky=True)
     assert test_execution.flakefighter_results == [
         expected
     ], "Expected original run of test_create_or_delete to be flaky"
@@ -99,7 +99,7 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
     test_execution.coverage = {
         os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): [1, 4, 6, 9, 10, 11, 12, 14],
     }
-    deflaker.flaky_test_live(test_execution)
+    diff_cov.flaky_test_live(test_execution)
     assert test_execution.flakefighter_results == [expected], "Expected second run of test_create_or_delete to be flaky"
 
 
@@ -116,10 +116,10 @@ def test_named_source_target(flaky_reruns_repo):
 
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
 
-    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[2])
+    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[2])
 
-    assert deflaker.source_commit == commits[1], f"Expected source commit {commits[1]} but was {deflaker.source_commit}"
-    assert deflaker.target_commit == commits[2], f"Expected source commit {commits[2]} but was {deflaker.target_commit}"
+    assert diff_cov.source_commit == commits[1], f"Expected source commit {commits[1]} but was {diff_cov.source_commit}"
+    assert diff_cov.target_commit == commits[2], f"Expected source commit {commits[2]} but was {diff_cov.target_commit}"
 
 
 def test_line_modified_by_target_commit(flaky_reruns_repo):
@@ -133,55 +133,55 @@ def test_line_modified_by_target_commit(flaky_reruns_repo):
     flaky_reruns_repo.index.add(["flaky_reruns.py"])
     flaky_reruns_repo.index.commit("Added a print statement.")
 
-    deflaker = DeFlaker(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
     with open(flaky_reruns_py) as f:
         lines = len(f.readlines())
 
     expected_lines_changed = {flaky_reruns_py: [23]}
     assert (
-        deflaker.lines_changed == expected_lines_changed
-    ), f"Expected lines changed to be {expected_lines_changed} but was {deflaker.lines_changed}"
+        diff_cov.lines_changed == expected_lines_changed
+    ), f"Expected lines changed to be {expected_lines_changed} but was {diff_cov.lines_changed}"
 
     for line in range(1, lines):
-        assert not deflaker.line_modified_by_target_commit(
+        assert not diff_cov.line_modified_by_target_commit(
             flaky_reruns_py, line
         ), f"Expected line {line} not to be changed"
 
-    assert deflaker.line_modified_by_target_commit(flaky_reruns_py, lines), f"Expected line {lines} to be changed"
-    assert not deflaker.line_modified_by_target_commit("spurious.py", 0), "Expected spurious.py not to be changed"
+    assert diff_cov.line_modified_by_target_commit(flaky_reruns_py, lines), f"Expected line {lines} to be changed"
+    assert not diff_cov.line_modified_by_target_commit("spurious.py", 0), "Expected spurious.py not to be changed"
 
 
-def test_flaky_test_live_false(deflaker_repo):
+def test_flaky_test_live_false(diff_cov_repo):
     """
     Test live classification of genuine failure.
     """
-    deflaker = DeFlaker(run_live=True, root=deflaker_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, root=diff_cov_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
-            os.path.join(deflaker_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
+            os.path.join(diff_cov_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
     )
     Test(  # pylint: disable=E1123
         name="test_app",
-        fspath=os.path.join(deflaker_repo.working_dir, "deflaker_example.py"),
+        fspath=os.path.join(diff_cov_repo.working_dir, "diff_cov_example.py"),
         line_no=15,
         executions=[test_execution],
     )
-    deflaker.flaky_test_live(test_execution)
-    expected = FlakefighterResult(name="DeFlaker", flaky=False)
+    diff_cov.flaky_test_live(test_execution)
+    expected = FlakefighterResult(name="DiffCov", flaky=False)
     assert test_execution.flakefighter_results == [expected]
 
 
-def test_flaky_tests_post_false(deflaker_repo):
+def test_flaky_tests_post_false(diff_cov_repo):
     """
     Test same failure as test_flaky_test_live_false but as a postprocess.
     """
-    deflaker = DeFlaker(run_live=True, root=deflaker_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, root=diff_cov_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
-            os.path.join(deflaker_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
+            os.path.join(diff_cov_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
     )
     run = Run(  # pylint: disable=E1123
@@ -192,8 +192,8 @@ def test_flaky_tests_post_false(deflaker_repo):
             ),
         ]
     )
-    deflaker.flaky_tests_post(run)
-    expected = FlakefighterResult(name="DeFlaker", flaky=False)
+    diff_cov.flaky_tests_post(run)
+    expected = FlakefighterResult(name="DiffCov", flaky=False)
     assert all(execution.flakefighter_results == [expected] for test in run.tests for execution in test.executions)
 
 
@@ -201,15 +201,15 @@ def test_flaky_test_live_true(flaky_reruns_repo):
     """
     Test live classification of genuine failure.
     """
-    deflaker = DeFlaker(run_live=True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): list(range(23)),
         },
     )
-    deflaker.flaky_test_live(test_execution)
-    expected = FlakefighterResult(name="DeFlaker", flaky=True)
+    diff_cov.flaky_test_live(test_execution)
+    expected = FlakefighterResult(name="DiffCov", flaky=True)
     assert test_execution.flakefighter_results == [expected]
 
 
@@ -217,7 +217,7 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
     """
     Test same failure as test_flaky_test_live_false but as a postprocess.
     """
-    deflaker = DeFlaker(run_live=True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -232,8 +232,8 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
             ),
         ]
     )
-    deflaker.flaky_tests_post(run)
-    expected = FlakefighterResult(name="DeFlaker", flaky=True)
+    diff_cov.flaky_tests_post(run)
+    expected = FlakefighterResult(name="DiffCov", flaky=True)
     for test in run.tests:
         print(test.flakefighter_results)
     assert all(execution.flakefighter_results == [expected] for test in run.tests for execution in test.executions)

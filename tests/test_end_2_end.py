@@ -290,9 +290,11 @@ def test_display_test_level_verdicts(pytester, diff_cov_repo):
     result.stdout.fnmatch_lines(["  CoverageIndependence: genuine"])
 
 
-def test_gatorgrade_parameterised(pytester, gatorgrade_repo):
+def test_gatorgrade_parameterised(pytester, gatorgrade_dir):
     """
     Test that flakefighters can run OK on parameterised tests.
     """
-    result = pytester.runpytest(os.path.join(gatorgrade_repo.working_dir, "gatorgrade.py"))
+    result = pytester.runpytest(
+        os.path.join(gatorgrade_dir, "gatorgrade.py"), "--flakefighters", "--active-flakefighters", "CosineSimilarity"
+    )
     result.assert_outcomes(passed=1)

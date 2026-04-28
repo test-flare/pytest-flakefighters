@@ -32,8 +32,8 @@ def test_from_config_params(flaky_reruns_repo, temp_db, run_live):
     Test that from_config generates the same result as a direct call
     """
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
-    source_run = Run(commit_sha=commits[1])
 
+    source_run = Run(commit_sha=commits[1])
     temp_db.save(source_run)
 
     from_config = DiffCov.from_config(
@@ -57,6 +57,23 @@ def test_from_config_params(flaky_reruns_repo, temp_db, run_live):
     assert from_config.source_commit == init.source_commit
     assert from_config.target_commit == init.target_commit
     assert from_config.params() == init.params()
+
+
+def test_no_previous_runs(flaky_reruns_repo, temp_db):
+    """
+    Test that empty db raises an error when source commit is specified.
+    """
+    commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
+    with pytest.raises(ValueError):
+        DiffCov.from_config(
+            {
+                "run_live": True,
+                "root": flaky_reruns_repo.working_dir,
+                "source_commit": commits[1],
+                "target_commit": commits[0],
+                "database": temp_db,
+            }
+        )
 
 
 def test_clean_repo(flaky_reruns_repo):
@@ -84,6 +101,36 @@ def test_dirty_repo(flaky_reruns_repo):
 
     assert diff_cov.source_commit == commits[0], f"Expected source commit {commits[0]} but was {diff_cov.source_commit}"
     assert diff_cov.target_commit is None, f"Expected source commit None but was {diff_cov.target_commit}"
+
+
+@pytest.mark.parametrize(
+    ("previous_outcome, current_outcome"),
+    [
+        pytest.param("passed", "passed", id="passed both times"),
+        pytest.param("passed", "failed", id="transition from passing to failing"),
+        pytest.param("failed", "passed", id="transition from failing to passing"),
+        pytest.param("failed", "failed", id="failed both times"),
+    ],
+)
+def test_previous_runs(flaky_reruns_repo, previous_outcome, current_outcome):
+    """
+    Test that flaky tests are correctly identified based on previous outcome.
+    """
+    coverage = {
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): [1, 4, 6, 9, 10, 11, 12, 14],
+    }
+    execution = TestExecution(outcome=current_outcome, coverage=coverage)
+    Test(name="", executions=[execution])
+    diff_cov = DiffCov(
+        run_live=True,  # Doesn't matter since we're calling flaky_test_live directly
+        source_runs=[
+            Run(tests=[Test(name="", executions=[TestExecution(outcome=previous_outcome, coverage=coverage)])])
+        ],
+        root=flaky_reruns_repo.working_dir,
+    )
+    diff_cov.flaky_test_live(execution)
+    [outcome] = execution.flakefighter_results
+    assert outcome.flaky == (previous_outcome != current_outcome)
 
 
 def test_new_test_preserves_original_results(flaky_reruns_repo):

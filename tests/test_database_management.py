@@ -234,9 +234,8 @@ def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
     )
     for i, run in enumerate(runs[1:3]):
         expected = "passed" if i % 2 == 0 else "failed"
-        flaky = "genuine" if i % 2 == 0 else "flaky"
         result.stdout.fnmatch_lines(
-            [f"*Flakefighter Verdicts {run.start_time}*", f"Execution 0: {expected}", f"*DiffCov: {flaky}"],
+            [f"*Flakefighter Verdicts {run.start_time}*", f"Execution 0: {expected}", "*DiffCov: flaky"],
             consecutive=True,
         )
 

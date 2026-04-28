@@ -130,21 +130,19 @@ class DiffCov(FlakeFighter):
         Classify an execution as flaky or not.
         :return: Boolean True of the test is classed as flaky and False otherwise.
         """
-        previous_executions_ok = True
+        previous_execution_outcomes = {}
         for run in self.source_runs:
             for test in run.tests:
                 if test.name == execution.test.name:
-                    previous_executions_ok = all(e.outcome == "passed" for e in test.executions)
+                    previous_execution_outcomes = {e.outcome for e in test.executions}
         return (
-            execution.outcome != "passed"
-            and previous_executions_ok
-            and not any(
-                self.line_modified_by_target_commit(file_path, line_no)
-                for file_path in execution.coverage
-                for line_no in execution.coverage[file_path]
-                if file_path in self.lines_changed
-                and (line_no == execution.test.line_no or line_no not in self.method_declarations.get(file_path, []))
-            )
+            execution.outcome not in previous_execution_outcomes or len(previous_execution_outcomes) > 1
+        ) and not any(
+            self.line_modified_by_target_commit(file_path, line_no)
+            for file_path in execution.coverage
+            for line_no in execution.coverage[file_path]
+            if file_path in self.lines_changed
+            and (line_no == execution.test.line_no or line_no not in self.method_declarations.get(file_path, []))
         )
 
     def flaky_test_live(self, execution: TestExecution):

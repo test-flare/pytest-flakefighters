@@ -23,12 +23,13 @@ class DiffCov(FlakeFighter):
     the same general methodology of checking whether covered code has been changed between commits.
 
     :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
+    :ivar source_runs: The runs to consider when checking whether a test has transitioned from passing to failing.
     :ivar root: The root directory of the Git repository.
     :ivar source_commit: The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).
     :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=R0913,R0917
         self,
         run_live: bool,
         source_runs: list[Run],
@@ -97,8 +98,8 @@ class DiffCov(FlakeFighter):
         if source_commit is not None and not source_runs:
             raise ValueError(
                 f"Could not find a run for specified source commit {source_commit}. "
-                f"Please checkout {source_commit} and run pytest again, use a different source commit hash, or leave it "
-                "unspecified. "
+                f"Please checkout {source_commit} and run pytest again, use a different source commit hash, or leave it"
+                " unspecified."
             )
         return DiffCov(
             run_live=config.get("run_live", True),

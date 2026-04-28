@@ -17,34 +17,41 @@ from pytest_flakefighters.database_management import (
 from pytest_flakefighters.flakefighters.diff_cov import DiffCov
 
 
+@pytest.fixture(name="temp_db")
+def _temp_db():
+    with TemporaryDirectory() as tempdir:
+        db_path = f"sqlite:///{tempdir}/test.db"
+        db = Database(db_path)
+        yield db
+        db.engine.dispose()
+
+
 @pytest.mark.parametrize("run_live", [True, False])
-def test_from_config_params(flaky_reruns_repo, run_live):
+def test_from_config_params(flaky_reruns_repo, temp_db, run_live):
     """
     Test that from_config generates the same result as a direct call
     """
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
     source_run = Run(commit_sha=commits[1])
 
-    with TemporaryDirectory() as tempdir:
-        db = Database(f"sqlite:///{tempdir}/flakefighters.db")
-        db.save(source_run)
+    temp_db.save(source_run)
 
-        from_config = DiffCov.from_config(
-            {
-                "run_live": run_live,
-                "root": flaky_reruns_repo.working_dir,
-                "source_commit": commits[1],
-                "target_commit": commits[0],
-                "database": db,
-            }
-        )
-        init = DiffCov(
-            run_live=run_live,
-            source_runs=[source_run],
-            root=flaky_reruns_repo.working_dir,
-            source_commit=commits[1],
-            target_commit=commits[0],
-        )
+    from_config = DiffCov.from_config(
+        {
+            "run_live": run_live,
+            "root": flaky_reruns_repo.working_dir,
+            "source_commit": commits[1],
+            "target_commit": commits[0],
+            "database": temp_db,
+        }
+    )
+    init = DiffCov(
+        run_live=run_live,
+        source_runs=[source_run],
+        root=flaky_reruns_repo.working_dir,
+        source_commit=commits[1],
+        target_commit=commits[0],
+    )
     assert from_config.run_live == init.run_live
     assert from_config.repo_root == init.repo_root
     assert from_config.source_commit == init.source_commit

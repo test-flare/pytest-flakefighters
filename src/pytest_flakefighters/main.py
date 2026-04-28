@@ -126,12 +126,7 @@ def pytest_configure(config: pytest.Config):
     flakefighters = []
     if flakefighter_configs is None and active_flakefighters is None:
         logger.warning("No flakefighters specified. Using basic differential coverage only.")
-        flakefighters.append(
-            DiffCov(
-                run_live=True,
-                root=get_config_value(config, "root"),
-            )
-        )
+        flakefighters.append(DiffCov(run_live=True, root=get_config_value(config, "root"), source_runs=[]))
     else:
         flakefighter_configs = setup_flakefighter_configs(flakefighter_configs)
         if active_flakefighters is not None:

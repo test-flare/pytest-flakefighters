@@ -3,10 +3,12 @@ This module tests the differential coverage flakefighter.
 """
 
 import os
+from tempfile import TemporaryDirectory
 
 import pytest
 
 from pytest_flakefighters.database_management import (
+    Database,
     FlakefighterResult,
     Run,
     Test,
@@ -21,18 +23,28 @@ def test_from_config_params(flaky_reruns_repo, run_live):
     Test that from_config generates the same result as a direct call
     """
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
+    source_run = Run(commit_sha=commits[1])
 
-    from_config = DiffCov.from_config(
-        {
-            "run_live": run_live,
-            "root": flaky_reruns_repo.working_dir,
-            "source_commit": commits[1],
-            "target_commit": commits[0],
-        }
-    )
-    init = DiffCov(
-        run_live=run_live, root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[0]
-    )
+    with TemporaryDirectory() as tempdir:
+        db = Database(f"sqlite:///{tempdir}/flakefighters.db")
+        db.save(source_run)
+
+        from_config = DiffCov.from_config(
+            {
+                "run_live": run_live,
+                "root": flaky_reruns_repo.working_dir,
+                "source_commit": commits[1],
+                "target_commit": commits[0],
+                "database": db,
+            }
+        )
+        init = DiffCov(
+            run_live=run_live,
+            source_runs=[source_run],
+            root=flaky_reruns_repo.working_dir,
+            source_commit=commits[1],
+            target_commit=commits[0],
+        )
     assert from_config.run_live == init.run_live
     assert from_config.repo_root == init.repo_root
     assert from_config.source_commit == init.source_commit
@@ -46,7 +58,7 @@ def test_clean_repo(flaky_reruns_repo):
     """
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
 
-    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, source_runs=[], root=flaky_reruns_repo.working_dir)
 
     assert diff_cov.source_commit == commits[1], f"Expected source commit {commits[1]} but was {diff_cov.source_commit}"
     assert diff_cov.target_commit == commits[0], f"Expected source commit {commits[0]} but was {diff_cov.target_commit}"
@@ -61,7 +73,7 @@ def test_dirty_repo(flaky_reruns_repo):
     with open(os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"), "w") as f:
         print("print()", file=f)
 
-    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, source_runs=[], root=flaky_reruns_repo.working_dir)
 
     assert diff_cov.source_commit == commits[0], f"Expected source commit {commits[0]} but was {diff_cov.source_commit}"
     assert diff_cov.target_commit is None, f"Expected source commit None but was {diff_cov.target_commit}"
@@ -72,7 +84,7 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
     Test the setup of source and target commits for a dirty repo (uncommitted changes).
     """
 
-    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, source_runs=[], root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -116,7 +128,9 @@ def test_named_source_target(flaky_reruns_repo):
 
     commits = [commit.hexsha for commit in flaky_reruns_repo.iter_commits("main")]
 
-    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[2])
+    diff_cov = DiffCov(
+        True, source_runs=[], root=flaky_reruns_repo.working_dir, source_commit=commits[1], target_commit=commits[2]
+    )
 
     assert diff_cov.source_commit == commits[1], f"Expected source commit {commits[1]} but was {diff_cov.source_commit}"
     assert diff_cov.target_commit == commits[2], f"Expected source commit {commits[2]} but was {diff_cov.target_commit}"
@@ -133,7 +147,7 @@ def test_line_modified_by_target_commit(flaky_reruns_repo):
     flaky_reruns_repo.index.add(["flaky_reruns.py"])
     flaky_reruns_repo.index.commit("Added a print statement.")
 
-    diff_cov = DiffCov(True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(True, source_runs=[], root=flaky_reruns_repo.working_dir)
     with open(flaky_reruns_py) as f:
         lines = len(f.readlines())
 
@@ -155,7 +169,7 @@ def test_flaky_test_live_false(diff_cov_repo):
     """
     Test live classification of genuine failure.
     """
-    diff_cov = DiffCov(run_live=True, root=diff_cov_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, source_runs=[], root=diff_cov_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -177,7 +191,7 @@ def test_flaky_tests_post_false(diff_cov_repo):
     """
     Test same failure as test_flaky_test_live_false but as a postprocess.
     """
-    diff_cov = DiffCov(run_live=True, root=diff_cov_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, source_runs=[], root=diff_cov_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -201,7 +215,7 @@ def test_flaky_test_live_true(flaky_reruns_repo):
     """
     Test live classification of genuine failure.
     """
-    diff_cov = DiffCov(run_live=True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, source_runs=[], root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={
@@ -217,7 +231,7 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
     """
     Test same failure as test_flaky_test_live_false but as a postprocess.
     """
-    diff_cov = DiffCov(run_live=True, root=flaky_reruns_repo.working_dir)
+    diff_cov = DiffCov(run_live=True, source_runs=[], root=flaky_reruns_repo.working_dir)
     test_execution = TestExecution(
         outcome="failed",
         coverage={

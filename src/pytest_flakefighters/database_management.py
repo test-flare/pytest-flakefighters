@@ -56,6 +56,8 @@ class Run(Base):
     This is not necessarily equivalent to start_time if the test suite took a long time to run or
     if the entry was migrated from a separate database.
     :ivar root: The root directory of the project.
+    :ivar commit_sha: The commit SHA at the time of the run.
+                      This should only be set if the root is a git repo and is clean at the time of the run.
     :ivar tests: The test suite.
     :ivar active_flakefighters: The flakefighters that are active on the run.
     """
@@ -63,6 +65,7 @@ class Run(Base):
     start_time = Column(DateTime)
     created_at = Column(DateTime, default=func.now())
     root: Mapped[str] = Column(String)
+    commit_sha: Mapped[str] = Column(String)
     tests = relationship("Test", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True)
     active_flakefighters = relationship(
         "ActiveFlakeFighter", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True
@@ -288,6 +291,15 @@ class Database:
                     session.delete(r)
             session.commit()
             session.flush()
+
+    def get_source_runs(self, target_sha: str) -> list[Run]:
+        """
+        Return the pytest run for the given target sha.
+        :param target_sha: The SHA for which to return runs.
+        :returns: List of pytest runs with DiffCov flakefighter active with the target_sha.
+        """
+        with Session(self.engine) as session:
+            return session.execute(select(Run).where(Run.commit_sha == target_sha)).scalars().all()
 
     def load_runs(self, limit: int = None):
         """

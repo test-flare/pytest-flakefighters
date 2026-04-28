@@ -48,3 +48,9 @@ class FlakeFighter(ABC):  # pylint: disable=R0903
         Convert the key parameters into a dictionary so that the object can be replicated.
         :return A dictionary of the parameters used to create the object.
         """
+
+    def json_serial(obj: any) -> any:
+        """
+        Convert an object into a JSON serialisable one.
+        """
+        return obj

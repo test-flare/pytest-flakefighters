@@ -10,6 +10,7 @@ from typing import Union
 from xml.etree import ElementTree as ET
 
 import coverage
+import git
 import pytest
 from _pytest.runner import runtestprotocol
 from packaging.version import Version
@@ -72,7 +73,22 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
             ],
             start_time=datetime.now(),
+            commit_sha=self._current_commit_sha(),
         )
+
+    def _current_commit_sha(self):
+        """
+        Get the SHA of the current commit of the repo.
+        :returns: The SHA of the current commit of the root directory, if it is a git repo and in a clean state, else
+        None.
+        """
+        try:
+            repo = git.Repo(self.root)
+            if not repo.is_dirty():
+                return repo.commit().hexsha
+            return None
+        except git.exc.InvalidGitRepositoryError:
+            return None
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """

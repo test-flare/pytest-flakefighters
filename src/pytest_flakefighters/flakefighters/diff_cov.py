@@ -28,10 +28,18 @@ class DiffCov(FlakeFighter):
     :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).
     """
 
-    def __init__(self, run_live: bool, root: str = ".", source_commit: str = None, target_commit: str = None):
+    def __init__(
+        self,
+        run_live: bool,
+        source_runs: list[Run],
+        root: str = ".",
+        source_commit: str = None,
+        target_commit: str = None,
+    ):
         super().__init__(run_live)
 
         self.repo_root = git.Repo(root)
+        self.source_runs = source_runs
         if target_commit is None and not self.repo_root.is_dirty():
             # No uncommitted changes, so use most recent commit
             self.target_commit = self.repo_root.commit().hexsha
@@ -84,8 +92,17 @@ class DiffCov(FlakeFighter):
         """
         Factory method to create a new instance from a pytest configuration.
         """
+        source_runs = config["database"].get_source_runs(config.get("source_commit"))
+        source_commit = config.get("source_commit")
+        if source_commit is not None and not source_runs:
+            raise ValueError(
+                f"Could not find a run for specified source commit {source_commit}. "
+                f"Please checkout {source_commit} and run pytest again, use a different source commit hash, or leave it "
+                "unspecified. "
+            )
         return DiffCov(
             run_live=config.get("run_live", True),
+            source_runs=source_runs,
             root=config.get("root", "."),
             source_commit=config.get("source_commit"),
             target_commit=config.get("target_commit"),
@@ -112,12 +129,21 @@ class DiffCov(FlakeFighter):
         Classify an execution as flaky or not.
         :return: Boolean True of the test is classed as flaky and False otherwise.
         """
-        return execution.outcome != "passed" and not any(
-            self.line_modified_by_target_commit(file_path, line_no)
-            for file_path in execution.coverage
-            for line_no in execution.coverage[file_path]
-            if file_path in self.lines_changed
-            and (line_no == execution.test.line_no or line_no not in self.method_declarations.get(file_path, []))
+        previous_executions_ok = True
+        for run in self.source_runs:
+            for test in run.tests:
+                if test.name == execution.test.name:
+                    previous_executions_ok = all(e.outcome == "passed" for e in test.executions)
+        return (
+            execution.outcome != "passed"
+            and previous_executions_ok
+            and not any(
+                self.line_modified_by_target_commit(file_path, line_no)
+                for file_path in execution.coverage
+                for line_no in execution.coverage[file_path]
+                if file_path in self.lines_changed
+                and (line_no == execution.test.line_no or line_no not in self.method_declarations.get(file_path, []))
+            )
         )
 
     def flaky_test_live(self, execution: TestExecution):

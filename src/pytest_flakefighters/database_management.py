@@ -2,6 +2,7 @@
 This module manages all interaction with the test run database.
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Union
@@ -28,6 +29,8 @@ from sqlalchemy.orm import (
     declared_attr,
     relationship,
 )
+
+logging.getLogger("sqlalchemy.engine.Engine").setLevel(logging.WARNING)
 
 
 @dataclass

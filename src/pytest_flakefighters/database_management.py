@@ -63,10 +63,8 @@ class Run(Base):
     start_time = Column(DateTime)
     created_at = Column(DateTime, default=func.now())
     root: Mapped[str] = Column(String)
-    tests = relationship("Test", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True)
-    active_flakefighters = relationship(
-        "ActiveFlakeFighter", backref="run", lazy="subquery", cascade="all, delete", passive_deletes=True
-    )
+    tests = relationship("Test", backref="run", cascade="all, delete")
+    active_flakefighters = relationship("ActiveFlakeFighter", backref="run", cascade="all, delete")
 
 
 @dataclass
@@ -106,11 +104,9 @@ class Test(Base):
     line_no: Mapped[int] = Column(Integer)
     name: Mapped[str] = Column(String)
     skipped: Mapped[bool] = Column(Boolean, default=False)
-    executions = relationship(
-        "TestExecution", backref="test", lazy="subquery", cascade="all, delete", passive_deletes=True
-    )
+    executions = relationship("TestExecution", backref="test", cascade="all, delete", passive_deletes=True)
     flakefighter_results = relationship(
-        "FlakefighterResult", backref="test", lazy="subquery", cascade="all, delete", passive_deletes=True
+        "FlakefighterResult", backref="test", cascade="all, delete", passive_deletes=True
     )
 
     @property
@@ -152,13 +148,12 @@ class TestExecution(Base):  # pylint: disable=R0902
     end_time: Mapped[datetime] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)
     flakefighter_results = relationship(
-        "FlakefighterResult", backref="test_execution", lazy="subquery", cascade="all, delete", passive_deletes=True
+        "FlakefighterResult", backref="test_execution", cascade="all, delete", passive_deletes=True
     )
     exception = relationship(
         "TestException",
         uselist=False,
         backref="test_execution",
-        lazy="subquery",
         cascade="all, delete",
         passive_deletes=True,
     )
@@ -185,9 +180,7 @@ class TestException(Base):  # pylint: disable=R0902
 
     execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=False)
     name: Mapped[str] = Column(String)
-    traceback = relationship(
-        "TracebackEntry", backref="exception", lazy="subquery", cascade="all, delete", passive_deletes=True
-    )
+    traceback = relationship("TracebackEntry", backref="exception", cascade="all, delete", passive_deletes=True)
 
 
 @dataclass
@@ -266,6 +259,7 @@ class Database:
             time_immemorial = timedelta(days=days, hours=hours, minutes=minutes)
 
         self.engine = create_engine(url)
+        self.session = Session(self.engine)
         Base.metadata.create_all(self.engine)
 
         self.store_max_runs = store_max_runs
@@ -276,18 +270,16 @@ class Database:
         """
         Save the given run into the database.
         """
-        with Session(self.engine) as session:
-            session.add(run)
-            if self.time_immemorial is not None:
-                expiry_date = datetime.now() - self.time_immemorial
-                for r in session.query(Run).filter(Run.created_at < (expiry_date - self.time_immemorial)):
-                    session.delete(r)
+        self.session.add(run)
+        if self.time_immemorial is not None:
+            expiry_date = datetime.now() - self.time_immemorial
+            for r in self.session.query(Run).filter(Run.created_at < (expiry_date - self.time_immemorial)):
+                self.session.delete(r)
 
-            if self.store_max_runs is not None:
-                for r in self.load_runs()[self.store_max_runs - 1 :]:
-                    session.delete(r)
-            session.commit()
-            session.flush()
+        if self.store_max_runs is not None:
+            for r in self.load_runs()[self.store_max_runs - 1 :]:
+                self.session.delete(r)
+        self.session.commit()
 
     def load_runs(self, limit: int = None):
         """
@@ -295,5 +287,11 @@ class Database:
 
         :param limit: The maximum number of runs to return (these will be most recent runs).
         """
-        with Session(self.engine) as session:
-            return session.scalars(select(Run).order_by(desc(Run.start_time)).limit(limit)).all()
+        return self.session.scalars(select(Run).order_by(desc(Run.start_time)).limit(limit)).all()
+
+    def close(self):
+        """
+        Close the database session and dispose of open resources.
+        """
+        self.session.close()
+        self.engine.dispose()

@@ -27,7 +27,7 @@ def test_flaky_reruns(pytester, flaky_reruns_repo):
     tests = runs[0].tests
     assert len(tests) == 1, f"Should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
     assert len(tests[0].executions) == 2, f"Should be 2 executions, but was {len(tests[0].executions)}"
-    db.engine.dispose()
+    db.close()
 
 
 def test_flaky_reruns_second_time_lucky(pytester, flaky_reruns_repo):
@@ -48,7 +48,7 @@ def test_flaky_reruns_second_time_lucky(pytester, flaky_reruns_repo):
     tests = runs[0].tests
     assert len(tests) == 1, f"Should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
     assert len(tests[0].executions) == 2, f"Should be 2 executions, but was {len(tests[0].executions)}"
-    db.engine.dispose()
+    db.close()
 
 
 def test_previously_flaky(pytester, flaky_reruns_repo):
@@ -82,7 +82,7 @@ def test_previously_flaky(pytester, flaky_reruns_repo):
 
     assert len(tests) == 1, f"Second run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
     assert len(tests[0].executions) == 2, f"Second run should be 2 executions, but was {len(tests[0].executions)}"
-    db.engine.dispose()
+    db.close()
 
 
 def test_previously_flaky_no_rerun(pytester, deflaker_repo):
@@ -114,7 +114,7 @@ def test_previously_flaky_no_rerun(pytester, deflaker_repo):
     tests = runs[0].tests
     assert len(tests) == 1, f"Second run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
     assert len(tests[0].executions) == 1, f"Second run should be 1 execution, but was {len(tests[0].executions)}"
-    db.engine.dispose()
+    db.close()
 
 
 def test_rerun_all(pytester, flaky_reruns_repo):
@@ -142,4 +142,4 @@ def test_rerun_all(pytester, flaky_reruns_repo):
     assert len(tests) == 3, f"Should be 3 tests, but was {len(tests)}: {[test.name for test in tests]}"
 
     assert all(len(test.executions) == 2 for test in tests), "Every test should have 2 executions"
-    db.engine.dispose()
+    db.close()

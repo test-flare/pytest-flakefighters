@@ -415,4 +415,4 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         if self.save_run:
             self.database.save(self.run)
-        self.database.engine.dispose()
+        self.database.close()

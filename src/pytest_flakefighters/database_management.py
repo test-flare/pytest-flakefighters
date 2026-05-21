@@ -295,3 +295,15 @@ class Database:
         """
         self.session.close()
         self.engine.dispose()
+
+    def __enter__(self):
+        """
+        Return the DatabaseManager object when entering a `with` block.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Close the  the session when exiting a `with` block.
+        """
+        self.close()

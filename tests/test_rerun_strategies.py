@@ -20,14 +20,13 @@ def test_flaky_reruns(pytester, flaky_reruns_repo):
         "--flakefighters",
         "--max-reruns=2",
     )
-    db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
-    runs = db.load_runs()
-    assert len(runs) == 1, f"Should have saved 1 pytest run, saved {len(runs)}"
+    with Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}") as db:
+        runs = db.load_runs()
+        assert len(runs) == 1, f"Should have saved 1 pytest run, saved {len(runs)}"
 
-    tests = runs[0].tests
-    assert len(tests) == 1, f"Should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
-    assert len(tests[0].executions) == 2, f"Should be 2 executions, but was {len(tests[0].executions)}"
-    db.close()
+        tests = runs[0].tests
+        assert len(tests) == 1, f"Should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
+        assert len(tests[0].executions) == 2, f"Should be 2 executions, but was {len(tests[0].executions)}"
 
 
 def test_flaky_reruns_second_time_lucky(pytester, flaky_reruns_repo):
@@ -41,14 +40,13 @@ def test_flaky_reruns_second_time_lucky(pytester, flaky_reruns_repo):
         "--max-reruns=3",
     )
 
-    db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
-    runs = db.load_runs()
-    assert len(runs) == 1, f"Should have saved 1 pytest run, saved {len(runs)}"
+    with Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}") as db:
+        runs = db.load_runs()
+        assert len(runs) == 1, f"Should have saved 1 pytest run, saved {len(runs)}"
 
-    tests = runs[0].tests
-    assert len(tests) == 1, f"Should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
-    assert len(tests[0].executions) == 2, f"Should be 2 executions, but was {len(tests[0].executions)}"
-    db.close()
+        tests = runs[0].tests
+        assert len(tests) == 1, f"Should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
+        assert len(tests[0].executions) == 2, f"Should be 2 executions, but was {len(tests[0].executions)}"
 
 
 def test_previously_flaky(pytester, flaky_reruns_repo):
@@ -70,19 +68,18 @@ def test_previously_flaky(pytester, flaky_reruns_repo):
         "--rerun-strategy=PREVIOUSLY_FLAKY",
     )
 
-    db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
-    runs = sorted(db.load_runs(), key=lambda run: run.id)
-    assert len(runs) == 2, f"Should have saved 2 pytest runs, saved {len(runs)}"
+    with Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}") as db:
+        runs = sorted(db.load_runs(), key=lambda run: run.id)
+        assert len(runs) == 2, f"Should have saved 2 pytest runs, saved {len(runs)}"
 
-    tests = runs[0].tests
-    assert len(tests) == 1, f"First run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
-    assert len(tests[0].executions) == 1, f"First run should be 1 execution, but was {len(tests[0].executions)}"
+        tests = runs[0].tests
+        assert len(tests) == 1, f"First run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
+        assert len(tests[0].executions) == 1, f"First run should be 1 execution, but was {len(tests[0].executions)}"
 
-    tests = runs[1].tests
+        tests = runs[1].tests
 
-    assert len(tests) == 1, f"Second run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
-    assert len(tests[0].executions) == 2, f"Second run should be 2 executions, but was {len(tests[0].executions)}"
-    db.close()
+        assert len(tests) == 1, f"Second run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
+        assert len(tests[0].executions) == 2, f"Second run should be 2 executions, but was {len(tests[0].executions)}"
 
 
 def test_previously_flaky_no_rerun(pytester, deflaker_repo):
@@ -104,17 +101,16 @@ def test_previously_flaky_no_rerun(pytester, deflaker_repo):
         "--rerun-strategy=PREVIOUSLY_FLAKY",
     )
 
-    db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
-    runs = db.load_runs()
-    assert len(runs) == 2, f"Should have saved 2 pytest runs, saved {len(runs)}"
+    with Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}") as db:
+        runs = db.load_runs()
+        assert len(runs) == 2, f"Should have saved 2 pytest runs, saved {len(runs)}"
 
-    tests = runs[0].tests
-    assert len(tests) == 1, f"First run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
-    assert len(tests[0].executions) == 1, f"First run should be 1 execution, but was {len(tests[0].executions)}"
-    tests = runs[0].tests
-    assert len(tests) == 1, f"Second run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
-    assert len(tests[0].executions) == 1, f"Second run should be 1 execution, but was {len(tests[0].executions)}"
-    db.close()
+        tests = runs[0].tests
+        assert len(tests) == 1, f"First run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
+        assert len(tests[0].executions) == 1, f"First run should be 1 execution, but was {len(tests[0].executions)}"
+        tests = runs[0].tests
+        assert len(tests) == 1, f"Second run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"
+        assert len(tests[0].executions) == 1, f"Second run should be 1 execution, but was {len(tests[0].executions)}"
 
 
 def test_rerun_all(pytester, flaky_reruns_repo):
@@ -134,12 +130,11 @@ def test_rerun_all(pytester, flaky_reruns_repo):
         "--rerun-strategy=ALL",
     )
 
-    db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
-    runs = db.load_runs()
-    assert len(runs) == 1, f"Should have saved 1 pytest run, saved {len(runs)}"
+    with Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}") as db:
+        runs = db.load_runs()
+        assert len(runs) == 1, f"Should have saved 1 pytest run, saved {len(runs)}"
 
-    tests = runs[0].tests
-    assert len(tests) == 3, f"Should be 3 tests, but was {len(tests)}: {[test.name for test in tests]}"
+        tests = runs[0].tests
+        assert len(tests) == 3, f"Should be 3 tests, but was {len(tests)}: {[test.name for test in tests]}"
 
-    assert all(len(test.executions) == 2 for test in tests), "Every test should have 2 executions"
-    db.close()
+        assert all(len(test.executions) == 2 for test in tests), "Every test should have 2 executions"

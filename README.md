@@ -59,14 +59,14 @@ Use pytest-flakefighters when you want to:
 
 ### Can They Work Together?
 
-Yes! pytest-flakefighters can be combined with other flaky test plugins:
+Yes! The pytest-flakefighters plugin can be combined with other flaky test plugins:
 
-* Use **pytest-flakefighters** to identify and classify flaky tests
-* Use [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) or [pytest-flaky](https://github.com/box/flaky) as a temporary measure while fixing them
-* Use [pytest-replay](https://github.com/ESSS/pytest-replay) to debug specific instances identified by flakefighters
-* Use [pytest-xdist](https://github.com/pytest-dev/pytest-xdist) to randomise the order of your test cases
+- Use **pytest-flakefighters** to identify and classify flaky tests
+- Use [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) or [pytest-flaky](https://github.com/box/flaky) as a temporary measure while fixing them
+- Use [pytest-replay](https://github.com/ESSS/pytest-replay) to debug specific instances identified by flakefighters
+- Use [pytest-xdist](https://github.com/pytest-dev/pytest-xdist) to randomise the order of your test cases
 
----
+______________________________________________________________________
 
 *For more information on flaky test management best practices, see the [pytest documentation](https://docs.pytest.org/en/stable/explanation/flaky.html).*
 

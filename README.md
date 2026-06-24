@@ -8,7 +8,8 @@
 [![Documentation Status](https://readthedocs.org/projects/pytest-flakefighters/badge/?version=latest)](https://pytest-flakefighters.readthedocs.io/en/latest/?badge=latest)
 ![GitHub License](https://img.shields.io/github/license/test-flare/pytest-flakefighters)
 
-### Pytest plugin implementing flaky test failure detection and classification.
+### Pytest plugin for flaky test failure detection and classification
+
 Read more about flaky tests [here](https://docs.pytest.org/en/stable/explanation/flaky.html).
 
 ## Features

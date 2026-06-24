@@ -2642,6 +2642,16 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+pg = [
+    { name = "psycopg2" },
+]
+scipy = [
+    { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
+
+[package.dev-dependencies]
 dev = [
     { name = "astroid" },
     { name = "autoclasstoc" },
@@ -2663,45 +2673,41 @@ dev = [
     { name = "tox", version = "4.30.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "tox", version = "4.55.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
-pg = [
-    { name = "psycopg2" },
-]
-scipy = [
-    { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-]
 
 [package.metadata]
 requires-dist = [
-    { name = "astroid", marker = "extra == 'dev'", specifier = "==3.3.8" },
-    { name = "autoclasstoc", marker = "extra == 'dev'" },
-    { name = "black", marker = "extra == 'dev'" },
     { name = "coverage", specifier = ">=7" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "gitpython", specifier = ">=3.1.45" },
     { name = "importlib-metadata" },
-    { name = "myst-parser", marker = "extra == 'dev'" },
-    { name = "nbsphinx", marker = "extra == 'dev'" },
     { name = "nltk", specifier = ">=3.9" },
     { name = "pandas", specifier = ">=2.3" },
-    { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "psycopg2", marker = "extra == 'pg'", specifier = ">2.9" },
-    { name = "pylint", marker = "extra == 'dev'" },
     { name = "pytest", specifier = ">=7" },
-    { name = "pytest-cov", marker = "extra == 'dev'" },
-    { name = "pytest-html", marker = "extra == 'dev'" },
-    { name = "pytest-json-report", marker = "extra == 'dev'", specifier = ">=1.5" },
     { name = "pyyaml", specifier = ">=5" },
     { name = "scikit-learn", specifier = ">1" },
     { name = "scipy", marker = "extra == 'scipy'" },
-    { name = "sphinx-autoapi", marker = "extra == 'dev'" },
-    { name = "sphinx-rtd-theme", marker = "extra == 'dev'" },
     { name = "sqlalchemy", specifier = ">=2" },
-    { name = "tox", marker = "extra == 'dev'" },
     { name = "unidiff", specifier = ">=0.7.5" },
 ]
-provides-extras = ["dev", "pg", "scipy"]
+provides-extras = ["pg", "scipy"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "astroid", specifier = "==3.3.8" },
+    { name = "autoclasstoc" },
+    { name = "black" },
+    { name = "myst-parser" },
+    { name = "nbsphinx" },
+    { name = "pre-commit" },
+    { name = "pylint" },
+    { name = "pytest-cov" },
+    { name = "pytest-html" },
+    { name = "pytest-json-report", specifier = ">=1.5" },
+    { name = "sphinx-autoapi" },
+    { name = "sphinx-rtd-theme" },
+    { name = "tox" },
+]
 
 [[package]]
 name = "pytest-html"

@@ -24,11 +24,11 @@ Read more about flaky tests [here](https://docs.pytest.org/en/stable/explanation
 ## Comparison with Other Plugins
 
 Flakefighters is a pytest plugin developed as part of the [TestFLARE](https://test-flare.github.io/) project.
-The plugin provides a "Swiss army knife" of techniques (called flakefighters) to detect flaky tests.
+The plugin provides a "Swiss army knife" of techniques, called flakefighters, to detect flaky tests.
 Where existing flaky test plugins such as [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) and [pytest-flaky](https://github.com/box/flaky) are primarily focused on rerunning (potentially) flaky tests until they pass, our main aim is to identify flaky tests by classifying test failures as genuine or flaky.
 The [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder) plugin does this by simply rerunning tests multiple times and observing the result.
 
-By contrast, Flakefighters incorporates several cutting edge flaky test detection techniques from research to automatically classify test failures as either genuine: indicating either a fault in the code or a mis-specified test case, or flaky: indicating a test with a nondeterministic outcome.
+In contrast, Flakefighters incorporates several cutting-edge flaky test detection techniques from research to automatically classify test failures as either genuine: indicating either a fault in the code or a mis-specified test case, or flaky: indicating a test with a nondeterministic outcome.
 Flaky tests are then reported separately in the test report, and can be optionally rerun or suppressed so they don't block CI/CD pipelines.
 
 | Feature | [pytest-flakefighters](https://github.com/test-flare/pytest-flakefighters) | [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) | [pytest-flaky](https://github.com/box/flaky) | [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder) | [pytest-replay](https://github.com/ESSS/pytest-replay) |

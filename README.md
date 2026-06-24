@@ -52,10 +52,10 @@ Use pytest-flakefighters when you want to:
 
 ### When to use alternatives
 
-* [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures): Quick fix for CI builds
-* [pytest-flaky](https://github.com/box/flaky): A few tests are known to be flaky
-* [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder): Brute force search for flaky tests
-* [pytest-replay](https://github.com/ESSS/pytest-replay): Debugging specific flaky failures
+- [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures): Quick fix for CI builds
+- [pytest-flaky](https://github.com/box/flaky): A few tests are known to be flaky
+- [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder): Brute force search for flaky tests
+- [pytest-replay](https://github.com/ESSS/pytest-replay): Debugging specific flaky failures
 
 ### Can They Work Together?
 

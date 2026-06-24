@@ -45,10 +45,10 @@ Flaky tests are then reported separately in the test report, and can be optional
 
 Use pytest-flakefighters when you want to:
 
-* **Understand WHY** tests are flaky, not just hide the symptoms
-* **Classify** flaky tests by root cause (coverage-independent, traceback-matched, etc.)
-* **Track** test flakiness over time and across commits
-* **Make informed decisions** about whether failures are legitimate
+- **Understand** why tests are flaky, not just hide the symptoms
+- **Classify** flaky tests by root cause (e.g., coverage-independent or traceback-matched)
+- **Track** test flakiness over time and across commits
+- **Make informed decisions** about whether failures are legitimate
 
 ### When to use alternatives
 

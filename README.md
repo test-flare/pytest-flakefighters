@@ -10,9 +10,9 @@
 
 ## Quick Start
 
-What is `pytest-flakefighters`? It is a Pytest plugin for flaky test failure
+What is `pytest-flakefighters`? It is a pytest plugin for flaky test failure
 detection and classification. Want to learn more? Read more about flaky tests
-[in Pytest's official description](https://docs.pytest.org/en/stable/explanation/flaky.html).
+[in pytest's official description](https://docs.pytest.org/en/stable/explanation/flaky.html).
 
 Ready to get started? Follow this quick start guide!
 
@@ -28,21 +28,21 @@ For more details, see the [Installation](#installation) and [Usage](#usage) sect
 
 ## Features of Pytest FlakeFighters
 
-- Implements differential coverage, inspired by the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/), for Pytest.
-- Implements two traceback-matching classifiers from [Alshammari et al. (2024)](https://doi.org/10.1109/ICST60714.2024.00031).
-- Implements a novel coverage-independence classifier that classifies tests as flaky if they fail independently of passing test cases that exercise overlapping code.
-- Optionally reruns or suppress flaky test failures.
-- Outputs its results to JSON, HTML, or JUnitXML.
-- Saves test outcome history to a remote or local database.
+- Implements differential coverage, inspired by the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/), for pytest
+- Implements two traceback-matching classifiers from [Alshammari et al. (2024)](https://doi.org/10.1109/ICST60714.2024.00031)
+- Implements a novel coverage-independence classifier that classifies tests as flaky if they fail independently of passing test cases that exercise overlapping code
+- Optionally reruns or suppress flaky test failures
+- Outputs its results to JSON, HTML, or JUnitXML
+- Saves test outcome history to a remote or local database
 
 ## Comparison with Other Plugins
 
 Flakefighters is a pytest plugin developed as part of the [TestFLARE](https://test-flare.github.io/) project.
 The plugin provides a "Swiss army knife" of techniques, called flakefighters, to detect flaky tests.
-Where existing flaky test plugins such as [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) and [pytest-flaky](https://github.com/box/flaky) are primarily focused on rerunning (potentially) flaky tests until they pass, our main aim is to identify flaky tests by classifying test failures as genuine or flaky.
+Where existing flaky test plugins such as [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) and [pytest-flaky](https://github.com/box/flaky) are primarily focused on rerunning (potentially) flaky tests until they pass, our main aim is to identify flaky tests by classifying test failures as _genuine_ or _flaky_.
 The [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder) plugin does this by simply rerunning tests multiple times and observing the result.
 
-In contrast, Flakefighters incorporates several cutting-edge flaky test detection techniques from research to automatically classify test failures as either genuine: indicating either a fault in the code or a mis-specified test case, or flaky: indicating a test with a nondeterministic outcome.
+In contrast, Flakefighters incorporates several cutting-edge flaky test detection techniques from research to automatically classify test failures as either _genuine_: indicating either a fault in the code or a mis-specified test case, or _flaky_: indicating a test with a nondeterministic outcome.
 Flaky tests are then reported separately in the test report, and can be optionally rerun or suppressed so they don't block CI/CD pipelines.
 
 | Feature | [pytest-flakefighters](https://github.com/test-flare/pytest-flakefighters) | [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) | [pytest-flaky](https://github.com/box/flaky) | [pytest-flakefinder](https://github.com/dropbox/pytest-flakefinder) | [pytest-replay](https://github.com/ESSS/pytest-replay) |
@@ -57,7 +57,7 @@ Flaky tests are then reported separately in the test report, and can be optional
 
 ### When to Use pytest-flakefighters
 
-Use pytest-flakefighters when you want to:
+Use `pytest-flakefighters` when you want to:
 
 - **Understand** why tests are flaky, not just hide the symptoms
 - **Classify** flaky tests by root cause (e.g., coverage-independent or traceback-matched)

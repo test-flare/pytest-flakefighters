@@ -78,6 +78,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.test_reports = {}
         self.display_verdicts = display_verdicts
         self.display_outcomes = display_outcomes
+        self.sffl = sffl
 
         self.run = Run(  # pylint: disable=E1123
             root=root,

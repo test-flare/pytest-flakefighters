@@ -338,7 +338,7 @@ def test_sffl(mocker, pytester, sffl_repo):
         {
             "file": [os.path.join(sffl_repo.working_dir, "sffl_example.py")] * 5,
             "line": [1, 2, 3, 4, 6],
-            "suspiciousness": [1 / sqrt(2), 1 / sqrt(2), 1 / sqrt(2), 0, 0],
+            "suspiciousness": [1.0, 1.0, 1.0, 0, 0],
         }
     )
 

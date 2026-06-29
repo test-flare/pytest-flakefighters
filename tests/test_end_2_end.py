@@ -4,7 +4,6 @@ Test end to end runs.
 
 import json
 import os
-from math import sqrt
 
 import pandas as pd
 from pytest import ExitCode

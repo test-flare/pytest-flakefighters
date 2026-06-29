@@ -20,7 +20,7 @@ jobs:
           - python-version: "3.11"
             pytest-version: "==8"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.2.0
         with:

@@ -8,6 +8,18 @@
 [![Documentation Status](https://readthedocs.org/projects/pytest-flakefighters/badge/?version=latest)](https://pytest-flakefighters.readthedocs.io/en/latest/?badge=latest)
 ![GitHub License](https://img.shields.io/github/license/test-flare/pytest-flakefighters)
 
+## Quick Start
+
+```bash
+# Install the plugin as a dev dependency
+uv add --dev pytest-flakefighters
+
+# Run your tests with flakefighters enabled
+uv run pytest --flakefighters
+```
+
+For more details, see the [Installation](#installation) and [Usage](#usage) sections below.
+
 ### Pytest plugin for flaky test failure detection and classification
 
 Read more about flaky tests [here](https://docs.pytest.org/en/stable/explanation/flaky.html).

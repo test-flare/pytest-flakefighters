@@ -34,6 +34,10 @@ DiffCov = "pytest_flakefighters.flakefighters.diff_cov:DiffCov"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
 
 [project.optional-dependencies]
+pg = ["psycopg2>2.9"]
+scipy = ["scipy"]
+
+[dependency-groups]
 dev = [
   "astroid==3.3.8",
   "black",
@@ -49,8 +53,9 @@ dev = [
   "autoclasstoc",
   "tox",
 ]
-pg = ["psycopg2>2.9"]
-scipy = ["scipy"]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [project.urls]
 Documentation = "https://pytest-flakefighters.readthedocs.io"

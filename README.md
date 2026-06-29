@@ -134,7 +134,7 @@ uv pip install -e .[dev]
 
 ## Usage
 
-FlakeFighter is intended to run on git repositories that have test suites runnable with `pytest`.
+FlakeFighter is intended to run on Git repositories that have test suites runnable with `pytest`.
 Once you have installed FlakeFighter, you can run it from the root directory of your repo simply by running `pytest` (or `uv run pytest` if you are using uv without activating the virtual environment).
 FlakeFighter has the following arguments.
 
@@ -222,11 +222,11 @@ Further details can be found in the [configuration documentation](https://pytest
 ## Contributing
 
 Contributions are very welcome.
-Tests can be run with `uv run pytest` (or `pytest` after activating the virtual environment); please ensure the coverage at least stays the same before you submit a pull request.
+Tests can be run with `uv run pytest` (or `pytest` after activating the virtual environment). Please ensure the coverage at least stays the same before you submit a pull request.
 
 ## Flake Fighters
 
-Our plugin is made up of a collection of heuristics that come together to help inform whether a test failure is genuine or flaky.
+The `pytest-flakefighters` plugin is made up of a collection of heuristics that come together to help inform whether a test failure is genuine or flaky.
 These come in two "flavours": those which run live after each test, and those which run at the end of the entire test suite.
 Both extend the base class `FlakeFighter` and implement the `flaky_failure` method, which returns `True` if the test is deemed to be flaky.
 

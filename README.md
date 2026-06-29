@@ -10,11 +10,11 @@
 
 ## Quick Start
 
-What is `pytest-flakefighters`? It is a pytest plugin for flaky test failure
-detection and classification. Want to learn more? Read more about flaky tests
-[in pytest's official description](https://docs.pytest.org/en/stable/explanation/flaky.html).
-
-Ready to get started? Follow this quick start guide!
+- What is `pytest-flakefighters`? It is a pytest plugin for flaky test failure
+  detection and classification.
+- Want to learn more? Read more about flaky tests [in pytest's official
+  description](https://docs.pytest.org/en/stable/explanation/flaky.html).
+- Ready to get started? Follow this quick start guide!
 
 ```bash
 # Install the plugin as a dev dependency

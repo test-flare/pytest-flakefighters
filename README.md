@@ -64,7 +64,7 @@ Use `pytest-flakefighters` when you want to:
 - **Track** test flakiness over time and across commits
 - **Make informed decisions** about whether failures are legitimate
 
-### When to use alternatives
+### When to Use Alternatives
 
 - [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures): Quick fix for CI builds
 - [pytest-flaky](https://github.com/box/flaky): A few tests are known to be flaky

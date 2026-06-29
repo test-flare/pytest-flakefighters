@@ -31,9 +31,9 @@ For more details, see the [Installation](#installation) and [Usage](#usage) sect
 - Implements differential coverage, inspired by the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/), for Pytest.
 - Implements two traceback-matching classifiers from [Alshammari et al. (2024)](https://doi.org/10.1109/ICST60714.2024.00031).
 - Implements a novel coverage-independence classifier that classifies tests as flaky if they fail independently of passing test cases that exercise overlapping code.
-- Optionally rerun or suppress flaky failures.
-- Output results to JSON, HTML, or JUnitXML.
-- Save test outcome history to a remote or local database.
+- Optionally reruns or suppress flaky failures.
+- Outputs its results to JSON, HTML, or JUnitXML.
+- Saves test outcome history to a remote or local database.
 
 ## Comparison with Other Plugins
 

@@ -103,7 +103,7 @@ class TracebackMatching(FlakeFighter):
             )
         )
 
-    def flaky_tests_post(self, run: Run) -> list[bool | None]:
+    def flaky_tests_post(self, run: Run):
         """
         Classify failing executions as flaky if any if their executions are flaky.
         :param run: Run object representing the pytest run, with tests accessible through run.tests.

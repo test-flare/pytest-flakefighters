@@ -6,22 +6,23 @@ requires = ["setuptools>=64", "setuptools_scm[toml]>=6.2", "wheel"]
 authors = [{ name = "TestFLARE Team" }]
 dependencies = [
   "GitPython>=3.1.45",
-  "coverage>=7.10.6",
+  "coverage>=7",
   "dotenv>=0.9.9",
   "nltk>=3.9",
   "pandas>=2.3",
-  "pytest>=6.2.0",
-  "pyyaml>=6",
-  "scikit-learn>=1.7",
-  "sqlalchemy>=2.0.43",
+  "pytest>=7",
+  "pyyaml>=5",
+  "scikit-learn>1",
+  "sqlalchemy>=2",
   "unidiff>=0.7.5",
+  "importlib_metadata",
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 dynamic = ["version"]
 license-files = ["LICENSE"]
 name = "pytest-flakefighters"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"
@@ -29,10 +30,14 @@ flakefighters = "pytest_flakefighters.main"
 [project.entry-points."pytest_flakefighters"]
 CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:CosineSimilarity"
 CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
-DeFlaker = "pytest_flakefighters.flakefighters.deflaker:DeFlaker"
+DiffCov = "pytest_flakefighters.flakefighters.diff_cov:DiffCov"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
 
 [project.optional-dependencies]
+pg = ["psycopg2>2.9"]
+scipy = ["scipy"]
+
+[dependency-groups]
 dev = [
   "astroid==3.3.8",
   "black",
@@ -46,11 +51,12 @@ dev = [
   "sphinx-autoapi",
   "sphinx_rtd_theme",
   "autoclasstoc",
-  "tox>=4.31.0",
+  "tox",
   "pytest-mock",
 ]
-pg = ["psycopg2>2.9"]
-scipy = ["scipy"]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [project.urls]
 Documentation = "https://pytest-flakefighters.readthedocs.io"
@@ -112,17 +118,10 @@ commands = [
     "--cov=src/pytest_flakefighters",
     "-p",
     "no:flakefighters",
-    "-x",
     "{posargs:tests}",
   ],
 ]
-deps = [
-  "pytest",
-  "pytest-cov",
-  "pytest-html",
-  "pytest-json-report",
-  "pytest-mock",
-]
+deps = ["pytest", "pytest-cov", "pytest-html", "pytest-json-report"]
 description = "Run pytest under {base_python}"
 extras = ["dev", "test"]
 usedevelop = true

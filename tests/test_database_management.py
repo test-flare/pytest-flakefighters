@@ -52,21 +52,21 @@ def test_run_saving(pytester, flaky_triangle_repo):
     db.engine.dispose()
 
 
-def test_max_load_runs(pytester, deflaker_repo):
+def test_max_load_runs(pytester, diff_cov_repo):
     """Test that we only load the specified number of runs"""
 
     # run pytest with the following cmd args
     assert not os.path.exists(
-        os.path.join(deflaker_repo.working_dir, "flakefighters.db")
+        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
     ), "Database file should not exist in advance of running pytest"
 
     for _ in range(5):
         pytester.runpytest(
-            os.path.join(deflaker_repo.working_dir, "app.py"),
+            os.path.join(diff_cov_repo.working_dir, "app.py"),
             "-s",
             "--flakefighters",
         )
-    db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
+    db = Database(f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}")
     assert len(db.load_runs()) == 5, "Should have saved 5 pytest runs"
     assert [run.id for run in db.load_runs(2)] == [
         5,
@@ -75,18 +75,18 @@ def test_max_load_runs(pytester, deflaker_repo):
     db.engine.dispose()
 
 
-def test_store_max_runs(pytester, deflaker_repo):
+def test_store_max_runs(pytester, diff_cov_repo):
     """Test that we only load the specified number of runs"""
 
     # run pytest with the following cmd args
     assert not os.path.exists(
-        os.path.join(deflaker_repo.working_dir, "flakefighters.db")
+        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
     ), "Database file should not exist in advance of running pytest"
     for _ in range(5):
         pytester.runpytest(
-            os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--flakefighters", "--store-max-runs=4"
+            os.path.join(diff_cov_repo.working_dir, "app.py"), "-s", "--flakefighters", "--store-max-runs=4"
         )
-    db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
+    db = Database(f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}")
 
     # Check first run with ID=1 was cleared
     with Session(db.engine) as session:
@@ -100,20 +100,46 @@ def test_store_max_runs(pytester, deflaker_repo):
     db.engine.dispose()
 
 
-def test_time_immemorial(pytester, deflaker_repo):
+def test_store_max_runs_ini(pytester, diff_cov_repo):
+    """Test that we only load the specified number of runs"""
+
+    with open(os.path.join(diff_cov_repo.working_dir, "pyproject.toml"), "w") as f:
+        f.write("[tool.pytest.ini_options.pytest_flakefighters]\nstore_max_runs=4")
+
+    # run pytest with the following cmd args
+    assert not os.path.exists(
+        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
+    ), "Database file should not exist in advance of running pytest"
+    for _ in range(5):
+        pytester.runpytest(os.path.join(diff_cov_repo.working_dir, "app.py"), "-s", "--flakefighters")
+    db = Database(f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}")
+
+    # Check first run with ID=1 was cleared
+    with Session(db.engine) as session:
+        run = session.get(Run, 1)
+        assert run is None, "Run with ID 1 should have been deleted"
+
+    # Check it's associated Tests were cleared
+    with Session(db.engine) as session:
+        tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
+        assert len(list(tests)) == 0
+    db.engine.dispose()
+
+
+def test_time_immemorial(pytester, diff_cov_repo):
     """Test that we only load the specified number of runs"""
 
     # run pytest with the following cmd args
     assert not os.path.exists(
-        os.path.join(deflaker_repo.working_dir, "flakefighters.db")
+        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
     ), "Database file should not exist in advance of running pytest"
 
     # Run pytest 5 times to fill up the database
     for _ in range(5):
-        pytester.runpytest(os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--flakefighters")
+        pytester.runpytest(os.path.join(diff_cov_repo.working_dir, "app.py"), "-s", "--flakefighters")
 
     # Spoof the first run as being from 2 days ago
-    db = Database(f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}")
+    db = Database(f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}")
     with Session(db.engine) as session:
         run = session.get(Run, 1)
         run.created_at = datetime.now() - timedelta(days=2)
@@ -122,7 +148,7 @@ def test_time_immemorial(pytester, deflaker_repo):
 
     # Run pytest again to clear the "old" entry with ID=1
     pytester.runpytest(
-        os.path.join(deflaker_repo.working_dir, "app.py"), "-s", "--flakefighters", "--time-immemorial=1:0:0"
+        os.path.join(diff_cov_repo.working_dir, "app.py"), "-s", "--flakefighters", "--time-immemorial=1:0:0"
     )
 
     # Check it was cleared
@@ -162,7 +188,7 @@ def test_display_outcomes(pytester, flaky_reruns_repo):
 
     # Check we're not displaying the verdicts
     for line in result.stdout.lines:
-        assert "DeFlaker" not in line
+        assert "DiffCov" not in line
 
     db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
     runs = db.load_runs()
@@ -204,13 +230,12 @@ def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
     db = Database(f"sqlite:///{os.path.join(flaky_reruns_repo.working_dir, 'flakefighters.db')}")
     runs = db.load_runs()
     result.stdout.fnmatch_lines(
-        ["*Flakefighter Verdicts (Current)*", "Execution 0: failed", "*DeFlaker: flaky"], consecutive=True
+        ["*Flakefighter Verdicts (Current)*", "Execution 0: failed", "*DiffCov: flaky"], consecutive=True
     )
     for i, run in enumerate(runs[1:3]):
         expected = "passed" if i % 2 == 0 else "failed"
-        flaky = "genuine" if i % 2 == 0 else "flaky"
         result.stdout.fnmatch_lines(
-            [f"*Flakefighter Verdicts {run.start_time}*", f"Execution 0: {expected}", f"*DeFlaker: {flaky}"],
+            [f"*Flakefighter Verdicts {run.start_time}*", f"Execution 0: {expected}", "*DiffCov: flaky"],
             consecutive=True,
         )
 

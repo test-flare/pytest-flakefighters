@@ -32,35 +32,31 @@ def fixture_flaky_triangle_repo(tmpdir_factory):
     return repo
 
 
-@pytest.fixture(scope="function", name="gatorgrade_repo")
+@pytest.fixture(scope="function", name="gatorgrade_dir")
 def fixture_gatorgrade_repo(tmpdir_factory):
     """
     Fixture for a repo containing the gatorgrade test that broke the plugin.
     """
     repo_root = tmpdir_factory.mktemp("gatorgrade_repo")
-    repo = git.Repo.init(repo_root, initial_branch="main")
-
     shutil.copy(os.path.join(CURRENT_DIR, "resources", "gatorgrade.py"), os.path.join(repo_root, "gatorgrade.py"))
-    repo.index.add(["gatorgrade.py"])
-    repo.index.commit("Initial commit of test file.")
     os.chdir(repo_root)
     os.mkdir("test_assignment")
     with open(os.path.join("test_assignment", "result.txt"), "w", encoding="utf8") as f:
         f.write("✓  Complete all TODOs\n✓  Use an if statement\n✓  Complete all TODOs\nPassed 3/3 (100%) of checks")
-    return repo
+    return repo_root
 
 
-@pytest.fixture(scope="function", name="deflaker_repo")
-def fixture_deflaker_repo(tmpdir_factory):
+@pytest.fixture(scope="function", name="diff_cov_repo")
+def fixture_diff_cov_repo(tmpdir_factory):
     """
     Fixture for a minimal git repo with a commit history of broken tests.
     """
-    repo_root = tmpdir_factory.mktemp("deflaker_repo")
+    repo_root = tmpdir_factory.mktemp("diff_cov_repo")
     repo = git.Repo.init(repo_root, initial_branch="main")
-    shutil.copy(os.path.join(CURRENT_DIR, "resources", "deflaker_example.py"), os.path.join(repo_root, "app.py"))
+    shutil.copy(os.path.join(CURRENT_DIR, "resources", "diff_cov_example.py"), os.path.join(repo_root, "app.py"))
     repo.index.add(["app.py"])
     repo.index.commit("Initial commit of test file.")
-    shutil.copy(os.path.join(CURRENT_DIR, "resources", "deflaker_broken.py"), os.path.join(repo_root, "app.py"))
+    shutil.copy(os.path.join(CURRENT_DIR, "resources", "diff_cov_broken.py"), os.path.join(repo_root, "app.py"))
     repo.index.add(["app.py"])
     repo.index.commit("Broke the tests.")
     os.chdir(repo_root)

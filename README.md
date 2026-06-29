@@ -70,7 +70,6 @@ ______________________________________________________________________
 
 *For more information on flaky test management best practices, see the [pytest documentation](https://docs.pytest.org/en/stable/explanation/flaky.html).*
 
-
 ## Installation
 
 ### With pip
@@ -81,12 +80,15 @@ You can install the extension by running `pip install pytest-flakefighters` from
 
 If you use [uv](https://github.com/astral-sh/uv) for Python package management, you can install pytest-flakefighters with `uv add pytest-flakefighters`.
 This will add the plugin to your main dependencies.
+
 ```
 dependencies = [
     "pytest-flakefighters>=x.y.z",
 ]
 ```
+
 However, pytest is typically a [development dependency](https://docs.astral.sh/uv/concepts/projects/dependencies/#development-dependencies), and so should be added with `uv add --dev pytest-flakefighters`.
+
 ```
 [dependency-groups]
 dev = [
@@ -94,26 +96,32 @@ dev = [
 ]
 ```
 
-
 ### From source (for development)
 
-You can install \"pytest-flakefighters\" by cloning this repo and running `pip install .` from the root directory.
-If you intend to develop the plugin, run `pip install -e .[dev]` instead.
-
-If you use [uv](https://github.com/astral-sh/uv), you can install pytest-flakefighters with:
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management and running tasks.
+After cloning the repository, create the virtual environment and install all dependencies (including development tools) with:
 
 ```bash
-# Install with uv
-uv pip install .
+# Sync the lockfile and install the project in editable mode with dev dependencies
+uv sync --extra dev
+```
 
-# For development
+This is the recommended workflow because it uses the project's `uv.lock` file and guarantees a reproducible environment.
+
+If you prefer the lower-level pip-compatible interface, you can still run:
+
+```bash
+# Editable install with development dependencies
 uv pip install -e .[dev]
 ```
+
+> [!NOTE]
+> `uv pip install -e .[dev]` does not update `uv.lock`. Use `uv sync --extra dev` when you want the lockfile to stay in sync.
 
 ## Usage
 
 FlakeFighter is intended to run on git repositories that have test suites runnable with `pytest`.
-Once you have installed FlakeFighter, you can run it from the root directory of your repo simply by running `pytest` in your usual way.
+Once you have installed FlakeFighter, you can run it from the root directory of your repo simply by running `pytest` (or `uv run pytest` if you are using uv without activating the virtual environment).
 FlakeFighter has the following arguments.
 
 ```
@@ -167,6 +175,7 @@ addopts = "--flakefighters"
 ```
 
 ### Configuration
+
 By default, the plugin will only use differential coverage to classify flaky tests.
 If you would like to use other algorithms as well (or instead), you need to configure these.
 This can be done by adding appropriate fields in your pyproject.toml or pytest.ini file.
@@ -199,9 +208,10 @@ Further details can be found in the [configuration documentation](https://pytest
 ## Contributing
 
 Contributions are very welcome.
-Tests can be run with [pytest](https://pytest.readthedocs.io/en/latest/), please ensure the coverage at least stays the same before you submit a pull request.
+Tests can be run with `uv run pytest` (or `pytest` after activating the virtual environment); please ensure the coverage at least stays the same before you submit a pull request.
 
 ## Flake Fighters
+
 Our plugin is made up of a collection of heuristics that come together to help inform whether a test failure is genuine or flaky.
 These come in two "flavours": those which run live after each test, and those which run at the end of the entire test suite.
 Both extend the base class `FlakeFighter` and implement the `flaky_failure` method, which returns `True` if the test is deemed to be flaky.
@@ -210,6 +220,6 @@ Both extend the base class `FlakeFighter` and implement the `flaky_failure` meth
 
 If you encounter any problems, please [file an issue](https://github.com/test-flare/pytest-flakefighters/issues) along with a detailed description.
 
-------------------------------------------------------------------------
+______________________________________________________________________
 
-This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [\@hackebrot](https://github.com/hackebrot)\'s [cookiecutter-pytest-plugin](https://github.com/pytest-dev/cookiecutter-pytest-plugin) template.
+This [pytest](https://github.com/pytest-dev/pytest) plugin was generated with [Cookiecutter](https://github.com/audreyr/cookiecutter) along with [@hackebrot](https://github.com/hackebrot)'s [cookiecutter-pytest-plugin](https://github.com/pytest-dev/cookiecutter-pytest-plugin) template.

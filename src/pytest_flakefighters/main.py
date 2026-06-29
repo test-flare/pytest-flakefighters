@@ -3,16 +3,17 @@ This module adds all the FlakeFighter configuration options to pytest.
 """
 
 import logging
-from importlib.metadata import entry_points
 from typing import Any
 
 import coverage
 import pytest
 import yaml
+from importlib_metadata import entry_points, version
+from packaging.version import Version
 
 from pytest_flakefighters.config import options
 from pytest_flakefighters.database_management import Database
-from pytest_flakefighters.flakefighters.deflaker import DeFlaker
+from pytest_flakefighters.flakefighters.diff_cov import DiffCov
 from pytest_flakefighters.function_coverage import Profiler
 from pytest_flakefighters.plugin import FlakeFighterPlugin
 from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyFlaky
@@ -41,9 +42,11 @@ def pytest_addoption(parser: pytest.Parser):
     parser.addini("pytest_flakefighters", type="args", help="Configuration for the pytest-flakefighters extension")
 
     def datatype(details):
+
         if "type" not in details:
             return None
-        if details["type"] is str:
+        # Support for ini int was only added in pytest>=3.9, but it seems to handle them fine as strings
+        if details["type"] is str or (Version(version("pytest")) <= Version("9.0.0") and details["type"] is int):
             return "string"
         return str(details["type"].__name__)
 
@@ -72,7 +75,8 @@ def get_config_value(config, name):
         return cli_val
 
     try:
-        return config.getini(name)
+        ini_value = config.getini(name)
+        return None if ini_value in ["", []] else ini_value
     except ValueError:
         return None
 
@@ -104,9 +108,10 @@ def pytest_configure(config: pytest.Config):
     if get_config_value(config, "root") is None:
         config.option.root = str(config.rootdir)
 
+    max_runs = get_config_value(config, "load_max_runs")
     database = Database(
         get_config_value(config, "database_url"),
-        get_config_value(config, "load_max_runs"),
+        max_runs if max_runs != "" else None,
         get_config_value(config, "store_max_runs"),
         get_config_value(config, "time_immemorial"),
     )
@@ -120,13 +125,8 @@ def pytest_configure(config: pytest.Config):
 
     flakefighters = []
     if flakefighter_configs is None and active_flakefighters is None:
-        logger.warning("No flakefighters specified. Using basic DeFlaker only.")
-        flakefighters.append(
-            DeFlaker(
-                run_live=True,
-                root=get_config_value(config, "root"),
-            )
-        )
+        logger.warning("No flakefighters specified. Using basic differential coverage only.")
+        flakefighters.append(DiffCov(run_live=True, root=get_config_value(config, "root"), source_runs=[]))
     else:
         flakefighter_configs = setup_flakefighter_configs(flakefighter_configs)
         if active_flakefighters is not None:

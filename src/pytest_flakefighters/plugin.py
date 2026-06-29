@@ -1,16 +1,19 @@
 """
-This module implements the DeFlaker algorithm [Bell et al. 10.1145/3180155.3180164] as a pytest plugin.
+This module implements the pytest hooks to run the extension.
 """
 
 from datetime import datetime
 from enum import Enum
+from importlib.metadata import version
 from re import escape
 from typing import Union
 from xml.etree import ElementTree as ET
 
 import coverage
+import git
 import pytest
 from _pytest.runner import runtestprotocol
+from packaging.version import Version
 
 from pytest_flakefighters.database_management import (
     ActiveFlakeFighter,
@@ -70,7 +73,22 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
             ],
             start_time=datetime.now(),
+            commit_sha=self._current_commit_sha(),
         )
+
+    def _current_commit_sha(self):
+        """
+        Get the SHA of the current commit of the repo.
+        :returns: The SHA of the current commit of the root directory, if it is a git repo and in a clean state, else
+        None.
+        """
+        try:
+            repo = git.Repo(self.root)
+            if not repo.is_dirty():
+                return repo.commit().hexsha
+            return None
+        except git.exc.InvalidGitRepositoryError:
+            return None
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -124,7 +142,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     TracebackEntry(
                         path=str(entry.path),
                         lineno=entry.lineno,
-                        colno=entry.colno,
+                        colno=entry.colno if hasattr(entry, "colno") else None,
                         statement=str(entry.statement),
                         source=str(entry.source),
                     )
@@ -249,7 +267,11 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :returns: The test status.
         """
         if getattr(report, "flaky", False) and not report.passed:
-            return report.outcome, "F", ("FLAKY", {"yellow": True})
+            # Previous versions did not support the "yellow" directive, so need to account for that
+            if Version(version("pytest")) >= Version("8.1"):
+                return report.outcome, "F", ("FLAKY", {"yellow": True})
+            return report.outcome, "F", "FLAKY"
+
         return None
 
     @pytest.hookimpl(hookwrapper=True)

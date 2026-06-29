@@ -8,32 +8,31 @@ from pytest_flakefighters.flakefighters.traceback_matching import CosineSimilari
 from pytest_flakefighters.main import pytest_configure
 
 
-def test_flakefighters(pytester, deflaker_repo):
+def test_flakefighters(pytester, diff_cov_repo):
     """
     Test that flakefighters is registered when the --flakefighters argument is passed.
     """
-    reprec = pytester.runpytest(
-        os.path.join(deflaker_repo.working_dir, "app.py"),
+    config = pytester.parseconfig(
+        os.path.join(diff_cov_repo.working_dir, "flaky_reruns.py"),
         "--flakefighters",
-        "-s",
-    ).reprec
-    assert any(
-        call.plugin_name == "flakefighters" for call in reprec.getcalls("pytest_plugin_registered")
-    ), "Flakefighters should be registered when --no-flakefighters is not passed"
+    )
+    pytest_configure(config)
+
+    plugin = config.pluginmanager.get_plugin("flakefighter_plugin")
+    assert plugin is not None
 
 
-def test_no_flakefighters(pytester, deflaker_repo):
+def test_no_flakefighters(pytester, diff_cov_repo):
     """
     Test that flakefighters is not registered when the --flakefighters argument is not passed.
     """
-    reprec = pytester.runpytest(
-        os.path.join(deflaker_repo.working_dir, "app.py"),
-        "-s",
-        "--flakefighters",
-    ).reprec
-    assert any(
-        call.plugin_name == "flakefighters" for call in reprec.getcalls("pytest_plugin_registered")
-    ), "Flakefighters should not be registered when --no-flakefighters is passed"
+    config = pytester.parseconfig(
+        os.path.join(diff_cov_repo.working_dir, "flaky_reruns.py"),
+    )
+    pytest_configure(config)
+
+    plugin = config.pluginmanager.get_plugin("flakefighter_plugin")
+    assert plugin is None
 
 
 def test_active_flakefighters_cmd(pytester, flaky_reruns_repo):

@@ -28,7 +28,7 @@ For more details, see the [Installation](#installation) and [Usage](#usage) sect
 
 ## Features of Pytest FlakeFighters
 
-- Implements differential coverage, inspired by the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/), for pytest.
+- Implements differential coverage, inspired by the [DeFlaker algorithm](http://www.deflaker.org/get-rid-of-your-flakes/), for Pytest.
 - Implements two traceback-matching classifiers from [Alshammari et al. (2024)](https://doi.org/10.1109/ICST60714.2024.00031).
 - Implements a novel coverage-independence classifier that classifies tests as flaky if they fail independently of passing test cases that exercise overlapping code.
 - Optionally rerun or suppress flaky failures.

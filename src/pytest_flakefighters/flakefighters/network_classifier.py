@@ -21,7 +21,7 @@ from pytest_flakefighters.database_management import (
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
 
-class NetworkSocket(FlakeFighter):
+class NetworkClassifier(FlakeFighter):
     """
     Network-socket FlakeFighter.
 
@@ -54,10 +54,10 @@ class NetworkSocket(FlakeFighter):
         """
         Factory method to create a new instance from a pytest configuration.
         """
-        return NetworkSocket(
+        return NetworkClassifier(
             run_live=config.get("run_live", True),
-            timeout=config.get("network_socket_timeout", 120),
-            extra_pytest_args=config.get("network_socket_extra_pytest_args", []),
+            timeout=config.get("network_classifier_timeout", 120),
+            extra_pytest_args=config.get("network_classifier_extra_pytest_args", []),
         )
 
     def params(self):
@@ -187,7 +187,7 @@ class NetworkSocket(FlakeFighter):
                     timeout=self.timeout,
                 )
             except subprocess.TimeoutExpired:
-                print(f"[NetworkSocket] TIMEOUT: {test_nodeid}")
+                print(f"[NetworkClassifier] TIMEOUT: {test_nodeid}")
                 return False
 
             # Primary check: pytest JSON report
@@ -224,9 +224,9 @@ class NetworkSocket(FlakeFighter):
         socket_blocked_found = self._run_with_disabled_socket(test_nodeid)
 
         if socket_blocked_found:
-            print(f"[NetworkSocket] YES SocketBlockedError found: {test_nodeid}")
+            print(f"[NetworkClassifier] YES SocketBlockedError found: {test_nodeid}")
         else:
-            print(f"[NetworkSocket] NO SocketBlockedError found: {test_nodeid}")
+            print(f"[NetworkClassifier] NO SocketBlockedError found: {test_nodeid}")
 
         return socket_blocked_found
 

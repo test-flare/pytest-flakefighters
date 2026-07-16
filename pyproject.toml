@@ -32,6 +32,7 @@ CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:Cosine
 CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
 DiffCov = "pytest_flakefighters.flakefighters.diff_cov:DiffCov"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
+NetworkClassifier = "pytest_flakefighters.flakefighters.network_classifier:NetworkClassifier"
 
 [project.optional-dependencies]
 pg = ["psycopg2>2.9"]

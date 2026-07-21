@@ -1,9 +1,11 @@
 """
-This module implements a network-socket FlakeFighter.
+Network-socket FlakeFighter.
 
-It reruns a failed pytest test with socket access disabled using pytest-socket.
-If the rerun report contains SocketBlockedError, the classifier records network
-evidence for that test.
+This classifier reruns a failed pytest test with socket access disabled
+using pytest-socket.
+
+If the rerun report contains SocketBlockedError, the classifier records
+network/socket evidence for that test.
 """
 
 import json
@@ -23,18 +25,13 @@ from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighte
 
 class NetworkClassifier(FlakeFighter):
     """
-    Network-socket FlakeFighter.
+    Network/socket FlakeFighter.
 
     Given a failed test execution, this classifier reruns the same test with
-    pytest-socket using --disable-socket. It then inspects the pytest JSON report
-    for SocketBlockedError.
+    pytest-socket using --disable-socket.
 
-    If SocketBlockedError is found, this classifier marks the execution as flaky
-    from the perspective of network evidence.
-
-    Important:
-    This classifier does not prove flakiness on its own. It only reports that
-    the test attempted socket access when sockets were disabled.
+    If SocketBlockedError is found, this classifier records evidence that the
+    test attempted socket access when sockets were disabled.
     """
 
     SOCKET_MARKER = "SocketBlockedError"
@@ -52,9 +49,9 @@ class NetworkClassifier(FlakeFighter):
     @classmethod
     def from_config(cls, config: dict):
         """
-        Factory method to create a new instance from a pytest configuration.
+        Factory method used by pytest-flakefighters.
         """
-        return NetworkClassifier(
+        return cls(
             run_live=config.get("run_live", True),
             timeout=config.get("network_classifier_timeout", 120),
             extra_pytest_args=config.get("network_classifier_extra_pytest_args", []),
@@ -62,12 +59,24 @@ class NetworkClassifier(FlakeFighter):
 
     def params(self):
         """
-        Convert the key parameters into a dictionary so that the object can be replicated.
+        Return parameters needed to reproduce this classifier instance.
         """
         return {
             "timeout": self.timeout,
             "extra_pytest_args": self.extra_pytest_args,
         }
+
+    def _execution_nodeid(self, execution: TestExecution) -> str:
+        """
+        Get pytest nodeid from a TestExecution.
+        """
+        return execution.test.name
+
+    def _execution_should_be_rerun(self, execution: TestExecution) -> bool:
+        """
+        Return whether this execution should be rerun with sockets disabled.
+        """
+        return execution.outcome in {"failed", "error"}
 
     def _phase_contains_socket_blocked_error(self, phase: dict[str, Any]) -> bool:
         """
@@ -77,19 +86,16 @@ class NetworkClassifier(FlakeFighter):
         if not isinstance(phase, dict):
             return False
 
-        # Check crash.message
         crash = phase.get("crash", {})
         if isinstance(crash, dict):
             crash_message = str(crash.get("message", ""))
             if self.SOCKET_MARKER in crash_message:
                 return True
 
-        # Check longrepr
         longrepr = str(phase.get("longrepr", ""))
         if self.SOCKET_MARKER in longrepr:
             return True
 
-        # Check traceback[*].message
         traceback = phase.get("traceback", [])
         if isinstance(traceback, list):
             for frame in traceback:
@@ -102,7 +108,10 @@ class NetworkClassifier(FlakeFighter):
 
         return False
 
-    def _test_report_contains_socket_blocked_error(self, test_report: dict[str, Any]) -> bool:
+    def _test_report_contains_socket_blocked_error(
+        self,
+        test_report: dict[str, Any],
+    ) -> bool:
         """
         Check setup, call, and teardown for SocketBlockedError.
         """
@@ -121,9 +130,6 @@ class NetworkClassifier(FlakeFighter):
     ) -> list[dict[str, Any]]:
         """
         Find the pytest JSON report entries for this test.
-
-        Usually there is exactly one exact match. The fallback handles cases
-        where a less-specific nodeid is provided.
         """
 
         tests = report.get("tests", [])
@@ -139,27 +145,20 @@ class NetworkClassifier(FlakeFighter):
         if exact_matches:
             return exact_matches
 
-        prefix_matches = [
+        return [
             test
             for test in tests
             if isinstance(test, dict)
             and str(test.get("nodeid", "")).startswith(test_nodeid)
         ]
 
-        return prefix_matches
-
-    def _execution_nodeid(self, execution: TestExecution) -> str:
-        """
-        Get the pytest nodeid from a TestExecution.
-
-        Based on the DiffCov example, execution.test.name is the test identifier.
-        """
-
-        return execution.test.name
-
     def _run_with_disabled_socket(self, test_nodeid: str) -> bool:
         """
-        Rerun the test with pytest-socket and return True if SocketBlockedError is found.
+        Rerun the test with all socket access disabled.
+
+        Returns:
+            True if SocketBlockedError is found.
+            False otherwise.
         """
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -170,6 +169,8 @@ class NetworkClassifier(FlakeFighter):
                 "-m",
                 "pytest",
                 test_nodeid,
+                "-p",
+                "no:pytest_flakefighters",
                 "--disable-socket",
                 "--json-report",
                 f"--json-report-file={report_path}",
@@ -187,16 +188,17 @@ class NetworkClassifier(FlakeFighter):
                     timeout=self.timeout,
                 )
             except subprocess.TimeoutExpired:
-                print(f"[NetworkClassifier] TIMEOUT: {test_nodeid}")
                 return False
 
-            # Primary check: pytest JSON report
             if report_path.exists():
                 try:
                     with report_path.open("r", encoding="utf-8") as file:
                         report = json.load(file)
 
-                    matching_reports = self._find_matching_test_reports(report, test_nodeid)
+                    matching_reports = self._find_matching_test_reports(
+                        report,
+                        test_nodeid,
+                    )
 
                     for test_report in matching_reports:
                         if self._test_report_contains_socket_blocked_error(test_report):
@@ -205,34 +207,26 @@ class NetworkClassifier(FlakeFighter):
                 except json.JSONDecodeError:
                     pass
 
-            # Fallback check: stdout/stderr
             combined_output = f"{completed.stdout}\n{completed.stderr}"
             return self.SOCKET_MARKER in combined_output
 
     def _flaky_execution(self, execution: TestExecution) -> bool:
         """
-        Classify an execution based on whether SocketBlockedError appears when the
-        test is rerun with sockets disabled.
+        Classify one execution.
 
-        Returns:
-            True if SocketBlockedError is found.
-            False otherwise.
+        Passing/skipped executions are not rerun and return False.
+        Failed/error executions are rerun with sockets disabled.
         """
 
+        if not self._execution_should_be_rerun(execution):
+            return False
+
         test_nodeid = self._execution_nodeid(execution)
-
-        socket_blocked_found = self._run_with_disabled_socket(test_nodeid)
-
-        if socket_blocked_found:
-            print(f"[NetworkClassifier] YES SocketBlockedError found: {test_nodeid}")
-        else:
-            print(f"[NetworkClassifier] NO SocketBlockedError found: {test_nodeid}")
-
-        return socket_blocked_found
+        return self._run_with_disabled_socket(test_nodeid)
 
     def flaky_test_live(self, execution: TestExecution):
         """
-        Classify a failing test execution by rerunning it with socket access disabled.
+        Classify one test execution live.
         """
 
         execution.flakefighter_results.append(
@@ -244,7 +238,7 @@ class NetworkClassifier(FlakeFighter):
 
     def flaky_tests_post(self, run: Run):
         """
-        Classify failing tests after the full run.
+        Classify test executions after the full run.
         """
 
         for test in run.tests:

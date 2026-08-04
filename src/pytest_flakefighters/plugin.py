@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from enum import Enum
 from importlib.metadata import version
+from re import escape
 from typing import Union
 from xml.etree import ElementTree as ET
 
@@ -30,13 +31,9 @@ from pytest_flakefighters.sffl import SFFL
 
 def context(item: pytest.Item) -> str:
     """
-    Escape [] characters.
+    Escape special characters for coverage context matching.
     """
-    return (
-        item.nodeid.replace("[", r"\[").replace("]", r"\]")
-        + "__"
-        + str(item.execution_count)
-    )
+    return escape(item.nodeid) + "__" + str(item.execution_count)
 
 
 class RerunStrategy(Enum):
@@ -187,7 +184,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
-                    line_coverage.set_query_contexts(["collection", context(item)])
+                    line_coverage.set_query_contexts(
+                        ["collection", escape(context(item))]
+                    )
                     captured_output = dict(report.sections)
                     test_execution = TestExecution(  # pylint: disable=E1123
                         outcome=report.outcome,
@@ -492,4 +491,4 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         if self.save_run:
             self.database.save(self.run)
-        self.database.engine.dispose()
+        self.database.close()

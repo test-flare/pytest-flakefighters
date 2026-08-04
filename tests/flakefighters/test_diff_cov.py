@@ -23,7 +23,7 @@ def _temp_db():
         db_path = f"sqlite:///{tempdir}/test.db"
         db = Database(db_path)
         yield db
-        db.engine.dispose()
+        db.close()
 
 
 @pytest.mark.parametrize("run_live", [True, False])

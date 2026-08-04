@@ -123,5 +123,5 @@ commands = [
 ]
 deps = ["pytest", "pytest-cov", "pytest-html", "pytest-json-report"]
 description = "Run pytest under {base_python}"
-extras = ["dev", "test"]
+extras = ["dev", "scipy"]
 usedevelop = true

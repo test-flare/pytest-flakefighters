@@ -87,7 +87,7 @@ def test_from_config_params(flaky_reruns_repo, matcher):
     assert from_config.root == init.root
     assert from_config.previous_runs == init.previous_runs
     assert from_config.params() == init.params()
-    db.engine.dispose()
+    db.close()
 
 
 @pytest.mark.parametrize("matcher", [TracebackMatching, CosineSimilarity])

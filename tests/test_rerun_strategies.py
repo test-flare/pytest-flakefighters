@@ -123,17 +123,12 @@ def test_previously_flaky_no_rerun(pytester, diff_cov_repo):
         "--rerun-strategy=PREVIOUSLY_FLAKY",
     )
 
-    # <<<<<<< HEAD
     with Database(
-        f"sqlite:///{os.path.join(deflaker_repo.working_dir, 'flakefighters.db')}"
+        f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}"
     ) as db:
         runs = db.load_runs()
         assert len(runs) == 2, f"Should have saved 2 pytest runs, saved {len(runs)}"
-        # =======
-        # db = Database(f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}")
-        # runs = db.load_runs()
-        # assert len(runs) == 2, f"Should have saved 2 pytest runs, saved {len(runs)}"
-        # >>>>>>> main
+
         tests = runs[0].tests
         assert len(tests) == 1, (
             f"First run should be 1 test, but was {len(tests)}: {[test.name for test in tests]}"

@@ -2,7 +2,6 @@
 Define fixtures and plugins.
 """
 
-import gc
 import os
 import shutil
 import sqlite3
@@ -18,24 +17,30 @@ collect_ignore = ["resources"]
 
 
 @pytest.fixture(autouse=True)
-def _close_leaked_sqlite_connections():
+def _close_leaked_sqlite_connections(monkeypatch):
     """
-    Close any sqlite3 connections that a test left open.
+    Close any sqlite3 connections opened during a test.
 
     In-process pytest runs can abandon Database engines (e.g. when an inner run
     fails during configuration), leaving sqlite3 connections open until the
-    garbage collector collects them, which emits a ResourceWarning. Closing
-    every still-open connection at the end of each test prevents those warnings
-    deterministically.
+    garbage collector collects them, which emits a ResourceWarning. Tracking
+    connections as they are created and closing them at the end of each test
+    prevents those warnings deterministically.
     """
+    connections = []
+    original_connect = sqlite3.dbapi2.connect
+
+    def _tracking_connect(*args, **kwargs):
+        connection = original_connect(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    # SQLAlchemy creates connections via sqlite3.dbapi2.connect, so patch both names.
+    monkeypatch.setattr(sqlite3, "connect", _tracking_connect)
+    monkeypatch.setattr(sqlite3.dbapi2, "connect", _tracking_connect)
     yield
-    for obj in gc.get_objects():
-        if isinstance(obj, sqlite3.Connection):
-            try:
-                obj.close()
-            except sqlite3.Error:
-                pass
-    gc.collect()
+    for connection in connections:
+        connection.close()
 
 
 @pytest.fixture(scope="function", name="flaky_triangle_repo")

@@ -17,6 +17,7 @@ from pytest_flakefighters.flakefighters.diff_cov import DiffCov
 from pytest_flakefighters.function_coverage import Profiler
 from pytest_flakefighters.plugin import FlakeFighterPlugin
 from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyFlaky
+from pytest_flakefighters.sffl import SFFL
 
 rerun_strategies = {"ALL": All, "FLAKY_FAILURE": FlakyFailure, "PREVIOUSLY_FLAKY": PreviouslyFlaky}
 
@@ -173,6 +174,16 @@ def pytest_configure(config: pytest.Config):
             save_run=not get_config_value(config, "no_save"),
             display_outcomes=get_config_value(config, "display_outcomes"),
             display_verdicts=get_config_value(config, "display_verdicts"),
+            sffl=(
+                SFFL(
+                    root=get_config_value(config, "root"),
+                    metric=get_config_value(config, "sffl"),
+                    output_file=get_config_value(config, "sffl_output_file"),
+                    include_test_code=get_config_value(config, "sffl_include_test_code"),
+                )
+                if get_config_value(config, "sffl")
+                else None
+            ),
         ),
         name="flakefighter_plugin",
     )

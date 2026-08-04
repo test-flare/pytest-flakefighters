@@ -1,0 +1,7 @@
+,file,line,suspiciousness
+0,file1.py,1,0.5
+1,file1.py,2,0.5
+2,file1.py,3,0.5
+3,file1.py,4,-0.5
+4,file1.py,5,-0.5
+5,file1.py,6,-0.5

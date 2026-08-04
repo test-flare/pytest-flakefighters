@@ -52,6 +52,7 @@ dev = [
   "sphinx_rtd_theme",
   "autoclasstoc",
   "tox",
+  "pytest-mock",
 ]
 
 [tool.uv]
@@ -98,5 +99,29 @@ variable-rgx = "^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
 minversion = "6.0"
 testpaths = ["tests"]
 
+
 [tool.setuptools_scm]
 write_to = "src/_version.py"
+
+[tool.tox]
+env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+requires = ["tox>=4.19"]
+skip_missing_interpreters = false                   # fail if devs don’t have all required Python versions
+
+# Base configuration for all test environments
+[tool.tox.env_run_base]
+allowlist_externals = ["pytest"]
+commands = [
+  [
+    "pytest",
+    "--cov-report=html",
+    "--cov=src/pytest_flakefighters",
+    "-p",
+    "no:flakefighters",
+    "{posargs:tests}",
+  ],
+]
+deps = ["pytest", "pytest-cov", "pytest-html", "pytest-json-report"]
+description = "Run pytest under {base_python}"
+extras = ["dev", "test"]
+usedevelop = true

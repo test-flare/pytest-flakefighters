@@ -2,15 +2,14 @@
 This module implements the pytest hooks to run the extension.
 """
 
+import os
 from datetime import datetime
 from enum import Enum
 from importlib.metadata import version
-from re import escape
 from typing import Union
 from xml.etree import ElementTree as ET
 
 import coverage
-import git
 import pytest
 from _pytest.runner import runtestprotocol
 from packaging.version import Version
@@ -26,6 +25,18 @@ from pytest_flakefighters.database_management import (
 )
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 from pytest_flakefighters.function_coverage import Profiler
+from pytest_flakefighters.sffl import SFFL
+
+
+def context(item: pytest.Item) -> str:
+    """
+    Escape [] characters.
+    """
+    return (
+        item.nodeid.replace("[", r"\[").replace("]", r"\]")
+        + "__"
+        + str(item.execution_count)
+    )
 
 
 class RerunStrategy(Enum):
@@ -56,6 +67,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         rerun_strategy: RerunStrategy = RerunStrategy.FLAKY_FAILURE,
         display_outcomes: int = 0,
         display_verdicts: bool = False,
+        sffl: SFFL = None,
     ):
         self.root = root
         self.database = database
@@ -66,29 +78,16 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.test_reports = {}
         self.display_verdicts = display_verdicts
         self.display_outcomes = display_outcomes
+        self.sffl = sffl
 
         self.run = Run(  # pylint: disable=E1123
             root=root,
             active_flakefighters=[
-                ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
+                ActiveFlakeFighter(name=f.__class__.__name__, params=f.params())
+                for f in flakefighters
             ],
             start_time=datetime.now(),
-            commit_sha=self._current_commit_sha(),
         )
-
-    def _current_commit_sha(self):
-        """
-        Get the SHA of the current commit of the repo.
-        :returns: The SHA of the current commit of the root directory, if it is a git repo and in a clean state, else
-        None.
-        """
-        try:
-            repo = git.Repo(self.root)
-            if not repo.is_dirty():
-                return repo.commit().hexsha
-            return None
-        except git.exc.InvalidGitRepositoryError:
-            return None
 
     def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
         """
@@ -118,7 +117,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         item.start = datetime.now().timestamp()
         self.cov.start()
         # Lines cannot appear as covered on our tests because the coverage measurement is leaking into the self.cov
-        self.cov.switch_context(escape(item.nodeid))  # pragma: no cover
+        self.cov.switch_context(context(item))  # pragma: no cover
         yield  # pragma: no cover
         self.cov.stop()  # pragma: no cover
         item.stop = datetime.now().timestamp()
@@ -169,15 +168,18 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         test = Test(  # pylint: disable=E1123
             name=item.nodeid,
-            fspath=fspath,
-            line_no=line_inx + 1,  # need to add one to the line index because this indexes from zero
+            fspath=os.path.join(self.root, fspath),
+            line_no=line_inx
+            + 1,  # need to add one to the line index because this indexes from zero
             skipped=skipped,
         )
         self.run.tests.append(test)
 
         for _ in range(self.rerun_strategy.max_reruns + 1):
             item.execution_count += 1
-            item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
+            item.ihook.pytest_runtest_logstart(
+                nodeid=item.nodeid, location=item.location
+            )
             reports = runtestprotocol(item, nextitem=nextitem, log=False)
 
             for report in reports:  # up to 3 reports: setup, call, teardown
@@ -185,7 +187,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
-                    line_coverage.set_query_contexts(["collection", escape(item.nodeid)])
+                    line_coverage.set_query_contexts(["collection", context(item)])
                     captured_output = dict(report.sections)
                     test_execution = TestExecution(  # pylint: disable=E1123
                         outcome=report.outcome,
@@ -195,7 +197,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         start_time=datetime.fromtimestamp(item.start),
                         end_time=datetime.fromtimestamp(item.stop),
                         coverage={
-                            file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
+                            file_path: line_coverage.lines(file_path)
+                            for file_path in line_coverage.measured_files()
                         },
                         exception=report.exception,
                     )
@@ -203,7 +206,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     for ff in filter(lambda ff: ff.run_live, self.flakefighters):
                         ff.flaky_test_live(test_execution)
                     self.test_reports[item.nodeid] = report
-                    report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
+                    report.flaky = any(
+                        result.flaky for result in test_execution.flakefighter_results
+                    )
                     # Limited pytest-json support
                     report.stage_metadata = {
                         "executions": [
@@ -211,7 +216,10 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 "start_time": x.start_time.isoformat(),
                                 "end_time": x.end_time.isoformat(),
                                 "outcome": test_execution.outcome,
-                                "flakefighter_results": {r.name: r.classification for r in x.flakefighter_results},
+                                "flakefighter_results": {
+                                    r.name: r.classification
+                                    for r in x.flakefighter_results
+                                },
                             }
                             for x in test.executions
                         ],
@@ -228,13 +236,29 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                     [
                                         f"""
                                         <td>
-                                        <p><strong>Start time:</strong> {execution.start_time}</p>
-                                        <p><strong>End time:</strong> {execution.end_time}</p>
-                                        <p><strong>Outcome:</strong> {execution.outcome}</p>
+                                        <p><strong>Start time:</strong> {
+                                            execution.start_time
+                                        }</p>
+                                        <p><strong>End time:</strong> {
+                                            execution.end_time
+                                        }</p>
+                                        <p><strong>Outcome:</strong> {
+                                            execution.outcome
+                                        }</p>
                                         <p><strong>Flakefighter Results:</strong></p>
                                         <ul>
-                                        {''.join(['<li><strong>'+result.name+':</strong> '+result.classification+'</li>'
-                                        for result in execution.flakefighter_results])}
+                                        {
+                                            "".join(
+                                                [
+                                                    "<li><strong>"
+                                                    + result.name
+                                                    + ":</strong> "
+                                                    + result.classification
+                                                    + "</li>"
+                                                    for result in execution.flakefighter_results
+                                                ]
+                                            )
+                                        }
                                         </ul>
                                         </td>
                                         """
@@ -247,7 +271,10 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 "mime_type": "text/html",
                             }
                         )
-                    if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
+                    if (
+                        item.execution_count <= self.rerun_strategy.max_reruns
+                        and self.rerun_strategy.rerun(report)
+                    ):
                         break  # trigger rerun
 
                 item.ihook.pytest_runtest_logreport(report=report)
@@ -258,7 +285,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         return True
 
     def pytest_report_teststatus(
-        self, report: pytest.TestReport, config: pytest.Config  # pylint: disable=unused-argument
+        self,
+        report: pytest.TestReport,
+        config: pytest.Config,  # pylint: disable=unused-argument
     ) -> tuple[str, str, str]:
         """
         Report flaky failures as such.
@@ -289,6 +318,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     r.name: r.classification for r in test.flakefighter_results
                 }
                 self.test_reports[test.name].flaky = test.flaky
+        if self.sffl:
+            self.sffl.rank(self.run.tests)
 
     @pytest.hookimpl(optionalhook=True)
     def pytest_json_modifyreport(self, json_report: dict):
@@ -301,7 +332,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             t["call"]["metadata"] = self.test_reports[t["nodeid"]].stage_metadata
 
             t["metadata"] = t.get("metadata", {}) | {
-                "flakefighter_results": self.test_reports[t["nodeid"]].flakefighter_results
+                "flakefighter_results": self.test_reports[
+                    t["nodeid"]
+                ].flakefighter_results
             }
 
     def build_outcome_string(self, test: Test) -> str:
@@ -314,7 +347,12 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         if test.flakefighter_results:
             if self.display_verdicts:
                 result_string.append(
-                    "Overall\n" + "\n".join(f"  {f.name}: {f.classification}" for f in test.flakefighter_results) + "\n"
+                    "Overall\n"
+                    + "\n".join(
+                        f"  {f.name}: {f.classification}"
+                        for f in test.flakefighter_results
+                    )
+                    + "\n"
                 )
         for i, execution in enumerate(test.executions):
             if execution.flakefighter_results:
@@ -322,7 +360,8 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     result_string.append(
                         f"Execution {i}: {execution.outcome}\n"
                         + "\n".join(
-                            f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in execution.flakefighter_results
+                            f"  {f.name}: {'flaky' if f.flaky else 'genuine'}"
+                            for f in execution.flakefighter_results
                         )
                     )
                 else:
@@ -343,7 +382,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 nodeid = "::".join(splitname + [testcase.get("name")])
                 flakefighter_results = ET.SubElement(testcase, "flakefighterresults")
                 if nodeid in self.test_reports:
-                    for execution in self.test_reports[nodeid].stage_metadata["executions"]:
+                    for execution in self.test_reports[nodeid].stage_metadata[
+                        "executions"
+                    ]:
                         execution_results = ET.Element(
                             "execution",
                             {
@@ -353,18 +394,20 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                             },
                         )
                         flakefighter_results.append(execution_results)
-                        for name, classification in execution["flakefighter_results"].items():
+                        for name, classification in execution[
+                            "flakefighter_results"
+                        ].items():
                             ET.SubElement(execution_results, name).text = classification
                     test_results = ET.SubElement(flakefighter_results, "test")
-                    for name, classification in self.test_reports[nodeid].flakefighter_results.items():
+                    for name, classification in self.test_reports[
+                        nodeid
+                    ].flakefighter_results.items():
                         ET.SubElement(test_results, name).text = classification
 
         tree.write(xml_path)
 
     @pytest.hookimpl(optionalhook=True)
-    def pytest_html_results_summary(
-        self, prefix: list, summary: list, postfix: list
-    ):  # pylint: disable=unused-argument
+    def pytest_html_results_summary(self, prefix: list, summary: list, postfix: list):  # pylint: disable=unused-argument
         """
         Add the test-level flakefighter results.
         :param prefix: The prefix content. UNUSED.
@@ -383,8 +426,18 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 + "".join(
                     [
                         f"""<ul>
-                            {''.join(['<li><strong>'+result['name']+':</strong> '+result['classification']+'</li>'
-                                for result in report.flakefighter_results])}
+                            {
+                            "".join(
+                                [
+                                    "<li><strong>"
+                                    + result["name"]
+                                    + ":</strong> "
+                                    + result["classification"]
+                                    + "</li>"
+                                    for result in report.flakefighter_results
+                                ]
+                            )
+                        }
                             </ul>"""
                     ]
                 )
@@ -425,7 +478,9 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         )
 
         genuine_failure_observed = any(
-            not test.flaky for test in self.run.tests if any(e.outcome != "passed" for e in test.executions)
+            not test.flaky
+            for test in self.run.tests
+            if any(e.outcome != "passed" for e in test.executions)
         )
 
         if (

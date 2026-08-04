@@ -79,7 +79,7 @@ def test_max_load_runs(pytester, diff_cov_repo):
         5,
         4,
     ], "Expected to load only the 2 most recent runs with IDs 4 and 5"
-    db.engine.dispose()
+    db.close()
 
 
 def test_store_max_runs(pytester, diff_cov_repo):
@@ -109,7 +109,7 @@ def test_store_max_runs(pytester, diff_cov_repo):
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
-    db.engine.dispose()
+    db.close()
 
 
 def test_store_max_runs_ini(pytester, diff_cov_repo):
@@ -139,7 +139,7 @@ def test_store_max_runs_ini(pytester, diff_cov_repo):
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
-    db.engine.dispose()
+    db.close()
 
 
 def test_time_immemorial(pytester, diff_cov_repo):
@@ -183,7 +183,7 @@ def test_time_immemorial(pytester, diff_cov_repo):
     with Session(db.engine) as session:
         tests = list(session.scalars(select(Test).where(Test.run_id == 1)))
         assert len(list(tests)) == 0
-    db.engine.dispose()
+    db.close()
 
 
 def test_display_outcomes(pytester, flaky_reruns_repo):
@@ -229,7 +229,7 @@ def test_display_outcomes(pytester, flaky_reruns_repo):
 
     for run in [runs[0]] + runs[3:]:
         assert f"Flakefighter Verdicts {run.start_time}" not in result.stdout.str()
-    db.engine.dispose()
+    db.close()
 
 
 def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
@@ -277,4 +277,4 @@ def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
 
     for run in [runs[0]] + runs[3:]:
         assert f"Flakefighter Verdicts {run.start_time}" not in result.stdout.str()
-    db.engine.dispose()
+    db.close()

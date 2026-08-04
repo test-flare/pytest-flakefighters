@@ -87,6 +87,7 @@ def test_from_config_params(flaky_reruns_repo, matcher):
     assert from_config.root == init.root
     assert from_config.previous_runs == init.previous_runs
     assert from_config.params() == init.params()
+    db.engine.dispose()
 
 
 @pytest.mark.parametrize("matcher", [TracebackMatching, CosineSimilarity])
@@ -95,7 +96,7 @@ def test_no_exception(test_execution, matcher):
     Test that the live classification classifies a flaky test.
     """
     previous_test_execution = deepcopy(test_execution)
-    previous_test_execution.flakefighter_results = [FlakefighterResult(name="DeFlaker", flaky=True)]
+    previous_test_execution.flakefighter_results = [FlakefighterResult(name="DiffCov", flaky=True)]
     previous_runs = [Run(tests=[Test(executions=[previous_test_execution])])]
 
     matcher = matcher(run_live=True, previous_runs=previous_runs)
@@ -112,7 +113,7 @@ def test_flaky_test_live(test_execution, matcher, flaky):
     Test that the live classification classifies a flaky test.
     """
     previous_test_execution = deepcopy(test_execution)
-    previous_test_execution.flakefighter_results = [FlakefighterResult(name="DeFlaker", flaky=flaky)]
+    previous_test_execution.flakefighter_results = [FlakefighterResult(name="DiffCov", flaky=flaky)]
     previous_runs = [Run(tests=[Test(executions=[previous_test_execution])])]
 
     matcher = matcher(run_live=True, previous_runs=previous_runs)
@@ -128,7 +129,7 @@ def test_flaky_tests_post(test_execution, matcher, flaky):
     Test that the post-hoc classification classifies a flaky test.
     """
     previous_test_execution = deepcopy(test_execution)
-    previous_test_execution.flakefighter_results = [FlakefighterResult(name="DeFlaker", flaky=flaky)]
+    previous_test_execution.flakefighter_results = [FlakefighterResult(name="DiffCov", flaky=flaky)]
     previous_runs = [Run(tests=[Test(executions=[previous_test_execution])])]
 
     current_run = Run(tests=[Test(executions=[test_execution])])

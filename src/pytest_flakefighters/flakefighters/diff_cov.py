@@ -1,5 +1,5 @@
 """
-This module implements the DeFlaker FlakeFighter.
+This module implements the differential coverage FlakeFighter, inspired by the DeFlaker algorithm.
 """
 
 import ast
@@ -16,22 +16,31 @@ from pytest_flakefighters.database_management import (
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
 
-class DeFlaker(FlakeFighter):
+class DiffCov(FlakeFighter):
     """
-    A python equivalent of the DeFlaker algorithm from `Bell et al. (2019) <https://doi.org/10.1145/3180155.3180164>`_.
+    Inspired by the DeFlaker algorithm from `Bell et al. (2019) <https://doi.org/10.1145/3180155.3180164>`_.
     Given the subtle differences between JUnit and pytest, this is not intended to be an exact port, but it follows
     the same general methodology of checking whether covered code has been changed between commits.
 
     :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.
+    :ivar source_runs: The runs to consider when checking whether a test has transitioned from passing to failing.
     :ivar root: The root directory of the Git repository.
     :ivar source_commit: The source (older) commit hash. Defaults to HEAD^ (the previous commit to target).
     :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).
     """
 
-    def __init__(self, run_live: bool, root: str = ".", source_commit: str = None, target_commit: str = None):
+    def __init__(  # pylint: disable=R0913,R0917
+        self,
+        run_live: bool,
+        source_runs: list[Run],
+        root: str = ".",
+        source_commit: str = None,
+        target_commit: str = None,
+    ):
         super().__init__(run_live)
 
         self.repo_root = git.Repo(root)
+        self.source_runs = source_runs
         if target_commit is None and not self.repo_root.is_dirty():
             # No uncommitted changes, so use most recent commit
             self.target_commit = self.repo_root.commit().hexsha
@@ -84,8 +93,17 @@ class DeFlaker(FlakeFighter):
         """
         Factory method to create a new instance from a pytest configuration.
         """
-        return DeFlaker(
+        source_runs = config["database"].get_source_runs(config.get("source_commit"))
+        source_commit = config.get("source_commit")
+        if source_commit is not None and not source_runs:
+            raise ValueError(
+                f"Could not find a run for specified source commit {source_commit}. "
+                f"Please checkout {source_commit} and run pytest again, use a different source commit hash, or leave it"
+                " unspecified."
+            )
+        return DiffCov(
             run_live=config.get("run_live", True),
+            source_runs=source_runs,
             root=config.get("root", "."),
             source_commit=config.get("source_commit"),
             target_commit=config.get("target_commit"),
@@ -112,7 +130,14 @@ class DeFlaker(FlakeFighter):
         Classify an execution as flaky or not.
         :return: Boolean True of the test is classed as flaky and False otherwise.
         """
-        return execution.outcome != "passed" and not any(
+        previous_execution_outcomes = {}
+        for run in self.source_runs:
+            for test in run.tests:
+                if test.name == execution.test.name:
+                    previous_execution_outcomes = {e.outcome for e in test.executions}
+        return (
+            execution.outcome not in previous_execution_outcomes or len(previous_execution_outcomes) > 1
+        ) and not any(
             self.line_modified_by_target_commit(file_path, line_no)
             for file_path in execution.coverage
             for line_no in execution.coverage[file_path]
@@ -130,7 +155,7 @@ class DeFlaker(FlakeFighter):
             FlakefighterResult(name=self.__class__.__name__, flaky=self._flaky_execution(execution))
         )
 
-    def flaky_tests_post(self, run: Run) -> list[bool | None]:
+    def flaky_tests_post(self, run: Run):
         """
         Classify failing tests as flaky if any of their executions are flaky.
         :param run: Run object representing the pytest run, with tests accessible through run.tests.

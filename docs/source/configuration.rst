@@ -9,7 +9,7 @@ Here, :code:`<FlakeFighterClass>` is the class of the flakefighter you wish to c
 
 .. code-block:: toml
 
-   [tool.pytest.ini_options.pytest_flakefighters.flakefighters.deflaker.DeFlaker]
+   [tool.pytest.ini_options.pytest_flakefighters.flakefighters.diff_cov.DiffCov]
    run_live=true # run the classifier immediately after each test
    active=false # turn off the flakefighter (use active=true, or leave unspecified to turn it on)
 
@@ -43,7 +43,7 @@ These are detailed below.
 
 .. autoclass:: pytest_flakefighters.flakefighters.coverage_independence.CoverageIndependence
   :noindex:
-.. autoclass:: pytest_flakefighters.flakefighters.deflaker.DeFlaker
+.. autoclass:: pytest_flakefighters.flakefighters.diff_cov.DiffCov
   :noindex:
 .. autoclass:: pytest_flakefighters.flakefighters.traceback_matching.TracebackMatching
   :noindex:

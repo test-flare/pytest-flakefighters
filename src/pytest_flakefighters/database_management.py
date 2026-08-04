@@ -2,6 +2,7 @@
 This module manages all interaction with the test run database.
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Union
@@ -28,6 +29,8 @@ from sqlalchemy.orm import (
     declared_attr,
     relationship,
 )
+
+logging.getLogger("sqlalchemy.engine.Engine").setLevel(logging.WARNING)
 
 
 @dataclass
@@ -56,6 +59,8 @@ class Run(Base):
     This is not necessarily equivalent to start_time if the test suite took a long time to run or
     if the entry was migrated from a separate database.
     :ivar root: The root directory of the project.
+    :ivar commit_sha: The commit SHA at the time of the run.
+                      This should only be set if the root is a git repo and is clean at the time of the run.
     :ivar tests: The test suite.
     :ivar active_flakefighters: The flakefighters that are active on the run.
     """
@@ -63,8 +68,28 @@ class Run(Base):
     start_time = Column(DateTime)
     created_at = Column(DateTime, default=func.now())
     root: Mapped[str] = Column(String)
-    tests = relationship("Test", backref="run", cascade="all, delete")
-    active_flakefighters = relationship("ActiveFlakeFighter", backref="run", cascade="all, delete")
+    # <<<<<<< HEAD
+    # tests = relationship("Test", backref="run", cascade="all, delete")
+    # active_flakefighters = relationship("ActiveFlakeFighter", backref="run", cascade="all, delete")
+    # =======
+    commit_sha: Mapped[str] = Column(String)
+    tests = relationship(
+        "Test",
+        backref="run",
+        lazy="subquery",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+    active_flakefighters = relationship(
+        "ActiveFlakeFighter",
+        backref="run",
+        lazy="subquery",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+
+
+# >>>>>>> main
 
 
 @dataclass
@@ -104,9 +129,14 @@ class Test(Base):
     line_no: Mapped[int] = Column(Integer)
     name: Mapped[str] = Column(String)
     skipped: Mapped[bool] = Column(Boolean, default=False)
-    executions = relationship("TestExecution", backref="test", cascade="all, delete", passive_deletes=True)
+    executions = relationship(
+        "TestExecution", backref="test", cascade="all, delete", passive_deletes=True
+    )
     flakefighter_results = relationship(
-        "FlakefighterResult", backref="test", cascade="all, delete", passive_deletes=True
+        "FlakefighterResult",
+        backref="test",
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     @property
@@ -148,7 +178,10 @@ class TestExecution(Base):  # pylint: disable=R0902
     end_time: Mapped[datetime] = Column(DateTime(timezone=True))
     coverage: Mapped[dict] = Column(PickleType)
     flakefighter_results = relationship(
-        "FlakefighterResult", backref="test_execution", cascade="all, delete", passive_deletes=True
+        "FlakefighterResult",
+        backref="test_execution",
+        cascade="all, delete",
+        passive_deletes=True,
     )
     exception = relationship(
         "TestException",
@@ -178,9 +211,16 @@ class TestException(Base):  # pylint: disable=R0902
 
     __tablename__ = "test_exception"
 
-    execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=False)
+    execution_id: Mapped[int] = Column(
+        Integer, ForeignKey("test_execution.id"), nullable=False
+    )
     name: Mapped[str] = Column(String)
-    traceback = relationship("TracebackEntry", backref="exception", cascade="all, delete", passive_deletes=True)
+    traceback = relationship(
+        "TracebackEntry",
+        backref="exception",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
 
 
 @dataclass
@@ -196,7 +236,9 @@ class TracebackEntry(Base):  # pylint: disable=R0902
     :ivar source: The surrounding source code.
     """
 
-    exception_id: Mapped[int] = Column(Integer, ForeignKey("test_exception.id"), nullable=False)
+    exception_id: Mapped[int] = Column(
+        Integer, ForeignKey("test_exception.id"), nullable=False
+    )
     path: Mapped[str] = Column(String)
     lineno: Mapped[int] = Column(Integer)
     colno: Mapped[int] = Column(Integer)
@@ -217,13 +259,18 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
 
     __tablename__ = "flakefighter_result"
 
-    test_execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=True)
+    test_execution_id: Mapped[int] = Column(
+        Integer, ForeignKey("test_execution.id"), nullable=True
+    )
     test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=True)
     name: Mapped[str] = Column(String)
     flaky: Mapped[bool] = Column(Boolean)
 
     __table_args__ = (
-        CheckConstraint("NOT (test_execution_id IS NULL AND test_id IS NULL)", name="check_test_id_not_null"),
+        CheckConstraint(
+            "NOT (test_execution_id IS NULL AND test_id IS NULL)",
+            name="check_test_id_not_null",
+        ),
     )
 
     @property
@@ -273,7 +320,9 @@ class Database:
         self.session.add(run)
         if self.time_immemorial is not None:
             expiry_date = datetime.now() - self.time_immemorial
-            for r in self.session.query(Run).filter(Run.created_at < (expiry_date - self.time_immemorial)):
+            for r in self.session.query(Run).filter(
+                Run.created_at < (expiry_date - self.time_immemorial)
+            ):
                 self.session.delete(r)
 
         if self.store_max_runs is not None:
@@ -281,13 +330,28 @@ class Database:
                 self.session.delete(r)
         self.session.commit()
 
+    def get_source_runs(self, target_sha: str) -> list[Run]:
+        """
+        Return the pytest run for the given target sha.
+        :param target_sha: The SHA for which to return runs.
+        :returns: List of pytest runs with DiffCov flakefighter active with the target_sha.
+        """
+        with Session(self.engine) as session:
+            return (
+                session.execute(select(Run).where(Run.commit_sha == target_sha))
+                .scalars()
+                .all()
+            )
+
     def load_runs(self, limit: int = None):
         """
         Load runs from the database.
 
         :param limit: The maximum number of runs to return (these will be most recent runs).
         """
-        return self.session.scalars(select(Run).order_by(desc(Run.start_time)).limit(limit)).all()
+        return self.session.scalars(
+            select(Run).order_by(desc(Run.start_time)).limit(limit)
+        ).all()
 
     def close(self):
         """

@@ -16,6 +16,8 @@ dependencies = [
   "sqlalchemy>=2",
   "unidiff>=0.7.5",
   "importlib_metadata",
+  "pytest-socket",
+  "pytest-json-report",
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 dynamic = ["version"]
@@ -33,6 +35,7 @@ CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence
 DiffCov = "pytest_flakefighters.flakefighters.diff_cov:DiffCov"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
 NetworkClassifier = "pytest_flakefighters.flakefighters.network_classifier:NetworkClassifier"
+OrderDependency = "pytest_flakefighters.flakefighters.order_dependency:OrderDependency"
 
 [project.optional-dependencies]
 pg = ["psycopg2>2.9"]

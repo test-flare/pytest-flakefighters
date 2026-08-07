@@ -42,6 +42,15 @@ options = {
         "default": "sqlite:///flakefighters.db",
         "help": "The database URL. Defaults to 'flakefighters.db' in current working directory.",
     },
+    ("--network-classifier-timeout",): {
+        "action": "store",
+        "default": 30,
+        "type": int,
+        "help": (
+            "Maximum number of seconds allowed for a NetworkClassifier rerun "
+            "before it is terminated. Defaults to 30 seconds."
+        ),
+    },
     ("--store-max-runs",): {
         "action": "store",
         "default": None,
@@ -96,4 +105,30 @@ options = {
         "If unspecified flakefighters with a specified configuration will be used."
         "Flakefighters can also be turned on and off individually with the `active` configuration parameter",
     },
+  ("--order-dependency-mode",): {
+      "action": "store",
+      "type": str,
+      "choices": [
+          "random",
+          "reverse",
+          "both",
+      ],
+      "default": "random",
+      "help": (
+          "Test-order perturbation used by OrderDependency. "
+          "Supported modes are random, reverse, and both. "
+          "Defaults to random."
+      ),
+  },
+
+  ("--order-dependency-runs",): {
+      "action": "store",
+      "type": int,
+      "default": 1,
+      "help": (
+          "Number of random-order executions performed by "
+          "OrderDependency. Defaults to 1. "
+          "This option applies to random mode only."
+      ),
+  },
 }

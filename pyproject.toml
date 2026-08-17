@@ -16,8 +16,9 @@ dependencies = [
   "sqlalchemy>=2",
   "unidiff>=0.7.5",
   "importlib_metadata",
-  "pytest-socket>=0.6.0",      
-  "pytest-json-report>=1.5",
+  "pytest-socket>=0.6.0",
+  "pytest-json-report>=1.5"
+
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 dynamic = ["version"]
@@ -47,7 +48,6 @@ dev = [
   "myst_parser",
   "nbsphinx",
   "pre_commit",
-  "pytest-json-report>=1.5",
   "pylint",
   "pytest-cov",
   "pytest-html",

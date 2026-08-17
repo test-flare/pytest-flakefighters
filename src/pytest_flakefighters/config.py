@@ -9,7 +9,6 @@ from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyF
 
 rerun_strategies = {"ALL": All, "FLAKY_FAILURE": FlakyFailure, "PREVIOUSLY_FLAKY": PreviouslyFlaky}
 
-
 options = {
     ("--root",): {
         "dest": "root",
@@ -42,6 +41,15 @@ options = {
         "default": "sqlite:///flakefighters.db",
         "help": "The database URL. Defaults to 'flakefighters.db' in current working directory.",
     },
+    ("--network-classifier-timeout",): {
+    		"action": "store",
+    		"default": 30,
+    		"type": int,
+    		"help": (
+        	"Maximum number of seconds allowed for a NetworkClassifier rerun "
+        	"before it is terminated. Defaults to 30 seconds."
+    	),
+		},
     ("--store-max-runs",): {
         "action": "store",
         "default": None,
@@ -62,7 +70,7 @@ options = {
         "choices": list(rerun_strategies),
         "default": "FLAKY_FAILURE",
         "help": "The strategy used to determine which tests to rerun. Supported options are:\n  "
-        + "\n  ".join(f"{name} - {strat.help()}" for name, strat in rerun_strategies.items()),
+        +"\n  ".join(f"{name} - {strat.help()}" for name, strat in rerun_strategies.items()),
     },
     ("--time-immemorial",): {
         "action": "store",

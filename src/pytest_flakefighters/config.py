@@ -70,7 +70,7 @@ options = {
         "choices": list(rerun_strategies),
         "default": "FLAKY_FAILURE",
         "help": "The strategy used to determine which tests to rerun. Supported options are:\n  "
-        +"\n  ".join(f"{name} - {strat.help()}" for name, strat in rerun_strategies.items()),
+        + "\n  ".join(f"{name} - {strat.help()}" for name, strat in rerun_strategies.items()),
     },
     ("--time-immemorial",): {
         "action": "store",

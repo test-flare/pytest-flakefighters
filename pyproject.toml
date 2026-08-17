@@ -47,6 +47,7 @@ dev = [
   "myst_parser",
   "nbsphinx",
   "pre_commit",
+  "pytest-json-report>=1.5",
   "pylint",
   "pytest-cov",
   "pytest-html",

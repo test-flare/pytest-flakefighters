@@ -19,7 +19,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from pytest_flakefighters.database_management import FlakefighterResult, Run
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
@@ -36,7 +36,7 @@ class NetworkClassifier(FlakeFighter):
         self,
         timeout: int=DEFAULT_TIMEOUT,
         root: str=".",   # The subprocess needs this because it must execute pytest inside the subject project's directory
-        extra_pytest_args: list[str] | None=None,
+        extra_pytest_args: Optional[list[str]] = None,
     ):
         super().__init__(run_live=False)
 
@@ -146,7 +146,7 @@ class NetworkClassifier(FlakeFighter):
         command: list[str],
         cwd: str,
         env: dict[str, str],
-    ) -> tuple[str, str] | None:
+    ) -> Optional[dict[str, dict[str, Any]]]:
         """
         Execute the network-disabled pytest rerun.
 
@@ -187,7 +187,7 @@ class NetworkClassifier(FlakeFighter):
         env.pop("COVERAGE_FILE", None)
         return env
 
-    def _run_with_disabled_socket(self, nodeids: list[str]) -> dict[str, dict[str, Any]] | None:
+    def _run_with_disabled_socket(self, nodeids: list[str]) -> Optional[dict[str, dict[str, Any]]]:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             report_path = Path(tmpdir) / "pytest_socket_report.json"

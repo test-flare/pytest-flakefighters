@@ -317,7 +317,9 @@ def test_test_missing_from_blocked_report_treated_as_inconclusive(mocker):
 
 
 def test_subprocess_disables_flakefighters_plugin_by_correct_name(mocker):
-    
+    """
+    Test that the blocked rerun disables FlakeFighters to prevent recursive execution.
+    """
     test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
     run = Run(tests=[test])  # pylint: disable=E1123
 

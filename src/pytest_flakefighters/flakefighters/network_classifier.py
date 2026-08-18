@@ -29,14 +29,21 @@ SOCKET_BLOCKED_EXCEPTION_NAMES = ("SocketBlockedError", "SocketConnectBlockedErr
 
 
 class NetworkClassifier(FlakeFighter):
- 
+    """
+    Detect tests that depend on external network access.
+
+    Baseline-passing tests are rerun with external sockets disabled.
+    A test is classified as network sensitive when the blocked rerun
+    fails because of a pytest socket blocked socket exception.
+    """
     DEFAULT_TIMEOUT = 30
 
+	 # The subprocess needs this because it must execute pytest inside the subject project's directory
     def __init__(
         self,
         timeout: int=DEFAULT_TIMEOUT,
-        root: str=".",   # The subprocess needs this because it must execute pytest inside the subject project's directory
-        extra_pytest_args: Optional[list[str]] = None,
+        root: str=".",
+        extra_pytest_args: Optional[list[str]]=None,
     ):
         super().__init__(run_live=False)
 
@@ -49,7 +56,7 @@ class NetworkClassifier(FlakeFighter):
 
     @classmethod
     def from_config(cls, config: dict):
-      
+
         return cls(
             timeout=config.get("network_classifier_timeout", cls.DEFAULT_TIMEOUT),
             root=config.get("root", "."),

@@ -259,8 +259,7 @@ def test_report_socket_blocked():
     classifier = NetworkClassifier()
 
     report = _failed_report(
-        "pytest_socket.SocketBlockedError: "
-        "A test tried to use socket.socket"
+        "pytest_socket.SocketBlockedError: A test tried to use socket.socket"
     )
 
     assert classifier._report_confirms_socket_blocked(report) is True
@@ -530,8 +529,7 @@ def test_run_with_disabled_socket_parses_report(mocker):
                 {
                     "tests": [
                         _failed_report(
-                            "pytest_socket.SocketBlockedError: "
-                            "socket disabled",
+                            "pytest_socket.SocketBlockedError: socket disabled",
                             nodeid="test_a.py::test_a",
                         )
                     ]
@@ -835,8 +833,7 @@ def test_socket_blocked_is_flaky(mocker):
         "_run_with_disabled_socket",
         return_value={
             "test_example": _failed_report(
-                "pytest_socket.SocketBlockedError: "
-                "socket disabled"
+              "pytest_socket.SocketBlockedError: socket disabled"
             )
         },
     )

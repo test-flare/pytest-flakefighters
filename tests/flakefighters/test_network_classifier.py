@@ -16,6 +16,7 @@ from pytest_flakefighters.flakefighters.network_classifier import (
     NetworkClassifier,
 )
 
+
 def _execution(outcome, duration=None):
     """Create a real TestExecution for unit tests."""
     if duration is None:
@@ -33,6 +34,7 @@ def _execution(outcome, duration=None):
         end_time=start + timedelta(seconds=duration),
     )
 
+
 def _test_with_execution(
     outcome="passed",
     duration=0.5,
@@ -44,12 +46,14 @@ def _test_with_execution(
         executions=[_execution(outcome, duration)],
     )
 
+
 def _passed_report(nodeid="test_example"):
     """Return a simple passing pytest report."""
     return {
         "nodeid": nodeid,
         "outcome": "passed",
     }
+
 
 def _failed_report(message, nodeid="test_example"):
     """Return a simple failed pytest report."""
@@ -61,6 +65,7 @@ def _failed_report(message, nodeid="test_example"):
             "longrepr": message,
         },
     }
+
 
 def _mock_pytest_report(mocker, classifier, report):
     """Mock a pytest subprocess and write the supplied JSON report."""
@@ -86,6 +91,7 @@ def _mock_pytest_report(mocker, classifier, report):
         side_effect=fake_run,
     )
 
+
 def _mock_invalid_json_report(mocker, classifier):
     """Mock a pytest subprocess that writes invalid JSON."""
 
@@ -110,6 +116,7 @@ def _mock_invalid_json_report(mocker, classifier):
         side_effect=fake_run,
     )
 
+
 def test_from_config_params():
     """Test that configuration values are applied correctly."""
     config = {
@@ -125,6 +132,7 @@ def test_from_config_params():
 
     assert from_config.params() == direct.params()
 
+
 def test_flaky_test_live_not_supported():
     """Test that live classification is not supported."""
     classifier = NetworkClassifier()
@@ -134,6 +142,7 @@ def test_flaky_test_live_not_supported():
         match="only supports postprocessing",
     ):
         classifier.flaky_test_live(None)
+
 
 def test_longest_passed_duration():
     """Test that the longest successful execution duration is returned."""
@@ -150,6 +159,7 @@ def test_longest_passed_duration():
 
     assert classifier._longest_passed_duration(test) == pytest.approx(0.8)
 
+
 def test_longest_passed_duration_no_pass():
     """Test that no duration is returned when no execution passed."""
     test = Test(
@@ -164,6 +174,7 @@ def test_longest_passed_duration_no_pass():
 
     assert classifier._longest_passed_duration(test) is None
 
+
 def test_longest_passed_duration_missing_times():
     """Test that passing executions with missing timing data are ignored."""
     test = _test_with_execution(
@@ -174,6 +185,7 @@ def test_longest_passed_duration_missing_times():
     classifier = NetworkClassifier()
 
     assert classifier._longest_passed_duration(test) is None
+
 
 def test_longest_passed_duration_missing_end_time():
     """Test that a passing execution with no end time is ignored."""
@@ -192,6 +204,7 @@ def test_longest_passed_duration_missing_end_time():
 
     assert classifier._longest_passed_duration(test) is None
 
+
 @pytest.mark.parametrize(
     ("durations", "expected"),
     [
@@ -206,6 +219,7 @@ def test_compute_timeout(durations, expected):
 
     assert classifier._compute_timeout(durations) == pytest.approx(expected)
 
+
 def test_subprocess_env(monkeypatch):
     """Test that conflicting environment variables are removed."""
     monkeypatch.setenv("PYTEST_ADDOPTS", "--some-option")
@@ -219,6 +233,7 @@ def test_subprocess_env(monkeypatch):
     assert "PYTEST_ADDOPTS" not in env
     assert "COVERAGE_FILE" not in env
     assert env["KEEP_ME"] == "yes"
+
 
 def test_run_pytest_subprocess_success(mocker):
     """Test successful child pytest process execution."""
@@ -237,6 +252,7 @@ def test_run_pytest_subprocess_success(mocker):
     assert result is True
     subprocess_run.assert_called_once()
 
+
 def test_run_pytest_subprocess_oserror(mocker):
     """Test subprocess launch failure handling."""
     mocker.patch(
@@ -254,6 +270,7 @@ def test_run_pytest_subprocess_oserror(mocker):
 
     assert result is False
 
+
 def test_report_socket_blocked():
     """Test detection of SocketBlockedError in a report."""
     classifier = NetworkClassifier()
@@ -263,6 +280,7 @@ def test_report_socket_blocked():
     )
 
     assert classifier._report_confirms_socket_blocked(report) is True
+
 
 def test_report_socket_connect_blocked():
     """Test detection of SocketConnectBlockedError in a report."""
@@ -283,6 +301,7 @@ def test_report_socket_connect_blocked():
 
     assert classifier._report_confirms_socket_blocked(report) is True
 
+
 def test_report_unrelated_failure():
     """Test that unrelated failures are not treated as socket blocking."""
     classifier = NetworkClassifier()
@@ -293,6 +312,7 @@ def test_report_unrelated_failure():
 
     assert classifier._report_confirms_socket_blocked(report) is False
 
+
 def test_report_timeout():
     """Test detection of pytest-timeout failures."""
     classifier = NetworkClassifier()
@@ -302,6 +322,7 @@ def test_report_timeout():
     )
 
     assert classifier._report_confirms_timeout(report) is True
+
 
 @pytest.mark.parametrize(
     "report",
@@ -328,6 +349,7 @@ def test_report_failed(report):
 
     assert classifier._report_failed(report) is True
 
+
 def test_report_passed():
     """Test that a passing report is not treated as failed."""
     classifier = NetworkClassifier()
@@ -340,6 +362,7 @@ def test_report_passed():
     }
 
     assert classifier._report_failed(report) is False
+
 
 def test_measure_own_baseline_no_nodeids(mocker):
     """Test that no baseline subprocess is run without node IDs."""
@@ -354,6 +377,7 @@ def test_measure_own_baseline_no_nodeids(mocker):
 
     assert not result
     subprocess_run.assert_not_called()
+
 
 def test_measure_own_baseline_parses_report(mocker):
     """Test parsing of a normal baseline pytest JSON report."""
@@ -405,6 +429,7 @@ def test_measure_own_baseline_parses_report(mocker):
     assert result["test_b.py::test_b"]["outcome"] == "failed"
     assert result["test_b.py::test_b"]["duration"] is None
 
+
 def test_measure_own_baseline_subprocess_failure(mocker):
     """Test baseline handling when the child pytest process fails."""
     classifier = NetworkClassifier()
@@ -421,6 +446,7 @@ def test_measure_own_baseline_subprocess_failure(mocker):
 
     assert not result
 
+
 def test_measure_own_baseline_invalid_json(mocker):
     """Test baseline handling when the JSON report is invalid."""
     classifier = NetworkClassifier()
@@ -435,6 +461,7 @@ def test_measure_own_baseline_invalid_json(mocker):
     )
 
     assert not result
+
 
 def test_measure_own_baseline_tests_not_list(mocker):
     """Test baseline handling when the tests field is malformed."""
@@ -451,6 +478,7 @@ def test_measure_own_baseline_tests_not_list(mocker):
     )
 
     assert not result
+
 
 def test_measure_own_baseline_ignores_invalid_test_entries(mocker):
     """Test that malformed baseline test entries are ignored."""
@@ -479,6 +507,7 @@ def test_measure_own_baseline_ignores_invalid_test_entries(mocker):
 
     assert list(result) == ["test_a.py::test_a"]
 
+
 def test_measure_own_baseline_ignores_invalid_phase(mocker):
     """Test that malformed phase data is ignored for duration."""
     classifier = NetworkClassifier()
@@ -506,6 +535,7 @@ def test_measure_own_baseline_ignores_invalid_phase(mocker):
     )
 
     assert result["test_a.py::test_a"]["duration"] == pytest.approx(0.5)
+
 
 def test_run_with_disabled_socket_parses_report(mocker):
     """Test blocked-network command construction and report parsing."""
@@ -560,6 +590,7 @@ def test_run_with_disabled_socket_parses_report(mocker):
     assert "no:flakefighters" in command
     assert reports["test_a.py::test_a"]["outcome"] == "failed"
 
+
 def test_run_with_disabled_socket_subprocess_failure(mocker):
     """Test blocked-network handling when the subprocess fails."""
     classifier = NetworkClassifier()
@@ -576,6 +607,7 @@ def test_run_with_disabled_socket_subprocess_failure(mocker):
     )
 
     assert result is None
+
 
 def test_run_with_disabled_socket_no_nodeids(mocker):
     """Test that no blocked subprocess is run without node IDs."""
@@ -594,6 +626,7 @@ def test_run_with_disabled_socket_no_nodeids(mocker):
     assert not result
     subprocess_run.assert_not_called()
 
+
 def test_run_with_disabled_socket_invalid_json(mocker):
     """Test blocked-network handling when the JSON report is invalid."""
     classifier = NetworkClassifier()
@@ -609,6 +642,7 @@ def test_run_with_disabled_socket_invalid_json(mocker):
     )
 
     assert result is None
+
 
 def test_run_with_disabled_socket_tests_not_list(mocker):
     """Test blocked-network handling when the tests field is malformed."""
@@ -626,6 +660,7 @@ def test_run_with_disabled_socket_tests_not_list(mocker):
     )
 
     assert result is None
+
 
 def test_existing_pass_is_eligible(mocker):
     """Test that an existing passing execution is eligible."""
@@ -658,6 +693,7 @@ def test_existing_pass_is_eligible(mocker):
     assert test.flakefighter_results[0].name == "NetworkClassifier"
     assert test.flakefighter_results[0].flaky is False
 
+
 def test_existing_pass_without_timing_is_still_eligible(mocker):
     """Test that a passing execution without timing stays eligible."""
     test = _test_with_execution(
@@ -687,6 +723,7 @@ def test_existing_pass_without_timing_is_still_eligible(mocker):
         pytest.approx(1.0),
     )
 
+
 def test_existing_failed_execution_is_inconclusive(mocker):
     """Test that a failed-only existing baseline is inconclusive."""
     test = _test_with_execution(
@@ -709,6 +746,7 @@ def test_existing_failed_execution_is_inconclusive(mocker):
     baseline.assert_not_called()
     blocked.assert_not_called()
     assert not test.flakefighter_results
+
 
 def test_missing_execution_stores_passing_baseline(mocker):
     """Test storing and using a newly measured passing baseline."""
@@ -755,6 +793,7 @@ def test_missing_execution_stores_passing_baseline(mocker):
     assert len(test.flakefighter_results) == 1
     assert test.flakefighter_results[0].flaky is False
 
+
 def test_missing_execution_stores_failed_baseline(mocker):
     """Test storing a newly measured failed baseline."""
     test = Test(
@@ -794,6 +833,7 @@ def test_missing_execution_stores_failed_baseline(mocker):
     blocked.assert_not_called()
     assert not test.flakefighter_results
 
+
 def test_missing_execution_without_baseline_result_is_inconclusive(
     mocker,
 ):
@@ -822,6 +862,7 @@ def test_missing_execution_without_baseline_result_is_inconclusive(
     assert not test.executions
     assert not test.flakefighter_results
 
+
 def test_socket_blocked_is_flaky(mocker):
     """Test classification of a socket-blocked failure as network-sensitive."""
     test = _test_with_execution()
@@ -844,6 +885,7 @@ def test_socket_blocked_is_flaky(mocker):
     assert test.flakefighter_results[0].name == "NetworkClassifier"
     assert test.flakefighter_results[0].flaky is True
 
+
 def test_unrelated_failure_is_genuine(mocker):
     """Test that an unrelated blocked failure is not network-sensitive."""
     test = _test_with_execution()
@@ -865,6 +907,7 @@ def test_unrelated_failure_is_genuine(mocker):
     assert len(test.flakefighter_results) == 1
     assert test.flakefighter_results[0].flaky is False
 
+
 def test_timeout_is_inconclusive(mocker):
     """Test that a blocked-run timeout leaves the result inconclusive."""
     test = _test_with_execution()
@@ -885,6 +928,7 @@ def test_timeout_is_inconclusive(mocker):
 
     assert not test.flakefighter_results
 
+
 def test_missing_blocked_report_is_inconclusive(mocker):
     """Test that a missing blocked report leaves the result inconclusive."""
     test = _test_with_execution()
@@ -901,6 +945,7 @@ def test_missing_blocked_report_is_inconclusive(mocker):
 
     assert not test.flakefighter_results
 
+
 def test_blocked_run_failure_is_inconclusive(mocker):
     """Test that an unusable blocked run leaves the result inconclusive."""
     test = _test_with_execution()
@@ -916,6 +961,7 @@ def test_blocked_run_failure_is_inconclusive(mocker):
     classifier.flaky_tests_post(run)
 
     assert not test.flakefighter_results
+
 
 def test_no_tests(mocker):
     """Test that an empty run performs no network classification."""

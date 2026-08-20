@@ -9,6 +9,7 @@ import pandas as pd
 from pytest import ExitCode
 from pytest_flakefighters.database_management import Database
 
+
 def test_real_failures(pytester, diff_cov_repo):
     """Make sure that genuine failures are labelled as such."""
 
@@ -358,6 +359,7 @@ def test_gatorgrade_parameterised(pytester, gatorgrade_dir):
         "CosineSimilarity",
     )
     result.assert_outcomes(passed=1)
+
 
 def test_network_classifier_non_network_test(pytester):
     """

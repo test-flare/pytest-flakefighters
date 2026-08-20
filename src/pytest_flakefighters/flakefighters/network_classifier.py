@@ -19,7 +19,6 @@ from pytest_flakefighters.database_management import (
 )
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
-
 SOCKET_BLOCKED_EXCEPTION_NAMES = (
     "SocketBlockedError",
     "SocketConnectBlockedError",
@@ -36,8 +35,8 @@ class NetworkClassifier(FlakeFighter):
 
     def __init__(
         self,
-        root: str = ".",
-        extra_pytest_args: Optional[list[str]] = None,
+        root: str=".",
+        extra_pytest_args: Optional[list[str]]=None,
     ):
         super().__init__(run_live=False)
         self.root = os.path.abspath(root)

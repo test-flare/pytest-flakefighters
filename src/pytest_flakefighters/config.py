@@ -41,15 +41,6 @@ options = {
         "default": "sqlite:///flakefighters.db",
         "help": "The database URL. Defaults to 'flakefighters.db' in current working directory.",
     },
-    ("--network-classifier-timeout",): {
-    		"action": "store",
-    		"default": 30,
-    		"type": int,
-    		"help": (
-        	"Maximum number of seconds allowed for a NetworkClassifier rerun "
-        	"before it is terminated. Defaults to 30 seconds."
-    	),
-		},
     ("--store-max-runs",): {
         "action": "store",
         "default": None,

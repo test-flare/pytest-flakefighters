@@ -3,366 +3,807 @@ This module tests the NetworkClassifier flakefighter.
 """
 
 import json
-from pathlib import Path
+from datetime import datetime, timedelta
 
 import pytest
 
 from pytest_flakefighters.database_management import (
-    FlakefighterResult,
     Run,
     Test,
     TestExecution,
 )
-from pytest_flakefighters.flakefighters.network_classifier import NetworkClassifier
+from pytest_flakefighters.flakefighters.network_classifier import (
+    NetworkClassifier,
+)
 
 
-def _report_path_from_command(command: list[str]) -> Path:
-    """
-    Extract the --json-report-file path from a constructed pytest command.
-    """
-    prefix = "--json-report-file="
-    for arg in command:
-        if arg.startswith(prefix):
-            return Path(arg[len(prefix):])
-    raise AssertionError("--json-report-file not found in command")
+def _execution(outcome, duration=None):
+    """Create a test execution."""
+    start = datetime(2026, 1, 1, 12, 0, 0)
 
+    if duration is None:
+        return TestExecution(
+            outcome=outcome,
+            start_time=None,
+            end_time=None,
+        )
 
-def _write_report(path: Path, entries: list[tuple[str, str, str]]):
-    """
-    Write a minimal pytest-json-report-shaped report file for a rerun.
-    :param entries: List of (nodeid, outcome, longrepr) tuples for each test.
-    """
-    tests = [
-        {
-            "nodeid": nodeid,
-            "outcome": outcome,
-            "call": {"outcome": outcome, "longrepr": longrepr},
-        }
-        for nodeid, outcome, longrepr in entries
-    ]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as file:
-        json.dump({"tests": tests}, file)
-
-
-def _make_test(nodeid: str, outcomes: list[str]) -> Test:
-    """
-    Build a Test with one TestExecution per outcome given, representing the normal-run
-    baseline for that test.
-    """
-    test = Test(name=nodeid)  # pylint: disable=E1123
-    for outcome in outcomes:
-        execution = TestExecution(outcome=outcome)  # pylint: disable=E1123
-        test.executions.append(execution)
-    return test
-
-
-def test_timeout_must_be_positive():
-    """
-    Test that a non-positive timeout is rejected.
-    """
-    with pytest.raises(ValueError):
-        NetworkClassifier(timeout=0)
-
+    return TestExecution(
+        outcome=outcome,
+        start_time=start,
+        end_time=start + timedelta(seconds=duration),
+    )
 
 def test_from_config_params():
-    """
-    Test that from_config generates the same result as a direct call.
-    """
-    from_config = NetworkClassifier.from_config(
-        {
-            "network_classifier_timeout": 15,
-            "root": ".",
-            "extra_pytest_args": ["-x"],
-        }
+    """Test config construction."""
+    config = {
+        "root": ".",
+        "extra_pytest_args": ["-vv"],
+    }
+
+    from_config = NetworkClassifier.from_config(config)
+
+    direct = NetworkClassifier(
+        root=".",
+        extra_pytest_args=["-vv"],
     )
-    init = NetworkClassifier(timeout=15, root=".", extra_pytest_args=["-x"])
-    assert from_config.run_live == init.run_live
-    assert from_config.params() == init.params()
 
-
-def test_from_config_defaults():
-    """
-    Test that from_config falls back to sensible defaults when nothing is configured.
-    """
-    classifier = NetworkClassifier.from_config({})
-    assert classifier.run_live is False
-    assert classifier.timeout == NetworkClassifier.DEFAULT_TIMEOUT
-    assert classifier.extra_pytest_args == []
-
+    assert from_config.root == direct.root
+    assert from_config.extra_pytest_args == direct.extra_pytest_args
+    assert from_config.params() == direct.params()
 
 def test_flaky_test_live_not_supported():
-    """
-    Test that flaky_test_live is not implemented, since this classifier needs the whole
-    suite's baseline results before it can compare anything.
-    """
+    """Test that live classification is not supported."""
     classifier = NetworkClassifier()
+
     with pytest.raises(NotImplementedError):
-        classifier.flaky_test_live(None)
+        classifier.flaky_test_live(
+            TestExecution(outcome="passed")
+        )
 
-
-def test_confirmed_network_flaky(mocker):
-    """
-    Test that a test which passed normally, and confirmed fails with SocketBlockedError under
-    the blocked-network run, is classified as flaky.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
+def test_longest_passed_duration():
+    """Test longest passed duration."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed", 0.2),
+            _execution("failed", 5.0),
+            _execution("passed", 0.8),
+        ],
+    )
 
     classifier = NetworkClassifier()
 
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        report_path = _report_path_from_command(command)
-        _write_report(
-            report_path,
-            [
-                (
-                    "tests/test_foo.py::test_bar",
-                    "failed",
-                    "pytest_socket.SocketBlockedError: A test tried to use socket.socket.",
+    assert classifier._longest_passed_duration(test) == pytest.approx(0.8)
+
+def test_longest_passed_duration_no_pass():
+    """Test no passed execution."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("failed", 0.5),
+            _execution("failed", 1.0),
+        ],
+    )
+
+    classifier = NetworkClassifier()
+
+    assert classifier._longest_passed_duration(test) is None
+
+def test_longest_passed_duration_missing_times():
+    """Test missing execution timestamps."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed"),
+        ],
+    )
+
+    classifier = NetworkClassifier()
+
+    assert classifier._longest_passed_duration(test) is None
+
+def test_existing_pass_without_timing_is_still_eligible(mocker):
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed"),
+        ],
+    )
+
+    run = Run(tests=[test])
+    classifier = NetworkClassifier()
+
+    baseline = mocker.patch.object(
+        classifier,
+        "_measure_own_baseline",
+    )
+
+    blocked = mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value={
+            "test_example": {
+                "outcome": "passed",
+            }
+        },
+    )
+
+    classifier.flaky_tests_post(run)
+
+    baseline.assert_not_called()
+
+    blocked.assert_called_once_with(
+        ["test_example"],
+        pytest.approx(1.0),
+    )
+    
+@pytest.mark.parametrize(
+    ("durations", "expected"),
+    [
+        ([0.2, 0.8, 0.5], 2.4),
+        ([0.1, 0.2], 1.0),
+        ([], 1.0),
+    ],
+)
+def test_compute_timeout(durations, expected):
+    """Test timeout calculation."""
+    classifier = NetworkClassifier()
+
+    assert classifier._compute_timeout(durations) == pytest.approx(expected)
+
+def test_subprocess_env(monkeypatch):
+    """Test child process environment."""
+    monkeypatch.setenv("PYTEST_ADDOPTS", "--some-option")
+    monkeypatch.setenv("COVERAGE_FILE", "/tmp/.coverage")
+    monkeypatch.setenv("KEEP_ME", "value")
+
+    classifier = NetworkClassifier()
+
+    env = classifier._subprocess_env()
+
+    assert "PYTEST_ADDOPTS" not in env
+    assert "COVERAGE_FILE" not in env
+    assert env["KEEP_ME"] == "value"
+
+def test_run_pytest_subprocess_success(mocker):
+    """Test successful subprocess execution."""
+    mocked_run = mocker.patch(
+        "pytest_flakefighters.flakefighters."
+        "network_classifier.subprocess.run"
+    )
+
+    classifier = NetworkClassifier()
+
+    result = classifier._run_pytest_subprocess(
+        ["pytest"],
+        cwd=".",
+        env={},
+    )
+
+    assert result is True
+    mocked_run.assert_called_once()
+
+def test_run_pytest_subprocess_oserror(mocker):
+    """Test subprocess launch failure."""
+    mocked_run = mocker.patch(
+        "pytest_flakefighters.flakefighters."
+        "network_classifier.subprocess.run"
+    )
+    mocked_run.side_effect = OSError("failed")
+
+    classifier = NetworkClassifier()
+
+    result = classifier._run_pytest_subprocess(
+        ["pytest"],
+        cwd=".",
+        env={},
+    )
+
+    assert result is False
+
+def test_report_socket_blocked():
+    """Test SocketBlockedError detection."""
+    classifier = NetworkClassifier()
+
+    report = {
+        "outcome": "failed",
+        "call": {
+            "outcome": "failed",
+            "longrepr": (
+                "pytest_socket.SocketBlockedError: "
+                "socket disabled"
+            ),
+        },
+    }
+
+    assert classifier._report_confirms_socket_blocked(report)
+
+def test_report_socket_connect_blocked():
+    """Test SocketConnectBlockedError detection."""
+    classifier = NetworkClassifier()
+
+    report = {
+        "outcome": "failed",
+        "call": {
+            "outcome": "failed",
+            "crash": {
+                "message": (
+                    "pytest_socket.SocketConnectBlockedError: "
+                    "blocked"
                 )
-            ],
+            },
+        },
+    }
+
+    assert classifier._report_confirms_socket_blocked(report)
+
+def test_report_unrelated_failure():
+    """Test unrelated failure."""
+    classifier = NetworkClassifier()
+
+    report = {
+        "outcome": "failed",
+        "call": {
+            "outcome": "failed",
+            "longrepr": "AssertionError",
+        },
+    }
+
+    assert not classifier._report_confirms_socket_blocked(report)
+
+def test_report_timeout():
+    """Test timeout detection."""
+    classifier = NetworkClassifier()
+
+    report = {
+        "outcome": "failed",
+        "call": {
+            "outcome": "failed",
+            "longrepr": "Failed: Timeout >2.0s",
+        },
+    }
+
+    assert classifier._report_confirms_timeout(report)
+
+@pytest.mark.parametrize(
+    "report",
+    [
+        {"outcome": "failed"},
+        {"outcome": "error"},
+        {
+            "outcome": "passed",
+            "setup": {"outcome": "failed"},
+        },
+        {
+            "outcome": "passed",
+            "call": {"outcome": "error"},
+        },
+        {
+            "outcome": "passed",
+            "teardown": {"outcome": "failed"},
+        },
+    ],
+)
+def test_report_failed(report):
+    """Test failure detection."""
+    classifier = NetworkClassifier()
+
+    assert classifier._report_failed(report)
+
+def test_report_passed():
+    """Test passed report."""
+    classifier = NetworkClassifier()
+
+    report = {
+        "outcome": "passed",
+        "setup": {"outcome": "passed"},
+        "call": {"outcome": "passed"},
+        "teardown": {"outcome": "passed"},
+    }
+
+    assert not classifier._report_failed(report)
+
+def test_measure_own_baseline_no_nodeids(mocker):
+    """Test empty baseline request."""
+    classifier = NetworkClassifier()
+
+    subprocess_runner = mocker.patch.object(
+        classifier,
+        "_run_pytest_subprocess",
+    )
+
+    result = classifier._measure_own_baseline([])
+
+    assert result == {}
+    subprocess_runner.assert_not_called()
+
+def test_measure_own_baseline_parses_report(mocker):
+    """Test baseline report parsing."""
+    classifier = NetworkClassifier()
+
+    def fake_run(command, cwd, env):
+        report_arg = next(
+            arg
+            for arg in command
+            if arg.startswith("--json-report-file=")
         )
-        return "", ""
 
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
-    classifier.flaky_tests_post(run)
+        report_path = report_arg.split("=", 1)[1]
 
-    assert FlakefighterResult(name="NetworkClassifier", flaky=True) in test.flakefighter_results
+        report = {
+            "tests": [
+                {
+                    "nodeid": "test_a.py::test_a",
+                    "outcome": "passed",
+                    "setup": {"duration": 0.1},
+                    "call": {"duration": 0.4},
+                    "teardown": {"duration": 0.2},
+                },
+                {
+                    "nodeid": "test_b.py::test_b",
+                    "outcome": "failed",
+                    "call": {
+                        "outcome": "failed",
+                        "longrepr": "AssertionError",
+                    },
+                },
+            ]
+        }
 
+        with open(report_path, "w", encoding="utf-8") as file:
+            json.dump(report, file)
 
-def test_confirmed_network_flaky_via_connect_blocked(mocker):
-    """
-    Regression test: since --allow-hosts is configured, pytest-socket raises the distinct
-    SocketConnectBlockedError when a test's connect() call
-    is blocked
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
+        return True
 
+    mocker.patch.object(
+        classifier,
+        "_run_pytest_subprocess",
+        side_effect=fake_run,
+    )
+
+    measured = classifier._measure_own_baseline(
+        [
+            "test_a.py::test_a",
+            "test_b.py::test_b",
+        ]
+    )
+
+    assert measured["test_a.py::test_a"]["outcome"] == "passed"
+    assert measured["test_a.py::test_a"]["duration"] == pytest.approx(
+        0.7
+    )
+
+    assert measured["test_b.py::test_b"]["outcome"] == "failed"
+    assert measured["test_b.py::test_b"]["duration"] is None
+
+def test_measure_own_baseline_subprocess_failure(mocker):
+    """Test baseline subprocess failure."""
     classifier = NetworkClassifier()
 
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        report_path = _report_path_from_command(command)
-        _write_report(
-            report_path,
-            [
-                (
-                    "tests/test_foo.py::test_bar",
-                    "failed",
-                    'pytest_socket.SocketConnectBlockedError: A test tried to use socket.socket.connect() '
-                    'with host "8.8.8.8" (allowed: "127.0.0.1,::1,localhost (127.0.0.1)").',
-                )
-            ],
+    mocker.patch.object(
+        classifier,
+        "_run_pytest_subprocess",
+        return_value=False,
+    )
+
+    result = classifier._measure_own_baseline(
+        ["test_a.py::test_a"]
+    )
+
+    assert result == {}
+
+def test_run_with_disabled_socket_parses_report(mocker):
+    """Test blocked-network report parsing."""
+    classifier = NetworkClassifier()
+
+    captured_command = {}
+
+    def fake_run(command, cwd, env):
+        captured_command["command"] = command
+
+        report_arg = next(
+            arg
+            for arg in command
+            if arg.startswith("--json-report-file=")
         )
-        return "", ""
 
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
-    classifier.flaky_tests_post(run)
+        report_path = report_arg.split("=", 1)[1]
 
-    assert FlakefighterResult(name="NetworkClassifier", flaky=True) in test.flakefighter_results
+        report = {
+            "tests": [
+                {
+                    "nodeid": "test_a.py::test_a",
+                    "outcome": "failed",
+                    "call": {
+                        "outcome": "failed",
+                        "longrepr": (
+                            "pytest_socket.SocketBlockedError: "
+                            "socket disabled"
+                        ),
+                    },
+                }
+            ]
+        }
 
+        with open(report_path, "w", encoding="utf-8") as file:
+            json.dump(report, file)
 
-def test_unconfirmed_failure_not_flaky(mocker):
-    """
-    Test that a failure NOT caused by a pytest-socket exception is not classified as
-    network-flaky -- e.g. some other, unrelated failure that happened to occur on the rerun.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
+        return True
 
-    classifier = NetworkClassifier()
+    mocker.patch.object(
+        classifier,
+        "_run_pytest_subprocess",
+        side_effect=fake_run,
+    )
 
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        report_path = _report_path_from_command(command)
-        _write_report(
-            report_path,
-            [("tests/test_foo.py::test_bar", "failed", "AssertionError: expected 1 but got None")],
-        )
-        return "", ""
+    reports = classifier._run_with_disabled_socket(
+        ["test_a.py::test_a"],
+        2.4,
+    )
 
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
-    classifier.flaky_tests_post(run)
+    command = captured_command["command"]
 
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in test.flakefighter_results
-
-
-def test_blocked_run_still_passes(mocker):
-    """
-    Test that a test which also passes under the blocked network run is not flaky.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
-
-    classifier = NetworkClassifier()
-
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        report_path = _report_path_from_command(command)
-        _write_report(report_path, [("tests/test_foo.py::test_bar", "passed", "")])
-        return "", ""
-
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
-    classifier.flaky_tests_post(run)
-
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in test.flakefighter_results
-
-
-def test_baseline_failure_skips_network_check_and_subprocess(mocker):
-    """
-    Test that a test which never passed normally is not classified as network-flaky
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["failed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
-
-    classifier = NetworkClassifier()
-    spy = mocker.patch.object(classifier, "_run_pytest_subprocess")
-
-    classifier.flaky_tests_post(run)
-
-    spy.assert_not_called()
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in test.flakefighter_results
-
-
-def test_multiple_tests_classified_independently(mocker):
-    """
-    Test that each passed test in the suite is compared against its own entry in the
-    blocked-network report, independently of the others
-    """
-    flaky_test = _make_test("tests/test_foo.py::test_flaky", outcomes=["passed"])
-    stable_test = _make_test("tests/test_foo.py::test_stable", outcomes=["passed"])
-    already_failed_test = _make_test("tests/test_foo.py::test_already_failed", outcomes=["failed"])
-    run = Run(tests=[flaky_test, stable_test, already_failed_test])  # pylint: disable=E1123
-
-    classifier = NetworkClassifier()
-    captured_commands = []
-
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        captured_commands.append(command)
-        report_path = _report_path_from_command(command)
-        _write_report(
-            report_path,
-            [
-                (
-                    "tests/test_foo.py::test_flaky",
-                    "failed",
-                    "pytest_socket.SocketBlockedError: A test tried to use socket.socket.",
-                ),
-                ("tests/test_foo.py::test_stable", "passed", ""),
-            ],
-        )
-        return "", ""
-
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
-    classifier.flaky_tests_post(run)
-
-    assert FlakefighterResult(name="NetworkClassifier", flaky=True) in flaky_test.flakefighter_results
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in stable_test.flakefighter_results
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in already_failed_test.flakefighter_results
-
-    command = captured_commands[0]
-    assert "tests/test_foo.py::test_flaky" in command
-    assert "tests/test_foo.py::test_stable" in command
-    assert "tests/test_foo.py::test_already_failed" not in command
-
-
-def test_timeout_treated_as_inconclusive(mocker):
-    """
-    Test that a rerun timeout (signalled by None) is treated as inconclusive.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
-
-    classifier = NetworkClassifier()
-    mocker.patch.object(classifier, "_run_pytest_subprocess", return_value=None)
-
-    classifier.flaky_tests_post(run)
-
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in test.flakefighter_results
-
-
-def test_missing_report_file_treated_as_inconclusive(mocker):
-    """
-    Test that a subprocess which ran but produced no report file is treated as inconclusive.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
-
-    classifier = NetworkClassifier()
-    mocker.patch.object(classifier, "_run_pytest_subprocess", return_value=("", ""))
-
-    classifier.flaky_tests_post(run)
-
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in test.flakefighter_results
-
-
-def test_test_missing_from_blocked_report_treated_as_inconclusive(mocker):
-    """
-    Test that a test present in the baseline but absent from the blocked network report is
-    treated as inconclusive for that test.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
-
-    classifier = NetworkClassifier()
-
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        report_path = _report_path_from_command(command)
-        _write_report(report_path, [("tests/test_foo.py::some_other_test", "passed", "")])
-        return "", ""
-
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
-    classifier.flaky_tests_post(run)
-
-    assert FlakefighterResult(name="NetworkClassifier", flaky=False) in test.flakefighter_results
-
-
-def test_subprocess_disables_flakefighters_plugin_by_correct_name(mocker):
-    """
-    Test that the blocked rerun disables FlakeFighters to prevent recursive execution.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
-
-    classifier = NetworkClassifier()
-    captured_commands = []
-
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        captured_commands.append(command)
-        report_path = _report_path_from_command(command)
-        _write_report(report_path, [("tests/test_foo.py::test_bar", "passed", "")])
-        return "", ""
-
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
-    classifier.flaky_tests_post(run)
-
-    command = captured_commands[0]
-    assert "no:flakefighters" in command
-    assert "no:pytest_flakefighters" not in command
-    assert "--no-save" not in command  # would be rejected: unrecognized without the plugin loaded
     assert "--disable-socket" in command
     assert "--allow-unix-socket" in command
     assert "--allow-hosts=localhost,127.0.0.1,::1" in command
-    assert "tests/test_foo.py::test_bar" in command
+    assert "--timeout=2.4" in command
+    assert "-p" in command
+    assert "no:flakefighters" in command
 
+    assert reports["test_a.py::test_a"]["outcome"] == "failed"
 
-def test_subprocess_uses_project_root_as_cwd(mocker, tmp_path):
-    """
-    Test that the blocked network run subprocess is executed with the classifier's root as
-    its working directory, so nodeid resolution matches the project layout.
-    """
-    test = _make_test("tests/test_foo.py::test_bar", outcomes=["passed"])
-    run = Run(tests=[test])  # pylint: disable=E1123
+def test_run_with_disabled_socket_subprocess_failure(mocker):
+    """Test blocked subprocess failure."""
+    classifier = NetworkClassifier()
 
-    classifier = NetworkClassifier(root=str(tmp_path))
-    captured = {}
+    mocker.patch.object(
+        classifier,
+        "_run_pytest_subprocess",
+        return_value=False,
+    )
 
-    def fake_subprocess(command, cwd, env):  # pylint: disable=unused-argument
-        captured["cwd"] = cwd
-        report_path = _report_path_from_command(command)
-        _write_report(report_path, [("tests/test_foo.py::test_bar", "passed", "")])
-        return "", ""
+    result = classifier._run_with_disabled_socket(
+        ["test_a.py::test_a"],
+        2.0,
+    )
 
-    mocker.patch.object(classifier, "_run_pytest_subprocess", side_effect=fake_subprocess)
+    assert result is None
+
+def test_existing_pass_is_eligible(mocker):
+    """Test reuse of an existing passing execution."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed", 0.5),
+        ],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    baseline = mocker.patch.object(
+        classifier,
+        "_measure_own_baseline",
+    )
+
+    blocked = mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value={
+            "test_example": {
+                "outcome": "passed",
+            }
+        },
+    )
+
     classifier.flaky_tests_post(run)
 
-    assert captured["cwd"] == str(tmp_path)
+    baseline.assert_not_called()
+
+    blocked.assert_called_once_with(
+        ["test_example"],
+        pytest.approx(1.5),
+    )
+
+    assert len(test.flakefighter_results) == 1
+    assert (
+        test.flakefighter_results[0].name
+        == "NetworkClassifier"
+    )
+    assert test.flakefighter_results[0].flaky is False
+
+def test_existing_failed_execution_is_inconclusive(mocker):
+    """Test existing failed baseline."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("failed", 0.5),
+        ],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    baseline = mocker.patch.object(
+        classifier,
+        "_measure_own_baseline",
+    )
+
+    blocked = mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+    )
+
+    classifier.flaky_tests_post(run)
+
+    baseline.assert_not_called()
+    blocked.assert_not_called()
+
+    assert test.flakefighter_results == []
+
+def test_missing_execution_stores_passing_baseline(mocker):
+    """Test storing a new passing baseline execution."""
+    test = Test(
+        name="test_example",
+        executions=[],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    baseline_report = {
+        "nodeid": "test_example",
+        "outcome": "passed",
+        "setup": {"duration": 0.1},
+        "call": {"duration": 0.3},
+        "teardown": {"duration": 0.1},
+    }
+
+    mocker.patch.object(
+        classifier,
+        "_measure_own_baseline",
+        return_value={
+            "test_example": {
+                "outcome": "passed",
+                "duration": 0.5,
+                "report": baseline_report,
+            }
+        },
+    )
+
+    mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value={
+            "test_example": {
+                "outcome": "passed",
+            }
+        },
+    )
+
+    classifier.flaky_tests_post(run)
+
+    assert len(test.executions) == 1
+
+    execution = test.executions[0]
+
+    assert execution.outcome == "passed"
+    assert json.loads(execution.report) == baseline_report
+
+    assert len(test.flakefighter_results) == 1
+    assert test.flakefighter_results[0].flaky is False
+
+def test_missing_execution_stores_failed_baseline(mocker):
+    """Test storing a failed baseline execution."""
+    test = Test(
+        name="test_example",
+        executions=[],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    baseline_report = {
+        "nodeid": "test_example",
+        "outcome": "failed",
+    }
+
+    mocker.patch.object(
+        classifier,
+        "_measure_own_baseline",
+        return_value={
+            "test_example": {
+                "outcome": "failed",
+                "duration": None,
+                "report": baseline_report,
+            }
+        },
+    )
+
+    blocked = mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+    )
+
+    classifier.flaky_tests_post(run)
+
+    assert len(test.executions) == 1
+
+    execution = test.executions[0]
+
+    assert execution.outcome == "failed"
+    assert json.loads(execution.report) == baseline_report
+
+    blocked.assert_not_called()
+
+    assert test.flakefighter_results == []
+
+def test_socket_blocked_is_flaky(mocker):
+    """Test network-sensitive classification."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed", 0.5),
+        ],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value={
+            "test_example": {
+                "outcome": "failed",
+                "call": {
+                    "outcome": "failed",
+                    "longrepr": (
+                        "pytest_socket.SocketBlockedError: "
+                        "socket disabled"
+                    ),
+                },
+            }
+        },
+    )
+
+    classifier.flaky_tests_post(run)
+
+    assert len(test.flakefighter_results) == 1
+    assert (
+        test.flakefighter_results[0].name
+        == "NetworkClassifier"
+    )
+    assert test.flakefighter_results[0].flaky is True
+
+def test_unrelated_failure_is_genuine(mocker):
+    """Test unrelated blocked-run failure."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed", 0.5),
+        ],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value={
+            "test_example": {
+                "outcome": "failed",
+                "call": {
+                    "outcome": "failed",
+                    "longrepr": "AssertionError",
+                },
+            }
+        },
+    )
+
+    classifier.flaky_tests_post(run)
+
+    assert len(test.flakefighter_results) == 1
+    assert test.flakefighter_results[0].flaky is False
+
+def test_timeout_is_inconclusive(mocker):
+    """Test blocked-run timeout."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed", 0.5),
+        ],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value={
+            "test_example": {
+                "outcome": "failed",
+                "call": {
+                    "outcome": "failed",
+                    "longrepr": (
+                        "Failed: Timeout >1.5s"
+                    ),
+                },
+            }
+        },
+    )
+
+    classifier.flaky_tests_post(run)
+
+    assert test.flakefighter_results == []
+
+def test_missing_blocked_report_is_inconclusive(mocker):
+    """Test missing blocked report."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed", 0.5),
+        ],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value={},
+    )
+
+    classifier.flaky_tests_post(run)
+
+    assert test.flakefighter_results == []
+
+def test_blocked_run_failure_is_inconclusive(mocker):
+    """Test failed blocked batch."""
+    test = Test(
+        name="test_example",
+        executions=[
+            _execution("passed", 0.5),
+        ],
+    )
+
+    run = Run(tests=[test])
+
+    classifier = NetworkClassifier()
+
+    mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+        return_value=None,
+    )
+
+    classifier.flaky_tests_post(run)
+
+    assert test.flakefighter_results == []
+
+def test_no_tests(mocker):
+    """Test empty run."""
+    run = Run(tests=[])
+
+    classifier = NetworkClassifier()
+
+    blocked = mocker.patch.object(
+        classifier,
+        "_run_with_disabled_socket",
+    )
+
+    classifier.flaky_tests_post(run)
+
+    blocked.assert_not_called()

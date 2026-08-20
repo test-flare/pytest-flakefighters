@@ -20,6 +20,10 @@ Here, :code:`<FlakeFighterClass>` is the class of the flakefighter you wish to c
    run_live=false # run the classifier at the end of the test suite
    threshold=0.8 # Cosine similarity >= 0.8 is classed as a match
 
+  [tool.pytest.ini_options.pytest_flakefighters.flakefighters.network_classifier.NetworkClassifier]
+  root="."
+  extra_pytest_args=[] # does not support run_live 
+
    [tool.pytest.ini_options.pytest_flakefighters.flakefighters.coverage_independence.CoverageIndependence]
    run_live=false # run the classifier at the end of the test suite
    threshold=0.1 # Distance <= 0.1 is classed as "similar"
@@ -48,4 +52,6 @@ These are detailed below.
 .. autoclass:: pytest_flakefighters.flakefighters.traceback_matching.TracebackMatching
   :noindex:
 .. autoclass:: pytest_flakefighters.flakefighters.traceback_matching.CosineSimilarity
+  :noindex:
+.. autoclass:: pytest_flakefighters.flakefighters.network_classifier.NetworkClassifier
   :noindex:

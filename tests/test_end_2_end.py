@@ -7,7 +7,10 @@ import os
 
 import pandas as pd
 from pytest import ExitCode
-
+from pytest_flakefighters.database_management import (
+    Database,
+    FlakefighterResult,
+)
 
 def test_real_failures(pytester, diff_cov_repo):
     """Make sure that genuine failures are labelled as such."""
@@ -358,3 +361,134 @@ def test_gatorgrade_parameterised(pytester, gatorgrade_dir):
         "CosineSimilarity",
     )
     result.assert_outcomes(passed=1)
+
+def test_network_classifier_non_network_test(pytester):
+    """
+    Test that a non-network test is classified as genuine.
+    """
+
+    pytester.makepyfile(
+        network_subject="""
+def test_no_network():
+    assert 2 + 2 == 4
+"""
+    )
+
+    db_path = pytester.path / "flakefighters.db"
+
+    result = pytester.runpytest(
+        "network_subject.py",
+        "-s",
+        "--flakefighters",
+        "--active-flakefighters",
+        "NetworkClassifier",
+        "--database-url",
+        f"sqlite:///{db_path}",
+    )
+
+    result.assert_outcomes(passed=1)
+
+    db = Database(f"sqlite:///{db_path}")
+    run = db.load_runs(limit=1)[0]
+
+    test = run.tests[0]
+
+    assert test.name.endswith("test_no_network")
+    assert len(test.flakefighter_results) == 1
+
+    network_result = test.flakefighter_results[0]
+
+    assert network_result.name == "NetworkClassifier"
+    assert network_result.flaky is False
+    assert network_result.test_id == test.id
+    assert network_result.test_execution_id is None
+
+    db.close()
+
+
+def test_network_classifier_network_test(pytester):
+    """
+    Test that a network-dependent test is classified as flaky.
+    """
+
+    pytester.makepyfile(
+        network_subject="""
+import socket
+
+
+def test_external_network():
+    sock = socket.create_connection(
+        ("example.com", 80),
+        timeout=3,
+    )
+    sock.close()
+"""
+    )
+
+    db_path = pytester.path / "flakefighters.db"
+
+    result = pytester.runpytest(
+        "network_subject.py",
+        "-s",
+        "--flakefighters",
+        "--active-flakefighters",
+        "NetworkClassifier",
+        "--database-url",
+        f"sqlite:///{db_path}",
+    )
+
+    result.assert_outcomes(passed=1)
+
+    db = Database(f"sqlite:///{db_path}")
+    run = db.load_runs(limit=1)[0]
+
+    test = run.tests[0]
+
+    assert test.name.endswith("test_external_network")
+    assert len(test.flakefighter_results) == 1
+
+    network_result = test.flakefighter_results[0]
+
+    assert network_result.name == "NetworkClassifier"
+    assert network_result.flaky is True
+    assert network_result.test_id == test.id
+    assert network_result.test_execution_id is None
+
+    db.close()
+
+
+def test_network_classifier_failed_baseline_is_inconclusive(pytester):
+    """
+    Test that an already failing test is not classified.
+    """
+
+    pytester.makepyfile(
+        network_subject="""
+def test_already_failing():
+    assert False
+"""
+    )
+
+    db_path = pytester.path / "flakefighters.db"
+
+    result = pytester.runpytest(
+        "network_subject.py",
+        "-s",
+        "--flakefighters",
+        "--active-flakefighters",
+        "NetworkClassifier",
+        "--database-url",
+        f"sqlite:///{db_path}",
+    )
+
+    result.assert_outcomes(failed=1)
+
+    db = Database(f"sqlite:///{db_path}")
+    run = db.load_runs(limit=1)[0]
+
+    test = run.tests[0]
+
+    assert test.name.endswith("test_already_failing")
+    assert test.flakefighter_results == []
+
+    db.close()

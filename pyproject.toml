@@ -17,8 +17,8 @@ dependencies = [
   "unidiff>=0.7.5",
   "importlib_metadata",
   "pytest-socket>=0.6.0",
-  "pytest-json-report>=1.5"
-
+  "pytest-json-report>=1.5",
+  "pytest-timeout>=2.4.0",
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 dynamic = ["version"]

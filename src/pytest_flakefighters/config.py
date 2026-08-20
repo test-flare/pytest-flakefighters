@@ -9,6 +9,7 @@ from pytest_flakefighters.rerun_strategies import All, FlakyFailure, PreviouslyF
 
 rerun_strategies = {"ALL": All, "FLAKY_FAILURE": FlakyFailure, "PREVIOUSLY_FLAKY": PreviouslyFlaky}
 
+
 options = {
     ("--root",): {
         "dest": "root",

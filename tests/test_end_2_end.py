@@ -7,10 +7,7 @@ import os
 
 import pandas as pd
 from pytest import ExitCode
-from pytest_flakefighters.database_management import (
-    Database,
-    FlakefighterResult,
-)
+from pytest_flakefighters.database_management import Database
 
 def test_real_failures(pytester, diff_cov_repo):
     """Make sure that genuine failures are labelled as such."""

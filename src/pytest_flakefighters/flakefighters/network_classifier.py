@@ -78,8 +78,7 @@ class NetworkClassifier(FlakeFighter):
                 continue
 
             duration = (
-                execution.end_time
-                - execution.start_time
+                execution.end_time - execution.start_time
             ).total_seconds()
 
             if duration >= 0:
@@ -98,6 +97,67 @@ class NetworkClassifier(FlakeFighter):
             self.MIN_TIMEOUT,
             longest * self.TIMEOUT_MULTIPLIER,
         )
+
+    @staticmethod
+    def _load_report(
+        report_path: Path,
+    ) -> Optional[dict[str, Any]]:
+        """Load a pytest JSON report."""
+        try:
+            with report_path.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                return json.load(file)
+        except (
+            json.JSONDecodeError,
+            OSError,
+        ):
+            return None
+
+    @staticmethod
+    def _report_duration(
+        test_report: dict[str, Any],
+    ) -> Optional[float]:
+        """Return total duration for a successful test report."""
+        outcome = str(
+            test_report.get(
+                "outcome",
+                "",
+            )
+        ).lower()
+
+        if outcome != "passed":
+            return None
+
+        total = 0.0
+
+        for phase_name in (
+            "setup",
+            "call",
+            "teardown",
+        ):
+            phase = test_report.get(
+                phase_name
+            )
+
+            if not isinstance(
+                phase,
+                dict,
+            ):
+                continue
+
+            phase_duration = phase.get(
+                "duration"
+            )
+
+            if isinstance(
+                phase_duration,
+                (int, float),
+            ):
+                total += phase_duration
+
+        return total
 
     def _measure_own_baseline(
         self,
@@ -123,11 +183,8 @@ class NetworkClassifier(FlakeFighter):
                 "--json-report",
                 f"--json-report-file={report_path}",
                 "-q",
+                *self.extra_pytest_args,
             ]
-
-            command.extend(
-                self.extra_pytest_args
-            )
 
             completed = self._run_pytest_subprocess(
                 command,
@@ -141,16 +198,11 @@ class NetworkClassifier(FlakeFighter):
             ):
                 return {}
 
-            try:
-                with report_path.open(
-                    "r",
-                    encoding="utf-8",
-                ) as file:
-                    report = json.load(file)
-            except (
-                json.JSONDecodeError,
-                OSError,
-            ):
+            report = self._load_report(
+                report_path
+            )
+
+            if report is None:
                 return {}
 
             tests = report.get(
@@ -187,41 +239,11 @@ class NetworkClassifier(FlakeFighter):
                     )
                 ).lower()
 
-                duration = None
-
-                if outcome == "passed":
-                    total = 0.0
-
-                    for phase_name in (
-                        "setup",
-                        "call",
-                        "teardown",
-                    ):
-                        phase = test_report.get(
-                            phase_name
-                        )
-
-                        if not isinstance(
-                            phase,
-                            dict,
-                        ):
-                            continue
-
-                        phase_duration = phase.get(
-                            "duration"
-                        )
-
-                        if isinstance(
-                            phase_duration,
-                            (int, float),
-                        ):
-                            total += phase_duration
-
-                    duration = total
-
                 measured[nodeid] = {
                     "outcome": outcome,
-                    "duration": duration,
+                    "duration": self._report_duration(
+                        test_report
+                    ),
                     "report": test_report,
                 }
 
@@ -422,11 +444,8 @@ class NetworkClassifier(FlakeFighter):
                 "--json-report",
                 f"--json-report-file={report_path}",
                 "-q",
+                *self.extra_pytest_args,
             ]
-
-            command.extend(
-                self.extra_pytest_args
-            )
 
             completed = self._run_pytest_subprocess(
                 command,
@@ -440,16 +459,11 @@ class NetworkClassifier(FlakeFighter):
             ):
                 return None
 
-            try:
-                with report_path.open(
-                    "r",
-                    encoding="utf-8",
-                ) as file:
-                    report = json.load(file)
-            except (
-                json.JSONDecodeError,
-                OSError,
-            ):
+            report = self._load_report(
+                report_path
+            )
+
+            if report is None:
                 return None
 
             tests = report.get(
@@ -477,14 +491,11 @@ class NetworkClassifier(FlakeFighter):
                 )
             }
 
-    def flaky_tests_post(
+    def _collect_existing_baselines(
         self,
         run: Run,
     ):
-        """Classify tests after the normal pytest run."""
-        if not run.tests:
-            return
-
+        """Separate existing passing tests from tests needing a baseline."""
         eligible_tests = []
         missing_tests = []
         durations = []
@@ -508,10 +519,8 @@ class NetworkClassifier(FlakeFighter):
                 test
             )
 
-            duration = (
-                self._longest_passed_duration(
-                    test
-                )
+            duration = self._longest_passed_duration(
+                test
             )
 
             if duration is not None:
@@ -519,81 +528,66 @@ class NetworkClassifier(FlakeFighter):
                     duration
                 )
 
-        if missing_tests:
-            measured = (
-                self._measure_own_baseline(
-                    [
-                        test.name
-                        for test
-                        in missing_tests
-                    ]
-                )
-            )
-
-            for test in missing_tests:
-                baseline = measured.get(
-                    test.name
-                )
-
-                if baseline is None:
-                    continue
-
-                outcome = baseline[
-                    "outcome"
-                ]
-                duration = baseline[
-                    "duration"
-                ]
-                report = baseline[
-                    "report"
-                ]
-
-                execution = TestExecution(
-                    outcome=outcome,
-                    report=json.dumps(
-                        report
-                    ),
-                )
-
-                test.executions.append(
-                    execution
-                )
-
-                if outcome != "passed":
-                    continue
-
-                eligible_tests.append(
-                    test
-                )
-
-                if duration is not None:
-                    durations.append(
-                        duration
-                    )
-
-        if not eligible_tests:
-            return
-
-        per_test_timeout = (
-            self._compute_timeout(
-                durations
-            )
+        return (
+            eligible_tests,
+            missing_tests,
+            durations,
         )
 
-        blocked_reports = (
-            self._run_with_disabled_socket(
-                [
-                    test.name
-                    for test
-                    in eligible_tests
-                ],
-                per_test_timeout,
-            )
-        )
-
-        if blocked_reports is None:
+    def _add_missing_baselines(
+        self,
+        missing_tests,
+        eligible_tests,
+        durations,
+    ):
+        """Measure and store baselines for tests with no executions."""
+        if not missing_tests:
             return
 
+        measured = self._measure_own_baseline(
+            [
+                test.name
+                for test in missing_tests
+            ]
+        )
+
+        for test in missing_tests:
+            baseline = measured.get(
+                test.name
+            )
+
+            if baseline is None:
+                continue
+
+            execution = TestExecution(
+                outcome=baseline["outcome"],
+                report=json.dumps(
+                    baseline["report"]
+                ),
+            )
+
+            test.executions.append(
+                execution
+            )
+
+            if baseline["outcome"] != "passed":
+                continue
+
+            eligible_tests.append(
+                test
+            )
+
+            if baseline["duration"] is not None:
+                durations.append(
+                    baseline["duration"]
+                )
+
+    def _store_blocked_results(
+        self,
+        eligible_tests,
+        blocked_reports,
+    ):
+        """Store classifications from blocked-network reports."""
         for test in eligible_tests:
             report = blocked_reports.get(
                 test.name
@@ -611,8 +605,7 @@ class NetworkClassifier(FlakeFighter):
                 self._report_failed(
                     report
                 )
-                and
-                self._report_confirms_socket_blocked(
+                and self._report_confirms_socket_blocked(
                     report
                 )
             )
@@ -629,3 +622,48 @@ class NetworkClassifier(FlakeFighter):
                 test.flakefighter_results.append(
                     result
                 )
+
+    def flaky_tests_post(
+        self,
+        run: Run,
+    ):
+        """Classify tests after the normal pytest run."""
+        if not run.tests:
+            return
+
+        (
+            eligible_tests,
+            missing_tests,
+            durations,
+        ) = self._collect_existing_baselines(
+            run
+        )
+
+        self._add_missing_baselines(
+            missing_tests,
+            eligible_tests,
+            durations,
+        )
+
+        if not eligible_tests:
+            return
+
+        per_test_timeout = self._compute_timeout(
+            durations
+        )
+
+        blocked_reports = self._run_with_disabled_socket(
+            [
+                test.name
+                for test in eligible_tests
+            ],
+            per_test_timeout,
+        )
+
+        if blocked_reports is None:
+            return
+
+        self._store_blocked_results(
+            eligible_tests,
+            blocked_reports,
+        )

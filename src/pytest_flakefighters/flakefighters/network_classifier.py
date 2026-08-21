@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
-from pytest_flakefighters.database_management import FlakefighterResult, Run, TestExecution
+from pytest_flakefighters.database_management import FlakefighterResult, Run
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
 SOCKET_BLOCKED_EXCEPTION_NAMES = ("SocketBlockedError", "SocketConnectBlockedError")
@@ -80,88 +80,6 @@ class NetworkClassifier(FlakeFighter):
                 return json.load(file)
         except (json.JSONDecodeError, OSError):
             return None
-
-    @staticmethod
-    def _report_duration(test_report: dict[str, Any]) -> Optional[float]:
-        """Return total duration for a successful test report."""
-        outcome = str(test_report.get("outcome", "")).lower()
-
-        if outcome != "passed":
-            return None
-
-        total = 0.0
-
-        for phase_name in ("setup", "call", "teardown"):
-            phase = test_report.get(phase_name)
-
-            if not isinstance(phase, dict):
-                continue
-
-            phase_duration = phase.get("duration")
-
-            if isinstance(phase_duration, (int, float)):
-                total += phase_duration
-
-        return total
-
-    def _measure_own_baseline(self, nodeids: list[str]) -> dict[str, dict[str, Any]]:
-        """Run missing tests normally."""
-        if not nodeids:
-            return {}
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            report_path = Path(tmpdir) / "network_baseline_report.json"
-
-            command = [
-                sys.executable,
-                "-m",
-                "pytest",
-                *nodeids,
-                "-p",
-                "no:flakefighters",
-                "--json-report",
-                f"--json-report-file={report_path}",
-                "-q",
-                *self.extra_pytest_args,
-            ]
-
-            completed = self._run_pytest_subprocess(
-                command, cwd=self.root, env=self._subprocess_env()
-            )
-
-            if not completed or not report_path.exists():
-                return {}
-
-            report = self._load_report(report_path)
-
-            if report is None:
-                return {}
-
-            tests = report.get("tests", [])
-
-            if not isinstance(tests, list):
-                return {}
-
-            measured = {}
-
-            for test_report in tests:
-                if not isinstance(test_report, dict):
-                    continue
-
-                nodeid = test_report.get("nodeid")
-
-                if not nodeid:
-                    continue
-
-                outcome = str(test_report.get("outcome", "")).lower()
-
-                measured[nodeid] = {
-                    "outcome": outcome,
-                    "duration": self._report_duration(test_report),
-                    "report": test_report,
-                }
-
-            return measured
 
     def _report_text(self, test_report: dict[str, Any]) -> str:
         """Combine report failure text."""
@@ -284,12 +202,10 @@ class NetworkClassifier(FlakeFighter):
     def _collect_existing_baselines(self, run: Run):
         """Separate existing passing tests from tests needing a baseline."""
         eligible_tests = []
-        missing_tests = []
         durations = []
 
         for test in run.tests:
             if not test.executions:
-                missing_tests.append(test)
                 continue
 
             has_pass = any(execution.outcome == "passed" for execution in test.executions)
@@ -304,34 +220,7 @@ class NetworkClassifier(FlakeFighter):
             if duration is not None:
                 durations.append(duration)
 
-        return (eligible_tests, missing_tests, durations)
-
-    def _add_missing_baselines(self, missing_tests, eligible_tests, durations):
-        """Measure and store baselines for tests with no executions."""
-        if not missing_tests:
-            return
-
-        measured = self._measure_own_baseline([test.name for test in missing_tests])
-
-        for test in missing_tests:
-            baseline = measured.get(test.name)
-
-            if baseline is None:
-                continue
-
-            execution = TestExecution(
-                outcome=baseline["outcome"], report=json.dumps(baseline["report"])
-            )
-
-            test.executions.append(execution)
-
-            if baseline["outcome"] != "passed":
-                continue
-
-            eligible_tests.append(test)
-
-            if baseline["duration"] is not None:
-                durations.append(baseline["duration"])
+        return eligible_tests, durations
 
     def _store_blocked_results(self, eligible_tests, blocked_reports):
         """Store classifications from blocked-network reports."""
@@ -358,9 +247,7 @@ class NetworkClassifier(FlakeFighter):
         if not run.tests:
             return
 
-        (eligible_tests, missing_tests, durations) = self._collect_existing_baselines(run)
-
-        self._add_missing_baselines(missing_tests, eligible_tests, durations)
+        eligible_tests, durations = self._collect_existing_baselines(run)
 
         if not eligible_tests:
             return

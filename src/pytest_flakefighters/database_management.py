@@ -294,6 +294,7 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
 
 @dataclass
 class OrderDependencyExecution(Base):
+    """Store the outcome of a test executed under a perturbed test order."""
     __tablename__ = "order_dependency_execution"
 
     run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)

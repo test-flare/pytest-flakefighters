@@ -1,3 +1,9 @@
+"""
+Unit tests for the OrderDependency FlakeFighter.
+"""
+
+# pylint: disable=protected-access
+
 import json
 import os
 from types import SimpleNamespace
@@ -8,7 +14,7 @@ from pytest_flakefighters.flakefighters.order_dependency import OrderDependency
 
 
 def make_test(name, outcomes):
-    """Create a test with current-run execution outcomes."""
+    """Create a simple test with current-run execution outcomes."""
     return SimpleNamespace(
         name=name,
         executions=[SimpleNamespace(outcome=outcome) for outcome in outcomes],
@@ -18,7 +24,7 @@ def make_test(name, outcomes):
 
 
 def make_database(previous_runs=None):
-    """Create a database object with optional previous runs."""
+    """Create a simple database object with optional previous runs."""
     return SimpleNamespace(previous_runs=previous_runs or [])
 
 
@@ -70,6 +76,8 @@ def test_live_classification_is_not_used():
 def test_collect_current_baseline():
     """
     The current FlakeFighters run should provide the baseline.
+
+    Skipped outcomes are ignored and the latest usable execution is used.
     """
 
     run = SimpleNamespace(
@@ -103,7 +111,10 @@ def test_random_order_uses_seed():
 
     tests = ["test_one", "test_two", "test_three"]
 
-    assert fighter._make_order(tests, 5) == fighter._make_order(tests, 5)
+    first_order = fighter._make_order(tests, 5)
+    second_order = fighter._make_order(tests, 5)
+
+    assert first_order == second_order
 
 
 def test_random_seed_starts_at_zero():
@@ -200,6 +211,8 @@ def test_store_order_execution():
 def test_classification():
     """
     PASS + FAIL means order-dependent.
+
+    A single outcome means genuine.
     """
 
     flaky_test = make_test("test_flaky", ["passed"])
@@ -229,7 +242,7 @@ def test_reverse_flow(mocker):
         tests=[test_one, test_two], root="/project", order_dependency_executions=[]
     )
 
-    mocker.patch.object(
+    run_ordered_tests = mocker.patch.object(
         fighter,
         "_run_ordered_tests",
         return_value={
@@ -250,7 +263,7 @@ def test_reverse_flow(mocker):
     # test_one remained PASS.
     assert test_one.flakefighter_results[0].flaky is False
 
-    fighter._run_ordered_tests.assert_called_once_with(
+    run_ordered_tests.assert_called_once_with(
         ordered_nodeids=["test_two", "test_one"], cwd="/project"
     )
 
@@ -258,7 +271,7 @@ def test_reverse_flow(mocker):
 def test_random_flow_uses_history_and_fresh_run(mocker):
     """
     Random mode should combine the current baseline,
-    historical random evidence and a fresh shuffled run.
+    historical random evidence, and a fresh shuffled run.
     """
 
     previous_test = SimpleNamespace(name="test_example")
@@ -298,11 +311,11 @@ def test_no_baseline_does_nothing(mocker):
 
     run = SimpleNamespace(tests=[make_test("test_skip", ["skipped"])])
 
-    run_tests = mocker.patch.object(fighter, "_run_ordered_tests")
+    run_ordered_tests = mocker.patch.object(fighter, "_run_ordered_tests")
 
     fighter.flaky_tests_post(run)
 
-    run_tests.assert_not_called()
+    run_ordered_tests.assert_not_called()
 
 
 def test_missing_or_empty_perturbation_is_ignored(mocker):
@@ -320,11 +333,11 @@ def test_missing_or_empty_perturbation_is_ignored(mocker):
         side_effect=[None, {"tests": [{"nodeid": "test_example", "outcome": "skipped"}]}],
     )
 
-    store = mocker.patch.object(fighter, "_store_order_execution")
+    store_order_execution = mocker.patch.object(fighter, "_store_order_execution")
 
     fighter.flaky_tests_post(run)
 
-    store.assert_not_called()
+    store_order_execution.assert_not_called()
     assert test.flakefighter_results[0].flaky is False
 
 
@@ -347,7 +360,7 @@ def test_run_ordered_tests(mocker, tmp_path):
 
     fighter = OrderDependency(database=make_database(), extra_pytest_args=["-s"])
 
-    def fake_subprocess(command, **kwargs):
+    def fake_subprocess(command, **_kwargs):
         report_argument = next(
             argument for argument in command if argument.startswith("--json-report-file=")
         )
@@ -382,13 +395,15 @@ def test_missing_subprocess_report_returns_none(mocker, tmp_path):
 
     fighter = OrderDependency(database=make_database())
 
-    def remove_report(command, **kwargs):
+    def remove_report(command, **_kwargs):
         report_argument = next(
             argument for argument in command if argument.startswith("--json-report-file=")
         )
 
         report_path = report_argument.split("=", 1)[1]
-        os.remove(report_path)
+
+        if os.path.exists(report_path):
+            os.remove(report_path)
 
     mocker.patch(
         "pytest_flakefighters.flakefighters.order_dependency.subprocess.run",

@@ -6,6 +6,7 @@ import os
 
 from pytest_flakefighters.flakefighters.traceback_matching import CosineSimilarity
 from pytest_flakefighters.main import pytest_configure
+from pytest_flakefighters.flakefighters.order_dependency import OrderDependency
 
 
 def test_flakefighters(pytester, diff_cov_repo):
@@ -151,4 +152,52 @@ def test_active_flakefighters_active_cmd(pytester, flaky_reruns_repo):
     assert [f.__class__ for f in plugin.flakefighters] == [CosineSimilarity]
     assert [f.params() for f in plugin.flakefighters] == [
         {"run_live": False, "root": flaky_reruns_repo.working_dir, "threshold": 1}
+    ]
+
+def test_active_order_dependency_cmd(pytester, flaky_reruns_repo):
+    """
+    Test that OrderDependency is activated with its default configuration.
+    """
+    config = pytester.parseconfig(
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+        "--flakefighters",
+        "--active-flakefighters",
+        "OrderDependency",
+    )
+    pytest_configure(config)
+
+    plugin = config.pluginmanager.get_plugin("flakefighter_plugin")
+
+    assert [f.__class__ for f in plugin.flakefighters] == [OrderDependency]
+    assert [f.params() for f in plugin.flakefighters] == [
+        {
+            "mode": "random",
+            "order_runs": 1,
+        }
+    ]
+    
+def test_order_dependency_cmd_options(pytester, flaky_reruns_repo):
+    """
+    Test that OrderDependency command-line options are passed to the classifier.
+    """
+    config = pytester.parseconfig(
+        os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
+        "--flakefighters",
+        "--active-flakefighters",
+        "OrderDependency",
+        "--order-mode",
+        "reverse",
+        "--order-runs",
+        "5",
+    )
+    pytest_configure(config)
+
+    plugin = config.pluginmanager.get_plugin("flakefighter_plugin")
+
+    assert [f.__class__ for f in plugin.flakefighters] == [OrderDependency]
+    assert [f.params() for f in plugin.flakefighters] == [
+        {
+            "mode": "reverse",
+            "order_runs": 5,
+        }
     ]

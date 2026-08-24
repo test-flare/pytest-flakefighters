@@ -358,3 +358,31 @@ def test_gatorgrade_parameterised(pytester, gatorgrade_dir):
         "CosineSimilarity",
     )
     result.assert_outcomes(passed=1)
+
+def test_order_dependency_reverse(pytester):
+    """Test that OrderDependency detects a reverse order dependent test."""
+
+    test_file = pytester.makepyfile(
+        """
+            state = []
+        
+            def test_polluter():
+                state.append("dirty")
+            
+            def test_victim():
+                assert state == []
+        """
+    )
+
+    result = pytester.runpytest(
+        str(test_file),
+        "--flakefighters",
+        "--active-flakefighters",
+        "OrderDependency",
+        "--order-mode=reverse",
+        "--display-verdicts",
+        "-s",
+    )
+
+    result.assert_outcomes(passed=1, failed=1)
+    result.stdout.fnmatch_lines(["*OrderDependency: flaky*"])

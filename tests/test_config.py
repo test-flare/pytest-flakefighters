@@ -6,7 +6,6 @@ import os
 
 from pytest_flakefighters.flakefighters.traceback_matching import CosineSimilarity
 from pytest_flakefighters.main import pytest_configure
-from pytest_flakefighters.flakefighters.order_dependency import OrderDependency
 
 
 def test_flakefighters(pytester, diff_cov_repo):

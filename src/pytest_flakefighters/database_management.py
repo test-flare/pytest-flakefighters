@@ -393,3 +393,4 @@ class Database:
         Close the  the session when exiting a `with` block.
         """
         self.close()
+

@@ -7,11 +7,9 @@ Unit tests for the OrderDependency FlakeFighter.
 import json
 import os
 from types import SimpleNamespace
-
 import pytest
 
 from pytest_flakefighters.flakefighters.order_dependency import OrderDependency
-
 
 def make_test(name, outcomes):
     """Create a simple test with current-run execution outcomes."""
@@ -22,11 +20,9 @@ def make_test(name, outcomes):
         order_dependency_executions=[],
     )
 
-
 def make_database(previous_runs=None):
     """Create a simple database object with optional previous runs."""
     return SimpleNamespace(previous_runs=previous_runs or [])
-
 
 def test_configuration():
     """OrderDependency should use its configured mode and number of runs."""
@@ -41,7 +37,6 @@ def test_configuration():
     assert fighter.run_live is False
     assert fighter.params() == {"mode": "reverse", "order_runs": 3}
 
-
 def test_default_configuration():
     """Random mode and one perturbation run should be the defaults."""
 
@@ -49,13 +44,11 @@ def test_default_configuration():
 
     assert fighter.params() == {"mode": "random", "order_runs": 1}
 
-
 def test_invalid_mode():
     """Only random and reverse modes should be accepted."""
 
     with pytest.raises(ValueError):
         OrderDependency(database=make_database(), mode="invalid")
-
 
 def test_order_runs_cannot_be_less_than_one():
     """Random mode should always perform at least one perturbation."""
@@ -64,14 +57,12 @@ def test_order_runs_cannot_be_less_than_one():
 
     assert fighter.order_runs == 1
 
-
 def test_live_classification_is_not_used():
     """OrderDependency is a post-processing FlakeFighter."""
 
     fighter = OrderDependency(database=make_database())
 
     assert fighter.flaky_test_live(None) is None
-
 
 def test_collect_current_baseline():
     """
@@ -93,7 +84,6 @@ def test_collect_current_baseline():
 
     assert baseline == {"test_pass": "passed", "test_fail": "failed", "test_rerun": "passed"}
 
-
 def test_reverse_order():
     """Reverse mode should execute the tests in reverse order."""
 
@@ -102,7 +92,6 @@ def test_reverse_order():
     order = fighter._make_order(["test_one", "test_two", "test_three"], seed=None)
 
     assert order == ["test_three", "test_two", "test_one"]
-
 
 def test_random_order_uses_seed():
     """The same random seed should reproduce the same shuffled order."""
@@ -116,14 +105,12 @@ def test_random_order_uses_seed():
 
     assert first_order == second_order
 
-
 def test_random_seed_starts_at_zero():
     """The first random perturbation should use seed 0."""
 
     fighter = OrderDependency(database=make_database())
 
     assert fighter._next_seed() == 0
-
 
 def test_random_seed_continues_from_history():
     """New random perturbations should continue after historical seeds."""
@@ -140,7 +127,6 @@ def test_random_seed_continues_from_history():
 
     assert fighter._next_seed() == 2
 
-
 def test_extract_pass_fail_outcomes():
     """Only passed and failed outcomes should be used as evidence."""
 
@@ -156,7 +142,6 @@ def test_extract_pass_fail_outcomes():
     outcomes = OrderDependency._extract_outcomes(report)
 
     assert outcomes == {"test_pass": "passed", "test_fail": "failed"}
-
 
 def test_load_historical_random_outcomes():
     """Only previous random PASS/FAIL executions should be reused."""
@@ -177,7 +162,6 @@ def test_load_historical_random_outcomes():
     outcomes = fighter._load_historical_outcomes()
 
     assert outcomes["test_example"] == {"passed", "failed"}
-
 
 def test_store_order_execution():
     """Perturbation outcomes should be attached to their run and test."""
@@ -207,12 +191,9 @@ def test_store_order_execution():
     assert test_one.order_dependency_executions == [execution]
     assert test_two.order_dependency_executions == []
 
-
 def test_classification():
     """
-    PASS + FAIL means order-dependent.
-
-    A single outcome means genuine.
+    PASS + FAIL means order dependent.
     """
 
     flaky_test = make_test("test_flaky", ["passed"])
@@ -226,7 +207,6 @@ def test_classification():
     assert flaky_test.flakefighter_results[0].flaky is True
     assert genuine_test.flakefighter_results[0].flaky is False
     assert ignored_test.flakefighter_results == []
-
 
 def test_reverse_flow(mocker):
     """
@@ -268,7 +248,6 @@ def test_reverse_flow(mocker):
         ordered_nodeids=["test_two", "test_one"], cwd="/project"
     )
 
-
 def test_random_flow_uses_history_and_fresh_run(mocker):
     """
     Random mode should combine the current baseline,
@@ -284,9 +263,7 @@ def test_random_flow_uses_history_and_fresh_run(mocker):
     )
 
     fighter = OrderDependency(database=make_database([previous_run]), mode="random", order_runs=1)
-
     test = make_test("test_example", ["passed"])
-
     run = SimpleNamespace(tests=[test], root="/project", order_dependency_executions=[])
 
     mocker.patch.object(
@@ -304,28 +281,21 @@ def test_random_flow_uses_history_and_fresh_run(mocker):
     # Therefore both outcomes have been observed.
     assert test.flakefighter_results[0].flaky is True
 
-
 def test_no_baseline_does_nothing(mocker):
     """No perturbation should run when there are no usable baseline outcomes."""
 
     fighter = OrderDependency(database=make_database())
-
     run = SimpleNamespace(tests=[make_test("test_skip", ["skipped"])])
-
     run_ordered_tests = mocker.patch.object(fighter, "_run_ordered_tests")
-
     fighter.flaky_tests_post(run)
 
     run_ordered_tests.assert_not_called()
-
 
 def test_missing_or_empty_perturbation_is_ignored(mocker):
     """A failed or unusable perturbation run should not become evidence."""
 
     fighter = OrderDependency(database=make_database(), mode="random", order_runs=2)
-
     test = make_test("test_example", ["passed"])
-
     run = SimpleNamespace(tests=[test], root="/project", order_dependency_executions=[])
 
     mocker.patch.object(
@@ -341,7 +311,6 @@ def test_missing_or_empty_perturbation_is_ignored(mocker):
     store_order_execution.assert_not_called()
     assert test.flakefighter_results[0].flaky is False
 
-
 def test_subprocess_environment(monkeypatch):
     """Pytest and coverage settings should not leak into the perturbation run."""
 
@@ -354,7 +323,6 @@ def test_subprocess_environment(monkeypatch):
     assert "PYTEST_ADDOPTS" not in env
     assert "COVERAGE_FILE" not in env
     assert env["KEEP_ME"] == "yes"
-
 
 def test_run_ordered_tests(mocker, tmp_path):
     """The perturbation subprocess should return its JSON report."""
@@ -380,7 +348,6 @@ def test_run_ordered_tests(mocker, tmp_path):
 
     assert report["tests"][0]["outcome"] == "passed"
 
-
 def test_invalid_subprocess_report_returns_none(mocker, tmp_path):
     """An unreadable perturbation report should simply be ignored."""
 
@@ -389,7 +356,6 @@ def test_invalid_subprocess_report_returns_none(mocker, tmp_path):
     mocker.patch("pytest_flakefighters.flakefighters." "order_dependency.subprocess.run")
 
     assert fighter._run_ordered_tests(["test_example"], str(tmp_path)) is None
-
 
 def test_missing_subprocess_report_returns_none(mocker, tmp_path):
     """A missing perturbation report should simply be ignored."""

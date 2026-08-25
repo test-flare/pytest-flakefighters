@@ -211,6 +211,10 @@ run_live=false # run the classifier at the end of the test suite
 threshold=0.1 # Distance <= 0.1 is classed as "similar"
 metric=hamming # Use Hamming distance
 linkage_method=complete # Use complete linkage for clustering
+
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.order_dependency.OrderDependency]
+mode=random # use random test order perturbation, alternatively use "reverse"
+order_runs=1 # number of shuffled executions performed in random mode
 ```
 
 > [!NOTE]

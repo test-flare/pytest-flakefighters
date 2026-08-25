@@ -100,6 +100,9 @@ variable-rgx = "^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
 minversion = "6.0"
 testpaths = ["tests"]
 
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.order_dependency.OrderDependency]
+mode = "random"
+order_runs = 1
 
 [tool.setuptools_scm]
 write_to = "src/_version.py"

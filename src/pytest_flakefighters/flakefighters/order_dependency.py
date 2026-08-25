@@ -20,6 +20,7 @@ from pytest_flakefighters.database_management import (
 )
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
+
 class OrderDependency(FlakeFighter):
     """
     Detect tests whose outcome changes when execution order changes.
@@ -27,11 +28,12 @@ class OrderDependency(FlakeFighter):
     Modes:
         random:
             One shuffled run is performed by default.
-            --order-runs controls how many fresh shuffled runs are performed.
+            The ``order_runs`` configuration parameter controls how many
+            fresh shuffled runs are performed.
 
         reverse:
             Execute the test suite once in reverse order.
-            --order-runs does not apply to reverse mode.
+            ``order_runs`` does not apply to reverse mode.
     """
 
     RANDOM = "random"
@@ -57,12 +59,12 @@ class OrderDependency(FlakeFighter):
     @classmethod
     def from_config(cls, config: dict):
         """
-        Create the classifier from the pytest/FlakeFighters configuration.
+        Create the classifier from the FlakeFighter-specific configuration.
         """
 
         return cls(
             database=config["database"],
-            mode=config.get("order_mode") or cls.RANDOM,
+            mode=config.get("mode") or cls.RANDOM,
             order_runs=int(config.get("order_runs") or 1),
         )
 
@@ -82,6 +84,7 @@ class OrderDependency(FlakeFighter):
         """
         Run the order-dependency experiment and classify tests.
         """
+
         baseline = self._collect_baseline(run)
 
         if not baseline:
@@ -183,7 +186,7 @@ class OrderDependency(FlakeFighter):
             execution.seed
             for previous_run in self.database.previous_runs
             for execution in previous_run.order_dependency_executions
-            if (execution.mode == self.RANDOM and execution.seed is not None)
+            if execution.mode == self.RANDOM and execution.seed is not None
         }
 
         if not seeds:
@@ -324,8 +327,8 @@ class OrderDependency(FlakeFighter):
     @staticmethod
     def _classify(run: Run, outcomes: dict[str, set[str]]):
         """
-        A test is classified as order-dependent whenever both a passing
-        and failing outcome are observed in the relevant evidence.
+        Classify a test as order-dependent when both a passing
+        and failing outcome have been observed.
         """
 
         for test in run.tests:

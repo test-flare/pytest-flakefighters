@@ -64,21 +64,6 @@ options = {
         "help": "The strategy used to determine which tests to rerun. Supported options are:\n  "
         + "\n  ".join(f"{name} - {strat.help()}" for name, strat in rerun_strategies.items()),
     },
-    ("--order-mode",): {
-        "action": "store",
-        "type": str,
-        "choices": ["random", "reverse"],
-        "default": "random",
-        "help": "Order perturbation mode used by OrderDependency. "
-        "Supported modes are random and reverse.",
-        },
-    ("--order-runs",): {
-        "action": "store",
-        "type": int,
-        "default": 1,
-        "help": "Number of fresh random-order executions performed by "
-        "OrderDependency. Reverse mode always performs exactly one run.",
-    },
     ("--time-immemorial",): {
         "action": "store",
         "default": None,

@@ -34,7 +34,7 @@ def test_configuration():
     database = make_database()
 
     fighter = OrderDependency.from_config(
-        {"database": database, "order_mode": "reverse", "order_runs": 3}
+        {"database": database, "mode": "reverse", "order_runs": 3}
     )
 
     assert fighter.database is database
@@ -230,7 +230,8 @@ def test_classification():
 
 def test_reverse_flow(mocker):
     """
-    Reverse mode should compare the current baseline with one reversed execution.
+    Reverse mode should compare the current baseline
+    with one reversed execution.
     """
 
     fighter = OrderDependency(database=make_database(), mode="reverse")
@@ -371,7 +372,7 @@ def test_run_ordered_tests(mocker, tmp_path):
             json.dump({"tests": [{"nodeid": "test_example", "outcome": "passed"}]}, report)
 
     mocker.patch(
-        "pytest_flakefighters.flakefighters.order_dependency.subprocess.run",
+        "pytest_flakefighters.flakefighters." "order_dependency.subprocess.run",
         side_effect=fake_subprocess,
     )
 
@@ -385,7 +386,7 @@ def test_invalid_subprocess_report_returns_none(mocker, tmp_path):
 
     fighter = OrderDependency(database=make_database())
 
-    mocker.patch("pytest_flakefighters.flakefighters.order_dependency.subprocess.run")
+    mocker.patch("pytest_flakefighters.flakefighters." "order_dependency.subprocess.run")
 
     assert fighter._run_ordered_tests(["test_example"], str(tmp_path)) is None
 
@@ -406,7 +407,7 @@ def test_missing_subprocess_report_returns_none(mocker, tmp_path):
             os.remove(report_path)
 
     mocker.patch(
-        "pytest_flakefighters.flakefighters.order_dependency.subprocess.run",
+        "pytest_flakefighters.flakefighters." "order_dependency.subprocess.run",
         side_effect=remove_report,
     )
 

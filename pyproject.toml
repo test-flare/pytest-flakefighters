@@ -16,6 +16,9 @@ dependencies = [
   "sqlalchemy>=2",
   "unidiff>=0.7.5",
   "importlib_metadata",
+  "pytest-socket>=0.6.0",
+  "pytest-json-report>=1.5",
+  "pytest-timeout>=2.4.0",
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 dynamic = ["version"]
@@ -32,6 +35,7 @@ CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:Cosine
 CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
 DiffCov = "pytest_flakefighters.flakefighters.diff_cov:DiffCov"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
+NetworkClassifier = "pytest_flakefighters.flakefighters.network_classifier:NetworkClassifier" 
 
 [project.optional-dependencies]
 pg = ["psycopg2>2.9"]
@@ -47,7 +51,6 @@ dev = [
   "pylint",
   "pytest-cov",
   "pytest-html",
-  "pytest-json-report>=1.5",
   "sphinx-autoapi",
   "sphinx_rtd_theme",
   "autoclasstoc",

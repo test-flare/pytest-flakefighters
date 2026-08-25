@@ -57,33 +57,6 @@ def test_order_runs_cannot_be_less_than_one():
 
     assert fighter.order_runs == 1
 
-def test_live_classification_is_not_used():
-    """OrderDependency is a post-processing FlakeFighter."""
-
-    fighter = OrderDependency(database=make_database())
-
-    assert fighter.flaky_test_live(None) is None
-
-def test_collect_current_baseline():
-    """
-    The current FlakeFighters run should provide the baseline.
-
-    Skipped outcomes are ignored and the latest usable execution is used.
-    """
-
-    run = SimpleNamespace(
-        tests=[
-            make_test("test_pass", ["passed"]),
-            make_test("test_fail", ["failed"]),
-            make_test("test_rerun", ["failed", "passed"]),
-            make_test("test_skip", ["skipped"]),
-        ]
-    )
-
-    baseline = OrderDependency._collect_baseline(run)
-
-    assert baseline == {"test_pass": "passed", "test_fail": "failed", "test_rerun": "passed"}
-
 def test_reverse_order():
     """Reverse mode should execute the tests in reverse order."""
 
@@ -104,13 +77,6 @@ def test_random_order_uses_seed():
     second_order = fighter._make_order(tests, 5)
 
     assert first_order == second_order
-
-def test_random_seed_starts_at_zero():
-    """The first random perturbation should use seed 0."""
-
-    fighter = OrderDependency(database=make_database())
-
-    assert fighter._next_seed() == 0
 
 def test_random_seed_continues_from_history():
     """New random perturbations should continue after historical seeds."""

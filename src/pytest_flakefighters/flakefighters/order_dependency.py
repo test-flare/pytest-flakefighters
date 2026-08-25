@@ -20,7 +20,6 @@ from pytest_flakefighters.database_management import (
 )
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
-
 class OrderDependency(FlakeFighter):
     """
     Detect tests whose outcome changes when execution order changes.

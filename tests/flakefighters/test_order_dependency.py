@@ -340,7 +340,7 @@ def test_run_ordered_tests(mocker, tmp_path):
             json.dump({"tests": [{"nodeid": "test_example", "outcome": "passed"}]}, report)
 
     mocker.patch(
-        "pytest_flakefighters.flakefighters." "order_dependency.subprocess.run",
+        "pytest_flakefighters.flakefighters.order_dependency.subprocess.run",
         side_effect=fake_subprocess,
     )
 
@@ -353,7 +353,7 @@ def test_invalid_subprocess_report_returns_none(mocker, tmp_path):
 
     fighter = OrderDependency(database=make_database())
 
-    mocker.patch("pytest_flakefighters.flakefighters." "order_dependency.subprocess.run")
+    mocker.patch("pytest_flakefighters.flakefighters.order_dependency.subprocess.run")
 
     assert fighter._run_ordered_tests(["test_example"], str(tmp_path)) is None
 
@@ -373,7 +373,7 @@ def test_missing_subprocess_report_returns_none(mocker, tmp_path):
             os.remove(report_path)
 
     mocker.patch(
-        "pytest_flakefighters.flakefighters." "order_dependency.subprocess.run",
+        "pytest_flakefighters.flakefighters.order_dependency.subprocess.run",
         side_effect=remove_report,
     )
 

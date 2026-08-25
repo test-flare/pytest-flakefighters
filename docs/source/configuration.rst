@@ -20,9 +20,8 @@ Here, :code:`<FlakeFighterClass>` is the class of the flakefighter you wish to c
    run_live=false # run the classifier at the end of the test suite
    threshold=0.8 # Cosine similarity >= 0.8 is classed as a match
 
-  [tool.pytest.ini_options.pytest_flakefighters.flakefighters.network_classifier.NetworkClassifier]
-  root="."
-  extra_pytest_args=[] # does not support run_live 
+   [tool.pytest.ini_options.pytest_flakefighters.flakefighters.network_classifier.NetworkClassifier]
+   # Does not support run_live=true 
 
    [tool.pytest.ini_options.pytest_flakefighters.flakefighters.coverage_independence.CoverageIndependence]
    run_live=false # run the classifier at the end of the test suite

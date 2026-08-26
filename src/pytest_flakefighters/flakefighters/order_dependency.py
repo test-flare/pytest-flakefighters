@@ -150,7 +150,7 @@ class OrderDependency(FlakeFighter):
             usable_outcomes = [
                 execution.outcome
                 for execution in test.executions
-                if execution.outcome in ("passed", "failed")
+                if execution.outcome in ("passed", "failed", "skipped")
             ]
 
             if not usable_outcomes:
@@ -265,7 +265,7 @@ class OrderDependency(FlakeFighter):
             if nodeid is None:
                 continue
 
-            if outcome not in ("passed", "failed"):
+            if outcome not in ("passed", "failed", "skipped"):
                 continue
 
             outcomes[nodeid] = outcome
@@ -284,7 +284,7 @@ class OrderDependency(FlakeFighter):
                 if execution.mode != self.RANDOM:
                     continue
 
-                if execution.outcome not in ("passed", "failed"):
+                if execution.outcome not in ("passed", "failed", "skipped"):
                     continue
 
                 outcomes[execution.test.name].add(execution.outcome)
@@ -308,7 +308,7 @@ class OrderDependency(FlakeFighter):
         for position, nodeid in enumerate(ordered_nodeids):
             outcome = outcomes.get(nodeid)
 
-            if outcome not in ("passed", "failed"):
+            if outcome not in ("passed", "failed", "skipped"):
                 continue
 
             test = tests_by_name.get(nodeid)

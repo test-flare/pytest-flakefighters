@@ -387,7 +387,7 @@ def test_run_ordered_tests(mocker, tmp_path):
         with open(report_path, "w", encoding="utf-8") as report:
             json.dump({"tests": [{"nodeid": "test_example", "outcome": "passed"}]}, report)
 
-    mocker.patch(("pytest_flakefighters.flakefighters." "order_dependency.subprocess.run"), side_effect=fake_subprocess)
+    mocker.patch(("pytest_flakefighters.flakefighters.order_dependency.subprocess.run"), side_effect=fake_subprocess)
 
     report = fighter._run_ordered_tests(["test_example"], str(tmp_path))
 
@@ -409,7 +409,7 @@ def test_run_ordered_tests_preserves_skipped_report(mocker, tmp_path):
         with open(report_path, "w", encoding="utf-8") as report:
             json.dump({"tests": [{"nodeid": "test_skip", "outcome": "skipped"}]}, report)
 
-    mocker.patch(("pytest_flakefighters.flakefighters." "order_dependency.subprocess.run"), side_effect=fake_subprocess)
+    mocker.patch(("pytest_flakefighters.flakefighters.order_dependency.subprocess.run"), side_effect=fake_subprocess)
 
     report = fighter._run_ordered_tests(["test_skip"], str(tmp_path))
 
@@ -423,7 +423,7 @@ def test_invalid_subprocess_report_returns_none(mocker, tmp_path):
 
     fighter = OrderDependency(database=make_database())
 
-    mocker.patch(("pytest_flakefighters.flakefighters." "order_dependency.subprocess.run"))
+    mocker.patch(("pytest_flakefighters.flakefighters.order_dependency.subprocess.run"))
 
     assert fighter._run_ordered_tests(["test_example"], str(tmp_path)) is None
 
@@ -443,7 +443,7 @@ def test_missing_subprocess_report_returns_none(mocker, tmp_path):
         if os.path.exists(report_path):
             os.remove(report_path)
 
-    mocker.patch(("pytest_flakefighters.flakefighters." "order_dependency.subprocess.run"), side_effect=remove_report)
+    mocker.patch(("pytest_flakefighters.flakefighters.order_dependency.subprocess.run"), side_effect=remove_report)
 
     assert fighter._run_ordered_tests(["test_example"], str(tmp_path)) is None
 

@@ -147,10 +147,10 @@ def test_load_historical_random_outcomes():
     assert outcomes["test_example"] == {"passed", "failed"}
 
     assert "other_test" not in outcomes
-
+    
     no_commit_run = SimpleNamespace(commit_sha=None)
-
-    assert fighter._load_historical_outcomes(no_commit_run) == {}
+    
+    assert not fighter._load_historical_outcomes(no_commit_run)
 
 def test_store_order_execution():
     """Perturbation outcomes should be attached to their run and test."""

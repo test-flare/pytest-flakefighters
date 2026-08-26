@@ -20,6 +20,7 @@ from pytest_flakefighters.database_management import (
 )
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
+
 class OrderDependency(FlakeFighter):
     """
     Detect tests whose outcome changes when execution order changes.
@@ -39,11 +40,7 @@ class OrderDependency(FlakeFighter):
     REVERSE = "reverse"
 
     def __init__(
-        self,
-        database: Database,
-        mode: str = RANDOM,
-        order_runs: int = 1,
-        extra_pytest_args: Optional[list[str]] = None,
+        self, database: Database, mode: str = RANDOM, order_runs: int = 1, extra_pytest_args: Optional[list[str]] = None
     ):
         super().__init__(run_live=False)
 
@@ -95,7 +92,7 @@ class OrderDependency(FlakeFighter):
             outcomes[nodeid].add(outcome)
 
         if self.mode == self.RANDOM:
-            historical = self._load_historical_outcomes()
+            historical = self._load_historical_outcomes(run)
 
             for nodeid, historical_outcomes in historical.items():
                 outcomes[nodeid].update(historical_outcomes)
@@ -126,11 +123,7 @@ class OrderDependency(FlakeFighter):
                 continue
 
             self._store_order_execution(
-                run=run,
-                mode=self.mode,
-                seed=seed,
-                ordered_nodeids=ordered_nodeids,
-                outcomes=perturbed_outcomes,
+                run=run, mode=self.mode, seed=seed, ordered_nodeids=ordered_nodeids, outcomes=perturbed_outcomes
             )
 
             for nodeid, outcome in perturbed_outcomes.items():
@@ -142,15 +135,16 @@ class OrderDependency(FlakeFighter):
     def _collect_baseline(run: Run) -> dict[str, str]:
         """
         Collect the current normal PASS/FAIL outcome for each test.
+
+        Skipped outcomes are ignored because they do not provide
+        a usable pass/fail result.
         """
 
         baseline = {}
 
         for test in run.tests:
             usable_outcomes = [
-                execution.outcome
-                for execution in test.executions
-                if execution.outcome in ("passed", "failed", "skipped")
+                execution.outcome for execution in test.executions if execution.outcome in ("passed", "failed")
             ]
 
             if not usable_outcomes:
@@ -185,7 +179,7 @@ class OrderDependency(FlakeFighter):
             execution.seed
             for previous_run in self.database.previous_runs
             for execution in previous_run.order_dependency_executions
-            if execution.mode == self.RANDOM and execution.seed is not None
+            if (execution.mode == self.RANDOM and execution.seed is not None)
         }
 
         if not seeds:
@@ -253,38 +247,52 @@ class OrderDependency(FlakeFighter):
     @staticmethod
     def _extract_outcomes(report: dict[str, Any]) -> dict[str, str]:
         """
-        Extract only PASS/FAIL outcomes from the pytest JSON report.
+        Extract only call-phase PASS/FAIL outcomes.
+
+        This matches how FlakeFighters stores normal
+        TestExecution outcomes. Skipped outcomes are ignored.
         """
 
         outcomes = {}
 
         for test_report in report.get("tests", []):
             nodeid = test_report.get("nodeid")
-            outcome = test_report.get("outcome")
+            call = test_report.get("call")
 
             if nodeid is None:
                 continue
 
-            if outcome not in ("passed", "failed", "skipped"):
+            if not isinstance(call, dict):
+                continue
+
+            outcome = call.get("outcome")
+
+            if outcome not in ("passed", "failed"):
                 continue
 
             outcomes[nodeid] = outcome
 
         return outcomes
 
-    def _load_historical_outcomes(self) -> dict[str, set[str]]:
+    def _load_historical_outcomes(self, run: Run) -> dict[str, set[str]]:
         """
-        Load historical random-order outcomes.
+        Load historical random-order outcomes from the same commit.
         """
 
         outcomes = defaultdict(set)
 
+        if not run.commit_sha:
+            return outcomes
+
         for previous_run in self.database.previous_runs:
+            if previous_run.commit_sha != run.commit_sha:
+                continue
+
             for execution in previous_run.order_dependency_executions:
                 if execution.mode != self.RANDOM:
                     continue
 
-                if execution.outcome not in ("passed", "failed", "skipped"):
+                if execution.outcome not in ("passed", "failed"):
                     continue
 
                 outcomes[execution.test.name].add(execution.outcome)
@@ -293,11 +301,7 @@ class OrderDependency(FlakeFighter):
 
     @staticmethod
     def _store_order_execution(
-        run: Run,
-        mode: str,
-        seed: Optional[int],
-        ordered_nodeids: list[str],
-        outcomes: dict[str, str],
+        run: Run, mode: str, seed: Optional[int], ordered_nodeids: list[str], outcomes: dict[str, str]
     ):
         """
         Store one complete perturbation execution.
@@ -308,7 +312,7 @@ class OrderDependency(FlakeFighter):
         for position, nodeid in enumerate(ordered_nodeids):
             outcome = outcomes.get(nodeid)
 
-            if outcome not in ("passed", "failed", "skipped"):
+            if outcome not in ("passed", "failed"):
                 continue
 
             test = tests_by_name.get(nodeid)
@@ -316,11 +320,10 @@ class OrderDependency(FlakeFighter):
             if test is None:
                 continue
 
-            execution = OrderDependencyExecution(
-                mode=mode, seed=seed, position=position, outcome=outcome
-            )
+            execution = OrderDependencyExecution(mode=mode, seed=seed, position=position, outcome=outcome)
 
             run.order_dependency_executions.append(execution)
+
             test.order_dependency_executions.append(execution)
 
     @staticmethod

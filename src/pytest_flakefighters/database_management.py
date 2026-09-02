@@ -87,7 +87,12 @@ class Run(Base):
         cascade="all, delete",
         passive_deletes=True,
     )
-
+    order_dependency_executions = relationship(
+        "OrderDependencyExecution",
+        backref="run",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
 
 # >>>>>>> main
 
@@ -134,6 +139,12 @@ class Test(Base):
     )
     flakefighter_results = relationship(
         "FlakefighterResult",
+        backref="test",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+    order_dependency_executions = relationship(
+        "OrderDependencyExecution",
         backref="test",
         cascade="all, delete",
         passive_deletes=True,
@@ -281,6 +292,17 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
         """
         return "flaky" if self.flaky else "genuine"
 
+@dataclass
+class OrderDependencyExecution(Base):
+    """Store the outcome of a test executed under a perturbed test order."""
+    __tablename__ = "order_dependency_execution"
+
+    run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
+    test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=False)
+    mode: Mapped[str] = Column(String, nullable=False)
+    seed: Mapped[int] = Column(Integer, nullable=True)
+    position: Mapped[int] = Column(Integer, nullable=False)
+    outcome: Mapped[str] = Column(String, nullable=False)
 
 class Database:
     """
@@ -371,3 +393,4 @@ class Database:
         Close the  the session when exiting a `with` block.
         """
         self.close()
+

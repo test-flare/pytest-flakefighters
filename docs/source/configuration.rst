@@ -26,18 +26,23 @@ Here, :code:`<FlakeFighterClass>` is the class of the flakefighter you wish to c
    metric=hamming # Use Hamming distance
    linkage_method=complete # Use complete linkage for clustering
 
+   [tool.pytest.ini_options.pytest_flakefighters.flakefighters.order_dependency.OrderDependency]
+    mode=random # use random test order perturbation, alternatively use "reverse"
+    order_runs=1 # number of shuffled executions performed in random mode
+
 .. note::
    The above configuration is just an example meant to demonstrate the various parameters that can be supplied, and is not a recommendation or "default".
 
    You should choose the parameter values that are appropriate for your project, especially threshold values for **CosineSimilarity** and **CoverageIndependence**.
 
-The default behaviour of the plugin is to run every flakefigher with a specified configuration.
+The default behaviour of the plugin is to run every flakefighter with a specified configuration.
 However, there are two ways to toggle flakefighters on and off.
 Firstly, you can add  :code:`active=false` to the configuration, as for :code:`DeFlaker` in the above example configuration.
-Secondly, you can use the :code:`--active-flakefighters` commandline argument, e.g. :code:`--active-flakefighters DeFlaker CosineSimilarity` would run just the :code:`DeFlaker` and :code:`CosineSimilarity` flakefighers.
-Note that the commandline argument overides the value of :code:`active` specified in the configuration file.
+Secondly, you can use the :code:`--active-flakefighters` commandline argument, e.g. :code:`--active-flakefighters DeFlaker CosineSimilarity` would run just the :code:`DeFlaker` and :code:`CosineSimilarity` flakefighters.
+Note that the commandline argument overrides the value of :code:`active` specified in the configuration file.
 
-Every flakefighter has a :code:`run_live` option, which can be set to :code:`true` to classify each test execution as flaky immediately after it is run, or :code:`false` to clasify all tests at once at the end, although individual flakefighters may only support one of these.
+Every flakefighter has a :code:`run_live` option, which can be set to :code:`true` to classify each test execution as flaky immediately after it is run, or :code:`false` to classify all tests at once at the end, although individual flakefighters may only support one of these.
+For example, :code:`OrderDependency` only supports post processing because it must first observe the normal test run and then execute the tests again in a perturbed order.
 Individual flakefighters have their own configurable options.
 These are detailed below.
 
@@ -48,4 +53,6 @@ These are detailed below.
 .. autoclass:: pytest_flakefighters.flakefighters.traceback_matching.TracebackMatching
   :noindex:
 .. autoclass:: pytest_flakefighters.flakefighters.traceback_matching.CosineSimilarity
+  :noindex:
+.. autoclass:: pytest_flakefighters.flakefighters.order_dependency.OrderDependency
   :noindex:

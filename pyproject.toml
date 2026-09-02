@@ -11,6 +11,7 @@ dependencies = [
   "nltk>=3.9",
   "pandas>=2.3",
   "pytest>=7",
+  "pytest-json-report>=1.5",
   "pyyaml>=5",
   "scikit-learn>1",
   "sqlalchemy>=2",
@@ -32,6 +33,7 @@ CosineSimilarity = "pytest_flakefighters.flakefighters.traceback_matching:Cosine
 CoverageIndependence = 'pytest_flakefighters.flakefighters.coverage_independence:CoverageIndependence'
 DiffCov = "pytest_flakefighters.flakefighters.diff_cov:DiffCov"
 TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:TracebackMatching"
+OrderDependency = "pytest_flakefighters.flakefighters.order_dependency:OrderDependency"
 
 [project.optional-dependencies]
 pg = ["psycopg2>2.9"]
@@ -47,7 +49,6 @@ dev = [
   "pylint",
   "pytest-cov",
   "pytest-html",
-  "pytest-json-report>=1.5",
   "sphinx-autoapi",
   "sphinx_rtd_theme",
   "autoclasstoc",
@@ -99,6 +100,9 @@ variable-rgx = "^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
 minversion = "6.0"
 testpaths = ["tests"]
 
+[tool.pytest.ini_options.pytest_flakefighters.flakefighters.order_dependency.OrderDependency]
+mode = "random"
+order_runs = 1
 
 [tool.setuptools_scm]
 write_to = "src/_version.py"

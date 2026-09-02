@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from pytest_flakefighters.database_management import Database, Run, Test
+from pytest_flakefighters.database_management import Database, Run, Test, OrderDependencyExecution
 
 
 def test_run_saving(pytester, flaky_triangle_repo):
@@ -278,3 +278,54 @@ def test_display_outcomes_verdicts(pytester, flaky_reruns_repo):
     for run in [runs[0]] + runs[3:]:
         assert f"Flakefighter Verdicts {run.start_time}" not in result.stdout.str()
     db.close()
+
+def test_order_dependency_execution_saving(tmp_path):
+    """Test that order dependency executions are saved."""
+
+    database_path = tmp_path / "flakefighters.db"
+
+    with Database(f"sqlite:///{database_path}") as db:
+        run = Run(
+            start_time=datetime.now(),
+            root="/test/project",
+            commit_sha="abc123",
+        )
+
+        test = Test(
+            fspath="tests/test_example.py",
+            line_no=1,
+            name="tests/test_example.py::test_example",
+            skipped=False,
+        )
+
+        run.tests.append(test)
+
+        execution = OrderDependencyExecution(
+            mode="random",
+            seed=0,
+            position=0,
+            outcome="passed",
+        )
+
+        run.order_dependency_executions.append(execution)
+        test.order_dependency_executions.append(execution)
+
+        db.save(run)
+
+    with Database(f"sqlite:///{database_path}") as db:
+        runs = db.load_runs()
+
+        assert len(runs) == 1
+
+        run = runs[0]
+
+        assert len(run.order_dependency_executions) == 1
+
+        execution = run.order_dependency_executions[0]
+
+        assert execution.mode == "random"
+        assert execution.seed == 0
+        assert execution.position == 0
+        assert execution.outcome == "passed"
+
+        assert execution.test.name == "tests/test_example.py::test_example"

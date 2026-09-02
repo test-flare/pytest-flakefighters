@@ -60,8 +60,8 @@ class OrderDependency(FlakeFighter):
 
         return cls(
             database=config["database"],
-            mode=config.get("mode") or cls.RANDOM,
-            order_runs=int(config.get("order_runs") or 1),
+            mode=config.get("mode", cls.RANDOM),
+            order_runs=int(config.get("order_runs", 1)),
         )
 
     def params(self) -> dict:
@@ -209,7 +209,7 @@ class OrderDependency(FlakeFighter):
         ]
 
         try:
-            subprocess.run(
+            completed = subprocess.run(
                 command,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -218,6 +218,9 @@ class OrderDependency(FlakeFighter):
                 check=False,
             )
 
+            if completed.returncode not in (0, 1):
+                return None
+            
             if not os.path.exists(report_path):
                 return None
 

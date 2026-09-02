@@ -341,14 +341,12 @@ def test_order_dependency_reverse(pytester):
         """
     )
 
-    pytester.makefile(
-        ".toml",
-        pyproject="""
-            [tool.pytest.ini_options.pytest_flakefighters.flakefighters.order_dependency.OrderDependency]
-            mode = "reverse"   
-            """,
-    )
-
+    with open(os.path.join(pytester.path, "pyproject.toml"), "w") as f:
+        f.write(
+            "[tool.pytest.ini_options.pytest_flakefighters.flakefighters.order_dependency.OrderDependency]\n"
+        )
+        f.write('mode="reverse"\n')
+    
     result = pytester.runpytest(
         str(test_file),
         "--flakefighters",

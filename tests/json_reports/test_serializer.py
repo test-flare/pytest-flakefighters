@@ -1,4 +1,5 @@
 """Tests for FlakeFighters JSON serialization."""
+# pylint: disable=duplicate-code
 
 import json
 from datetime import datetime
@@ -8,7 +9,6 @@ from pytest_flakefighters.json_reports.serializer import (
     export_database_to_json,
     export_json_schema,
 )
-
 
 def test_export_database_to_json(tmp_path):
     """Test exporting database runs to JSON."""
@@ -30,7 +30,6 @@ def test_export_database_to_json(tmp_path):
 
     assert data["runs"][0]["id"] == 1
     assert data["runs"][0]["commit_sha"] == "abc123"
-
 
 def test_export_json_schema(tmp_path):
     """Test exporting the JSON Schema."""

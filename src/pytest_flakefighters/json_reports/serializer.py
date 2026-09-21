@@ -6,7 +6,6 @@ from typing import Iterable
 
 from .models import FlakefightersReport, RunModel
 
-
 def export_database_to_json(runs: Iterable, output_path: Path) -> None:
     """Export database runs to JSON."""
     report = FlakefightersReport(runs=[RunModel.model_validate(run) for run in runs])
@@ -18,7 +17,6 @@ def export_database_to_json(runs: Iterable, output_path: Path) -> None:
         report.model_dump_json(indent=2),
         encoding="utf-8",
     )
-
 
 def export_json_schema(output_path: Path) -> None:
     """Export the JSON Schema describing a FlakeFighters report."""

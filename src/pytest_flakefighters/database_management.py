@@ -327,6 +327,7 @@ class Database:
         self.export_json(run)
 
     def export_json(self, run: Run):
+        """Export FlakeFighters results and their JSON Schema."""
         if run.root:
             output_dir = Path(run.root)
 

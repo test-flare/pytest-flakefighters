@@ -1,11 +1,12 @@
 """Pydantic models describing the FlakeFighters JSON output."""
 
+# pylint: disable=too-few-public-methods
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import git
 from pydantic import BaseModel, ConfigDict, field_serializer
-
 
 class FlakefighterResultModel(BaseModel):
     """A result produced by a FlakeFighter."""
@@ -17,7 +18,6 @@ class FlakefighterResultModel(BaseModel):
     test_id: Optional[int]
     name: str
     flaky: bool
-
 
 class ActiveFlakeFighterModel(BaseModel):
     """A FlakeFighter enabled for a run."""
@@ -34,7 +34,6 @@ class ActiveFlakeFighterModel(BaseModel):
         """Convert Python-specific parameter values to JSON representations."""
         return {key: value.working_tree_dir if isinstance(value, git.Repo) else value for key, value in params.items()}
 
-
 class TracebackEntryModel(BaseModel):
     """An entry in a test exception traceback."""
 
@@ -48,7 +47,6 @@ class TracebackEntryModel(BaseModel):
     statement: str
     source: str
 
-
 class TestExceptionModel(BaseModel):
     """An exception raised during a test execution."""
 
@@ -58,7 +56,6 @@ class TestExceptionModel(BaseModel):
     execution_id: int
     name: str
     traceback: List[TracebackEntryModel]
-
 
 class TestExecutionModel(BaseModel):
     """A single execution of a test."""
@@ -78,7 +75,6 @@ class TestExecutionModel(BaseModel):
     flakefighter_results: List[FlakefighterResultModel]
     exception: Optional[TestExceptionModel]
 
-
 class TestModel(BaseModel):
     """A test belonging to a run."""
 
@@ -94,7 +90,6 @@ class TestModel(BaseModel):
     flakefighter_results: List[FlakefighterResultModel]
     executions: List[TestExecutionModel]
 
-
 class RunModel(BaseModel):
     """A pytest-flakefighters run."""
 
@@ -108,7 +103,6 @@ class RunModel(BaseModel):
 
     active_flakefighters: List[ActiveFlakeFighterModel]
     tests: List[TestModel]
-
 
 class FlakefightersReport(BaseModel):
     """Complete FlakeFighters JSON report."""

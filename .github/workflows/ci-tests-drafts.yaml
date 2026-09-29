@@ -32,7 +32,7 @@ jobs:
         if: matrix.pytest-version
         run: uv pip install "pytest${{ matrix.pytest-version }}"
       - name: Test with pytest
-        run: uv run --no-sync pytest -p no:flakefighters --cov=src --cov-report=xml
+        run: uv run --no-sync task test
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v5
         with:

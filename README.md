@@ -222,7 +222,9 @@ Further details can be found in the [configuration documentation](https://pytest
 ## Contributing
 
 Contributions are very welcome.
-Tests can be run with `uv run pytest` (or `pytest` after activating the virtual environment). Please ensure the coverage at least stays the same before you submit a pull request.
+Before submitting a pull request, run all checks (formatting, linting and tests) with `uv run task all`.
+Individual checks can be run with `uv run task format-check`, `uv run task lint` and `uv run task test`, and `uv run task format` fixes formatting automatically.
+Please ensure the coverage at least stays the same before you submit a pull request.
 
 ## Flake Fighters
 

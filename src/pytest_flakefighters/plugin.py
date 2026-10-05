@@ -219,9 +219,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 <h4>Flakefighter Results</h4>
                                 <div id="ff-{report.nodeid.replace("::", "_")}"></div>
                                 <table style="width:100%"><tbody><tr>"""
-                                + "".join(
-                                    [
-                                        f"""
+                                + "".join([f"""
                                         <td>
                                         <p><strong>Start time:</strong> {
                                             execution.start_time
@@ -248,10 +246,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                         }
                                         </ul>
                                         </td>
-                                        """
-                                        for execution in test.executions
-                                    ]
-                                )
+                                        """ for execution in test.executions])
                                 + "</tr></tbody></table>",
                                 "extension": "html",
                                 "format_type": "html",
@@ -393,11 +388,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 "<thead><tr><td>Test</td><td>Flakefighter results</td></tr></thead>",
                 "<tbody>",
             ]
-            + [
-                f"<tr><td>{nodeid}</td><td>"
-                + "".join(
-                    [
-                        f"""<ul>
+            + [f"<tr><td>{nodeid}</td><td>" + "".join([f"""<ul>
                             {
                             "".join(
                                 [
@@ -410,12 +401,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 ]
                             )
                         }
-                            </ul>"""
-                    ]
-                )
-                + "</td></tr>"
-                for nodeid, report in self.test_reports.items()
-            ]
+                            </ul>"""]) + "</td></tr>" for nodeid, report in self.test_reports.items()]
             + [
                 "</tbody>",
                 "</table>",

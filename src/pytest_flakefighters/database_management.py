@@ -129,9 +129,7 @@ class Test(Base):
     line_no: Mapped[int] = Column(Integer)
     name: Mapped[str] = Column(String)
     skipped: Mapped[bool] = Column(Boolean, default=False)
-    executions = relationship(
-        "TestExecution", backref="test", cascade="all, delete", passive_deletes=True
-    )
+    executions = relationship("TestExecution", backref="test", cascade="all, delete", passive_deletes=True)
     flakefighter_results = relationship(
         "FlakefighterResult",
         backref="test",
@@ -211,9 +209,7 @@ class TestException(Base):  # pylint: disable=R0902
 
     __tablename__ = "test_exception"
 
-    execution_id: Mapped[int] = Column(
-        Integer, ForeignKey("test_execution.id"), nullable=False
-    )
+    execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=False)
     name: Mapped[str] = Column(String)
     traceback = relationship(
         "TracebackEntry",
@@ -236,9 +232,7 @@ class TracebackEntry(Base):  # pylint: disable=R0902
     :ivar source: The surrounding source code.
     """
 
-    exception_id: Mapped[int] = Column(
-        Integer, ForeignKey("test_exception.id"), nullable=False
-    )
+    exception_id: Mapped[int] = Column(Integer, ForeignKey("test_exception.id"), nullable=False)
     path: Mapped[str] = Column(String)
     lineno: Mapped[int] = Column(Integer)
     colno: Mapped[int] = Column(Integer)
@@ -259,9 +253,7 @@ class FlakefighterResult(Base):  # pylint: disable=R0902
 
     __tablename__ = "flakefighter_result"
 
-    test_execution_id: Mapped[int] = Column(
-        Integer, ForeignKey("test_execution.id"), nullable=True
-    )
+    test_execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=True)
     test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=True)
     name: Mapped[str] = Column(String)
     flaky: Mapped[bool] = Column(Boolean)
@@ -320,9 +312,7 @@ class Database:
         self.session.add(run)
         if self.time_immemorial is not None:
             expiry_date = datetime.now() - self.time_immemorial
-            for r in self.session.query(Run).filter(
-                Run.created_at < (expiry_date - self.time_immemorial)
-            ):
+            for r in self.session.query(Run).filter(Run.created_at < (expiry_date - self.time_immemorial)):
                 self.session.delete(r)
 
         if self.store_max_runs is not None:
@@ -337,11 +327,7 @@ class Database:
         :returns: List of pytest runs with DiffCov flakefighter active with the target_sha.
         """
         with Session(self.engine) as session:
-            return (
-                session.execute(select(Run).where(Run.commit_sha == target_sha))
-                .scalars()
-                .all()
-            )
+            return session.execute(select(Run).where(Run.commit_sha == target_sha)).scalars().all()
 
     def load_runs(self, limit: int = None):
         """
@@ -349,9 +335,7 @@ class Database:
 
         :param limit: The maximum number of runs to return (these will be most recent runs).
         """
-        return self.session.scalars(
-            select(Run).order_by(desc(Run.start_time)).limit(limit)
-        ).all()
+        return self.session.scalars(select(Run).order_by(desc(Run.start_time)).limit(limit)).all()
 
     def close(self):
         """

@@ -76,9 +76,7 @@ def fixture_gatorgrade_repo(tmpdir_factory):
     os.chdir(repo_root)
     os.mkdir("test_assignment")
     with open(os.path.join("test_assignment", "result.txt"), "w", encoding="utf8") as f:
-        f.write(
-            "✓  Complete all TODOs\n✓  Use an if statement\n✓  Complete all TODOs\nPassed 3/3 (100%) of checks"
-        )
+        f.write("✓  Complete all TODOs\n✓  Use an if statement\n✓  Complete all TODOs\nPassed 3/3 (100%) of checks")
     return repo_root
 
 

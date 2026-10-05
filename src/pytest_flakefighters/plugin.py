@@ -80,8 +80,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.run = Run(  # pylint: disable=E1123
             root=root,
             active_flakefighters=[
-                ActiveFlakeFighter(name=f.__class__.__name__, params=f.params())
-                for f in flakefighters
+                ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
             ],
             start_time=datetime.now(),
         )
@@ -166,17 +165,14 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         test = Test(  # pylint: disable=E1123
             name=item.nodeid,
             fspath=os.path.join(self.root, fspath),
-            line_no=line_inx
-            + 1,  # need to add one to the line index because this indexes from zero
+            line_no=line_inx + 1,  # need to add one to the line index because this indexes from zero
             skipped=skipped,
         )
         self.run.tests.append(test)
 
         for _ in range(self.rerun_strategy.max_reruns + 1):
             item.execution_count += 1
-            item.ihook.pytest_runtest_logstart(
-                nodeid=item.nodeid, location=item.location
-            )
+            item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
             reports = runtestprotocol(item, nextitem=nextitem, log=False)
 
             for report in reports:  # up to 3 reports: setup, call, teardown
@@ -184,9 +180,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     skipped = True
                 if report.when == "call":
                     line_coverage = self.cov.get_data()
-                    line_coverage.set_query_contexts(
-                        ["collection", escape(context(item))]
-                    )
+                    line_coverage.set_query_contexts(["collection", escape(context(item))])
                     captured_output = dict(report.sections)
                     test_execution = TestExecution(  # pylint: disable=E1123
                         outcome=report.outcome,
@@ -196,8 +190,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         start_time=datetime.fromtimestamp(item.start),
                         end_time=datetime.fromtimestamp(item.stop),
                         coverage={
-                            file_path: line_coverage.lines(file_path)
-                            for file_path in line_coverage.measured_files()
+                            file_path: line_coverage.lines(file_path) for file_path in line_coverage.measured_files()
                         },
                         exception=report.exception,
                     )
@@ -205,9 +198,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     for ff in filter(lambda ff: ff.run_live, self.flakefighters):
                         ff.flaky_test_live(test_execution)
                     self.test_reports[item.nodeid] = report
-                    report.flaky = any(
-                        result.flaky for result in test_execution.flakefighter_results
-                    )
+                    report.flaky = any(result.flaky for result in test_execution.flakefighter_results)
                     # Limited pytest-json support
                     report.stage_metadata = {
                         "executions": [
@@ -215,10 +206,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 "start_time": x.start_time.isoformat(),
                                 "end_time": x.end_time.isoformat(),
                                 "outcome": test_execution.outcome,
-                                "flakefighter_results": {
-                                    r.name: r.classification
-                                    for r in x.flakefighter_results
-                                },
+                                "flakefighter_results": {r.name: r.classification for r in x.flakefighter_results},
                             }
                             for x in test.executions
                         ],
@@ -231,9 +219,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 <h4>Flakefighter Results</h4>
                                 <div id="ff-{report.nodeid.replace("::", "_")}"></div>
                                 <table style="width:100%"><tbody><tr>"""
-                                + "".join(
-                                    [
-                                        f"""
+                                + "".join([f"""
                                         <td>
                                         <p><strong>Start time:</strong> {
                                             execution.start_time
@@ -260,20 +246,14 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                         }
                                         </ul>
                                         </td>
-                                        """
-                                        for execution in test.executions
-                                    ]
-                                )
+                                        """ for execution in test.executions])
                                 + "</tr></tbody></table>",
                                 "extension": "html",
                                 "format_type": "html",
                                 "mime_type": "text/html",
                             }
                         )
-                    if (
-                        item.execution_count <= self.rerun_strategy.max_reruns
-                        and self.rerun_strategy.rerun(report)
-                    ):
+                    if item.execution_count <= self.rerun_strategy.max_reruns and self.rerun_strategy.rerun(report):
                         break  # trigger rerun
 
                 item.ihook.pytest_runtest_logreport(report=report)
@@ -331,9 +311,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             t["call"]["metadata"] = self.test_reports[t["nodeid"]].stage_metadata
 
             t["metadata"] = t.get("metadata", {}) | {
-                "flakefighter_results": self.test_reports[
-                    t["nodeid"]
-                ].flakefighter_results
+                "flakefighter_results": self.test_reports[t["nodeid"]].flakefighter_results
             }
 
     def build_outcome_string(self, test: Test) -> str:
@@ -346,12 +324,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         if test.flakefighter_results:
             if self.display_verdicts:
                 result_string.append(
-                    "Overall\n"
-                    + "\n".join(
-                        f"  {f.name}: {f.classification}"
-                        for f in test.flakefighter_results
-                    )
-                    + "\n"
+                    "Overall\n" + "\n".join(f"  {f.name}: {f.classification}" for f in test.flakefighter_results) + "\n"
                 )
         for i, execution in enumerate(test.executions):
             if execution.flakefighter_results:
@@ -359,8 +332,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     result_string.append(
                         f"Execution {i}: {execution.outcome}\n"
                         + "\n".join(
-                            f"  {f.name}: {'flaky' if f.flaky else 'genuine'}"
-                            for f in execution.flakefighter_results
+                            f"  {f.name}: {'flaky' if f.flaky else 'genuine'}" for f in execution.flakefighter_results
                         )
                     )
                 else:
@@ -381,9 +353,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 nodeid = "::".join(splitname + [testcase.get("name")])
                 flakefighter_results = ET.SubElement(testcase, "flakefighterresults")
                 if nodeid in self.test_reports:
-                    for execution in self.test_reports[nodeid].stage_metadata[
-                        "executions"
-                    ]:
+                    for execution in self.test_reports[nodeid].stage_metadata["executions"]:
                         execution_results = ET.Element(
                             "execution",
                             {
@@ -393,20 +363,18 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                             },
                         )
                         flakefighter_results.append(execution_results)
-                        for name, classification in execution[
-                            "flakefighter_results"
-                        ].items():
+                        for name, classification in execution["flakefighter_results"].items():
                             ET.SubElement(execution_results, name).text = classification
                     test_results = ET.SubElement(flakefighter_results, "test")
-                    for name, classification in self.test_reports[
-                        nodeid
-                    ].flakefighter_results.items():
+                    for name, classification in self.test_reports[nodeid].flakefighter_results.items():
                         ET.SubElement(test_results, name).text = classification
 
         tree.write(xml_path)
 
     @pytest.hookimpl(optionalhook=True)
-    def pytest_html_results_summary(self, prefix: list, summary: list, postfix: list):  # pylint: disable=unused-argument
+    def pytest_html_results_summary(
+        self, prefix: list, summary: list, postfix: list
+    ):  # pylint: disable=unused-argument
         """
         Add the test-level flakefighter results.
         :param prefix: The prefix content. UNUSED.
@@ -420,11 +388,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 "<thead><tr><td>Test</td><td>Flakefighter results</td></tr></thead>",
                 "<tbody>",
             ]
-            + [
-                f"<tr><td>{nodeid}</td><td>"
-                + "".join(
-                    [
-                        f"""<ul>
+            + [f"<tr><td>{nodeid}</td><td>" + "".join([f"""<ul>
                             {
                             "".join(
                                 [
@@ -437,12 +401,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 ]
                             )
                         }
-                            </ul>"""
-                    ]
-                )
-                + "</td></tr>"
-                for nodeid, report in self.test_reports.items()
-            ]
+                            </ul>"""]) + "</td></tr>" for nodeid, report in self.test_reports.items()]
             + [
                 "</tbody>",
                 "</table>",
@@ -477,9 +436,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                         )
 
         genuine_failure_observed = any(
-            not test.flaky
-            for test in self.run.tests
-            if any(e.outcome != "passed" for e in test.executions)
+            not test.flaky for test in self.run.tests if any(e.outcome != "passed" for e in test.executions)
         )
 
         if (

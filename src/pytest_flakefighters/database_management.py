@@ -66,7 +66,7 @@ class Run(Base):
     """
 
     start_time = Column(DateTime)
-    created_at = Column(DateTime, default=func.now())
+    created_at = Column(DateTime, default=func.now())  # pylint: disable=not-callable
     root: Mapped[str] = Column(String)
     # <<<<<<< HEAD
     # tests = relationship("Test", backref="run", cascade="all, delete")

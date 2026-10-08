@@ -2,8 +2,8 @@
 # See all available variables at https://oxsecurity.github.io/megalinter/configuration/ and in linters documentation
 
 ENABLE_LINTERS:
-  - PYTHON_PYLINT
-  - PYTHON_BLACK
+  - PYTHON_RUFF
+  - PYTHON_RUFF_FORMAT
 
 GITHUB_STATUS_REPORTER: true
 
@@ -11,4 +11,4 @@ FILTER_REGEX_INCLUDE: (src/|tests/)
 FILTER_REGEX_EXCLUDE: (tests/resources/)
 
 APPLY_FIXES: all
-PYTHON_PYLINT_CONFIG_FILE: pyproject.toml
+PYTHON_RUFF_CONFIG_FILE: pyproject.toml

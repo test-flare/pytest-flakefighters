@@ -43,13 +43,13 @@ def test_flaky_tests_post_flaky():
     Test that flaky_tests_post correctly identifies a flaky test.
     """
 
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="Test1",
                 executions=[TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]})],
             ),
-            Test(  # pylint: disable=E1123
+            Test(
                 name="Test2",
                 executions=[TestExecution(outcome="failed", coverage={"file1.py": [1, 2, 3, 6, 7]})],
             ),
@@ -66,13 +66,13 @@ def test_flaky_tests_post_not_flaky():
     Test that flaky_tests_post correctly identifies a non-flaky test.
     """
 
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="Test1",
                 executions=[TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]})],
             ),
-            Test(  # pylint: disable=E1123
+            Test(
                 name="Test2",
                 executions=[TestExecution(outcome="failed", coverage={"file1.py": [1, 2, 3, 6, 8]})],
             ),
@@ -89,9 +89,9 @@ def test_flaky_tests_post_flaky_executions():
     Test that flaky_tests_post correctly identifies a flaky test with passing and failing executions.
     """
 
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="Test1",
                 executions=[
                     TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]}),
@@ -111,9 +111,9 @@ def test_flaky_tests_post_single_execution():
     Test that flaky_tests_post gracefully handles a single execution.
     """
 
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="Test1",
                 executions=[
                     TestExecution(outcome="passed", coverage={"file1.py": [1, 2, 3, 6, 7]}),

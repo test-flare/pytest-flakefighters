@@ -145,7 +145,7 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): [1, 4, 6, 9, 10, 11, 12],
         },
     )
-    Test(  # pylint: disable=E1123
+    Test(
         name="test_create_or_delete",
         fspath=os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         line_no=9,
@@ -153,9 +153,9 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
     )
     diff_cov.flaky_test_live(test_execution)
     expected = FlakefighterResult(name="DiffCov", flaky=True)
-    assert test_execution.flakefighter_results == [
-        expected
-    ], "Expected original run of test_create_or_delete to be flaky"
+    assert test_execution.flakefighter_results == [expected], (
+        "Expected original run of test_create_or_delete to be flaky"
+    )
 
     # Add a new test and check that test_create_or_delete is still flaky
     with open(os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"), "w") as f:
@@ -206,14 +206,14 @@ def test_line_modified_by_target_commit(flaky_reruns_repo):
         lines = len(f.readlines())
 
     expected_lines_changed = {flaky_reruns_py: [23]}
-    assert (
-        diff_cov.lines_changed == expected_lines_changed
-    ), f"Expected lines changed to be {expected_lines_changed} but was {diff_cov.lines_changed}"
+    assert diff_cov.lines_changed == expected_lines_changed, (
+        f"Expected lines changed to be {expected_lines_changed} but was {diff_cov.lines_changed}"
+    )
 
     for line in range(1, lines):
-        assert not diff_cov.line_modified_by_target_commit(
-            flaky_reruns_py, line
-        ), f"Expected line {line} not to be changed"
+        assert not diff_cov.line_modified_by_target_commit(flaky_reruns_py, line), (
+            f"Expected line {line} not to be changed"
+        )
 
     assert diff_cov.line_modified_by_target_commit(flaky_reruns_py, lines), f"Expected line {lines} to be changed"
     assert not diff_cov.line_modified_by_target_commit("spurious.py", 0), "Expected spurious.py not to be changed"
@@ -230,7 +230,7 @@ def test_flaky_test_live_false(diff_cov_repo):
             os.path.join(diff_cov_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
     )
-    Test(  # pylint: disable=E1123
+    Test(
         name="test_app",
         fspath=os.path.join(diff_cov_repo.working_dir, "diff_cov_example.py"),
         line_no=15,
@@ -252,9 +252,9 @@ def test_flaky_tests_post_false(diff_cov_repo):
             os.path.join(diff_cov_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
     )
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="app.py::test_app",
                 executions=[test_execution],
             ),
@@ -292,9 +292,9 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): list(range(23)),
         },
     )
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="app.py::test_app",
                 executions=[test_execution],
             ),

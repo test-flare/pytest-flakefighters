@@ -4,6 +4,7 @@ This module implements the differential coverage FlakeFighter, inspired by the D
 
 import ast
 import os
+from typing import Optional
 
 import git
 from unidiff import PatchSet
@@ -29,13 +30,13 @@ class DiffCov(FlakeFighter):
     :ivar target_commit: The target (newer) commit hash. Defaults to HEAD (the most recent commit).
     """
 
-    def __init__(  # pylint: disable=R0913,R0917
+    def __init__(
         self,
         run_live: bool,
         source_runs: list[Run],
         root: str = ".",
-        source_commit: str = None,
-        target_commit: str = None,
+        source_commit: Optional[str] = None,
+        target_commit: Optional[str] = None,
     ):
         super().__init__(run_live)
 

@@ -39,7 +39,7 @@ class All(RerunStrategy):
     Rerun all tests, regardless of outcome.
     """
 
-    def rerun(self, report: pytest.TestReport) -> bool:
+    def rerun(self, report: pytest.TestReport) -> bool:  # noqa: ARG002
         """
         Trivially rerun all tests, regardless of outcome.
         :return: Boolean true to rerun, False otherwise.
@@ -48,6 +48,9 @@ class All(RerunStrategy):
 
     @classmethod
     def help(cls):
+        """
+        Return the help string for config options.
+        """
         return "Trivially rerun all tests, regardless of outcome."
 
 
@@ -64,6 +67,9 @@ class FlakyFailure(RerunStrategy):
 
     @classmethod
     def help(cls):
+        """
+        Return the help string for config options.
+        """
         return "Rerun failing tests that have been merked as flaky by live FlakeFighters."
 
 
@@ -87,4 +93,7 @@ class PreviouslyFlaky(FlakyFailure):
 
     @classmethod
     def help(cls):
+        """
+        Return the help string for config options.
+        """
         return "Rerun failing tests marked as flaky, and tests that have previously been marked as flaky."

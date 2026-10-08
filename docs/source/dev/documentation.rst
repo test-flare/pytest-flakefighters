@@ -15,7 +15,7 @@ Style and Tools
 
 The `Sphinx docstring format <https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html#the-sphinx-docstring-format>`_ is used
 throughout our project's codebase to allow for the easy understanding of classes, methods and functions. This format
-allows for the easy generation of html documentation pages. It also checks for docstrings that have been added to the project's pyLint configuration.
+allows for the easy generation of html documentation pages. Ruff checks that public modules, classes and functions have docstrings, as configured under ``[tool.ruff]`` in ``pyproject.toml``.
 
 To install the packages required to work with the documentation, please ensure the projects **dev** dependencies are installed::
 

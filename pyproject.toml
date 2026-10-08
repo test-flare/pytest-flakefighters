@@ -39,12 +39,9 @@ scipy = ["scipy"]
 
 [dependency-groups]
 dev = [
-  "astroid==3.3.8",
-  "black",
   "myst_parser",
   "nbsphinx",
   "pre_commit",
-  "pylint",
   "pytest-cov",
   "pytest-html",
   "pytest-json-report>=1.5",
@@ -54,7 +51,7 @@ dev = [
   "tox",
   "pytest-mock",
   "taskipy>=1.14.1",
-  "isort>=6.1.0",
+  "ruff>=0.16.10",
 ]
 
 [tool.uv]
@@ -70,32 +67,37 @@ Repository = "https://github.com/test-flare/pytest-flakefighters"
 reorder_keys = true
 reorder_arrays = true
 
-[tool.black]
-# https://github.com/psf/black
+[tool.ruff]
+# https://docs.astral.sh/ruff/
+extend-exclude = ["tests/resources"]
 line-length = 120
-target-version = ["py310"]
 
-[tool.isort]
-profile = "black"
-
-[tool.pylint]
-disable = [
-  "bad-inline-option",
-  "deprecated-pragma",
-  "file-ignored",
-  "import-error",
-  "locally-disabled",
-  "logging-fstring-interpolation",
-  "raw-checker-failed",
-  "suppressed-message",
-  "unexpected-keyword-arg",
-  "unspecified-encoding",
-  "use-symbolic-message-instead",
-  "useless-suppression",
+[tool.ruff.lint]
+# Ruff's default rules, plus the checks pylint used to enforce.
+extend-select = [
+  "ARG",
+  "B",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "E",
+  "F",
+  "I",
+  "N",
+  "PL",
+  "UP",
+  "W",
 ]
-ignore-paths = "tests/resources"
-max-line-length = 120
-variable-rgx = "^[a-z][a-z0-9]*((_[a-z0-9]+)*)?$"
+# DTZ: timezone-aware datetimes will be handled in a separate PR.
+# FA100: no longer applies once Python 3.9 support is dropped.
+# RUF009: false positive on SQLAlchemy Column() defaults in the dataclass models.
+ignore = ["DTZ", "FA100", "RUF009"]
+
+[tool.ruff.lint.per-file-ignores]
+"docs/**" = ["D100"]
+"tests/**" = ["PLR2004"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -103,9 +105,10 @@ testpaths = ["tests"]
 
 [tool.taskipy.tasks]
 all = "task format-check && task lint && task test"
-format = "black src tests && isort src tests"
-format-check = "black --check src tests && isort --check-only src tests"
-lint = "pylint src/pytest_flakefighters tests"
+format = "ruff format"
+format-check = "ruff format --check"
+lint = "ruff check"
+lint-fix = "ruff check --fix"
 test = "pytest -p no:flakefighters --cov=src --cov-report=xml"
 
 [tool.setuptools_scm]

@@ -55,7 +55,7 @@ def safe_div(x: float, y: float) -> float:
     return x / y
 
 
-class SFFL:  # pylint: disable=R0902
+class SFFL:
     """
     This class implements Spectrum-based Flaky Fault Localization ranking.
     """

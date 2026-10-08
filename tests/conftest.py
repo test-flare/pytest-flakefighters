@@ -10,7 +10,6 @@ from pathlib import Path
 import git
 import pytest
 
-# pylint:disable=C0103
 pytest_plugins = "pytester"
 CURRENT_DIR = Path(__file__).parent
 collect_ignore = ["resources"]

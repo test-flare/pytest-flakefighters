@@ -13,6 +13,9 @@ from pytest_flakefighters.database_management import (
 )
 from pytest_flakefighters.flakefighters.abstract_flakefighter import FlakeFighter
 
+# Pairwise distances need at least two executions to compare.
+MIN_EXECUTIONS = 2
+
 
 class CoverageIndependence(FlakeFighter):
     """
@@ -80,7 +83,7 @@ class CoverageIndependence(FlakeFighter):
                 )
 
         # Can't compute the pairwise distance of a single execution
-        if len(coverage) < 2:
+        if len(coverage) < MIN_EXECUTIONS:
             return
 
         coverage = pd.DataFrame(coverage)
@@ -99,7 +102,7 @@ class CoverageIndependence(FlakeFighter):
             for test in group["test"]:
                 result = FlakefighterResult(
                     name=self.__class__.__name__,
-                    flaky=len(set(map(lambda x: x.outcome, group["execution"]))) > 1,
+                    flaky=len({x.outcome for x in group["execution"]}) > 1,
                 )
                 if result not in test.flakefighter_results:
                     test.flakefighter_results.append(result)

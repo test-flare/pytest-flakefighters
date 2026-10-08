@@ -168,9 +168,9 @@ def test_html_report(pytester, diff_cov_repo):
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["FAILED app.py::test_app - assert False"])
 
-    assert os.path.exists(
-        os.path.join(diff_cov_repo.working_dir, "report.html")
-    ), "Expected report.html to exist but it did not."
+    assert os.path.exists(os.path.join(diff_cov_repo.working_dir, "report.html")), (
+        "Expected report.html to exist but it did not."
+    )
 
     # Test that the DiffCov result is in the file and reports a genuine fault
     with open(os.path.join(diff_cov_repo.working_dir, "report.html")) as f:
@@ -204,9 +204,9 @@ def test_xml_report(pytester, diff_cov_repo):
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["FAILED app.py::test_app - assert False"])
 
-    assert os.path.exists(
-        os.path.join(diff_cov_repo.working_dir, "report.xml")
-    ), "Expected report.xml to exist but it did not."
+    assert os.path.exists(os.path.join(diff_cov_repo.working_dir, "report.xml")), (
+        "Expected report.xml to exist but it did not."
+    )
 
     # Test that the DiffCov result is in the file and reports a genuine fault
     with open(os.path.join(diff_cov_repo.working_dir, "report.xml")) as f:
@@ -232,9 +232,9 @@ def test_json_report(pytester, diff_cov_repo):
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(["FAILED app.py::test_app - assert False"])
 
-    assert os.path.exists(
-        os.path.join(diff_cov_repo.working_dir, ".report.json")
-    ), "Expected .report.json to exist but it did not."
+    assert os.path.exists(os.path.join(diff_cov_repo.working_dir, ".report.json")), (
+        "Expected .report.json to exist but it did not."
+    )
 
     with open(os.path.join(diff_cov_repo.working_dir, ".report.json")) as f:
         tests = json.load(f)["tests"]

@@ -49,12 +49,12 @@ class RerunStrategy(Enum):
     PREVIOUSLY_FLAKY = "PREVIOUSLY_FLAKY"
 
 
-class FlakeFighterPlugin:  # pylint: disable=R0902
+class FlakeFighterPlugin:
     """
     The main plugin to manage the various FlakeFighter tools.
     """
 
-    def __init__(  # pylint: disable=R0913,R0917
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         root: str,
         database: Database,
@@ -77,7 +77,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.display_outcomes = display_outcomes
         self.sffl = sffl
 
-        self.run = Run(  # pylint: disable=E1123
+        self.run = Run(
             root=root,
             active_flakefighters=[
                 ActiveFlakeFighter(name=f.__class__.__name__, params=f.params()) for f in flakefighters
@@ -85,7 +85,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
             start_time=datetime.now(),
         )
 
-    def pytest_sessionstart(self, session: pytest.Session):  # pylint: disable=unused-argument
+    def pytest_sessionstart(self, session: pytest.Session):  # noqa: ARG002
         """
         Start the coverage measurement before tests are collected so we measure class and method definitions as covered.
         :param session: The session.
@@ -93,7 +93,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         self.cov.start()
         self.cov.switch_context("collection")  # pragma: no cover
 
-    def pytest_collection_finish(self, session: pytest.Session):  # pylint: disable=unused-argument
+    def pytest_collection_finish(self, session: pytest.Session):  # noqa: ARG002
         """
         Stop the coverage measurement after tests are collected.
         :param session: The session.
@@ -119,7 +119,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         item.stop = datetime.now().timestamp()
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo):  # pylint: disable=unused-argument
+    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo):  # noqa: ARG002
         """
         Called after a test execution call (setup, call, teardown)
         to create a TestReport.
@@ -131,7 +131,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         report = outcome.get_result()
         excinfo = call.excinfo
         if excinfo is not None and call.when == "call":
-            report.exception = TestException(  # pylint: disable=E1123
+            report.exception = TestException(
                 name=excinfo.type.__name__,
                 traceback=[
                     TracebackEntry(
@@ -162,7 +162,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
 
         fspath, line_inx, _ = item.location
 
-        test = Test(  # pylint: disable=E1123
+        test = Test(
             name=item.nodeid,
             fspath=os.path.join(self.root, fspath),
             line_no=line_inx + 1,  # need to add one to the line index because this indexes from zero
@@ -182,7 +182,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                     line_coverage = self.cov.get_data()
                     line_coverage.set_query_contexts(["collection", escape(context(item))])
                     captured_output = dict(report.sections)
-                    test_execution = TestExecution(  # pylint: disable=E1123
+                    test_execution = TestExecution(
                         outcome=report.outcome,
                         stdout=captured_output.get("stdout"),
                         stderr=captured_output.get("stderr"),
@@ -219,17 +219,13 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 <h4>Flakefighter Results</h4>
                                 <div id="ff-{report.nodeid.replace("::", "_")}"></div>
                                 <table style="width:100%"><tbody><tr>"""
-                                + "".join([f"""
+                                + "".join(
+                                    [
+                                        f"""
                                         <td>
-                                        <p><strong>Start time:</strong> {
-                                            execution.start_time
-                                        }</p>
-                                        <p><strong>End time:</strong> {
-                                            execution.end_time
-                                        }</p>
-                                        <p><strong>Outcome:</strong> {
-                                            execution.outcome
-                                        }</p>
+                                        <p><strong>Start time:</strong> {execution.start_time}</p>
+                                        <p><strong>End time:</strong> {execution.end_time}</p>
+                                        <p><strong>Outcome:</strong> {execution.outcome}</p>
                                         <p><strong>Flakefighter Results:</strong></p>
                                         <ul>
                                         {
@@ -246,7 +242,10 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                         }
                                         </ul>
                                         </td>
-                                        """ for execution in test.executions])
+                                        """
+                                        for execution in test.executions
+                                    ]
+                                )
                                 + "</tr></tbody></table>",
                                 "extension": "html",
                                 "format_type": "html",
@@ -266,7 +265,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
     def pytest_report_teststatus(
         self,
         report: pytest.TestReport,
-        config: pytest.Config,  # pylint: disable=unused-argument
+        config: pytest.Config,  # noqa: ARG002
     ) -> tuple[str, str, str]:
         """
         Report flaky failures as such.
@@ -283,7 +282,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         return None
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtestloop(self, session: pytest.Session):  # pylint: disable=unused-argument
+    def pytest_runtestloop(self, session: pytest.Session):  # noqa: ARG002
         """
         Run postprocessing flakefighters.
         :param session: The pytest session object.
@@ -321,11 +320,10 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         :param test: The test case.
         """
         result_string = []
-        if test.flakefighter_results:
-            if self.display_verdicts:
-                result_string.append(
-                    "Overall\n" + "\n".join(f"  {f.name}: {f.classification}" for f in test.flakefighter_results) + "\n"
-                )
+        if test.flakefighter_results and self.display_verdicts:
+            result_string.append(
+                "Overall\n" + "\n".join(f"  {f.name}: {f.classification}" for f in test.flakefighter_results) + "\n"
+            )
         for i, execution in enumerate(test.executions):
             if execution.flakefighter_results:
                 if self.display_verdicts:
@@ -372,9 +370,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         tree.write(xml_path)
 
     @pytest.hookimpl(optionalhook=True)
-    def pytest_html_results_summary(
-        self, prefix: list, summary: list, postfix: list
-    ):  # pylint: disable=unused-argument
+    def pytest_html_results_summary(self, prefix: list, summary: list, postfix: list):  # noqa: ARG002
         """
         Add the test-level flakefighter results.
         :param prefix: The prefix content. UNUSED.
@@ -388,20 +384,25 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 "<thead><tr><td>Test</td><td>Flakefighter results</td></tr></thead>",
                 "<tbody>",
             ]
-            + [f"<tr><td>{nodeid}</td><td>" + "".join([f"""<ul>
+            + [
+                f"<tr><td>{nodeid}</td><td>"
+                + "".join(
+                    [
+                        f"""<ul>
                             {
                             "".join(
                                 [
-                                    "<li><strong>"
-                                    + result["name"]
-                                    + ":</strong> "
-                                    + result["classification"]
-                                    + "</li>"
+                                    "<li><strong>" + result["name"] + ":</strong> " + result["classification"] + "</li>"
                                     for result in report.flakefighter_results
                                 ]
                             )
                         }
-                            </ul>"""]) + "</td></tr>" for nodeid, report in self.test_reports.items()]
+                            </ul>"""
+                    ]
+                )
+                + "</td></tr>"
+                for nodeid, report in self.test_reports.items()
+            ]
             + [
                 "</tbody>",
                 "</table>",
@@ -411,7 +412,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
     def pytest_sessionfinish(
         self,
         session: pytest.Session,
-        exitstatus: pytest.ExitCode,  # pylint: disable=unused-argument
+        exitstatus: pytest.ExitCode,  # noqa: ARG002
     ) -> None:
         """Called after whole test run finished, right before returning the exit status to the system.
         :param session: The pytest session object.

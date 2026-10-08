@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from pytest_flakefighters.database_management import Run, TestExecution
 
 
-class FlakeFighter(ABC):  # pylint: disable=R0903
+class FlakeFighter(ABC):
     """
     Abstract base class for a FlakeFighter
     :ivar run_live: Run detection "live" after each test. Otherwise run as a postprocessing step after the test suite.

@@ -5,6 +5,7 @@ This module implements three FlakeFighters based on failure de-duplication from 
 
 import os
 import re
+from typing import Optional
 
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -85,7 +86,7 @@ class TracebackMatching(FlakeFighter):
             if execution.exception
         ]
 
-    def flaky_test_live(self, execution: TestExecution, previous_runs: list[Run] = None):
+    def flaky_test_live(self, execution: TestExecution, previous_runs: Optional[list[Run]] = None):
         """
         Classify executions as flaky if they have the same failure logs as a flaky execution.
         :param execution: Test execution to consider.

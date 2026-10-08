@@ -145,7 +145,7 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): [1, 4, 6, 9, 10, 11, 12],
         },
     )
-    Test(  # pylint: disable=E1123
+    Test(
         name="test_create_or_delete",
         fspath=os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"),
         line_no=9,
@@ -230,7 +230,7 @@ def test_flaky_test_live_false(diff_cov_repo):
             os.path.join(diff_cov_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
     )
-    Test(  # pylint: disable=E1123
+    Test(
         name="test_app",
         fspath=os.path.join(diff_cov_repo.working_dir, "diff_cov_example.py"),
         line_no=15,
@@ -252,9 +252,9 @@ def test_flaky_tests_post_false(diff_cov_repo):
             os.path.join(diff_cov_repo.working_dir, "app.py"): [1, 2, 6, 7, 8, 11, 12, 15, 16],
         },
     )
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="app.py::test_app",
                 executions=[test_execution],
             ),
@@ -292,9 +292,9 @@ def test_flaky_tests_post_true(flaky_reruns_repo):
             os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"): list(range(23)),
         },
     )
-    run = Run(  # pylint: disable=E1123
+    run = Run(
         tests=[
-            Test(  # pylint: disable=E1123
+            Test(
                 name="app.py::test_app",
                 executions=[test_execution],
             ),

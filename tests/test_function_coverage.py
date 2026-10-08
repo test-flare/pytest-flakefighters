@@ -29,7 +29,7 @@ def test_profile_fun_calls():
     """Make sure that function-level coverage runs fine."""
     profiler = Profiler()
     assert not profiler.function_defs, f"Expected empty but got {profiler.function_defs}"
-    from tests.resources.triangle import triangle_type  # pylint: disable=C0415
+    from tests.resources.triangle import triangle_type  # noqa: PLC0415
 
     profiler.start()
     triangle_type(3, 4, 5)
@@ -50,7 +50,7 @@ def test_profile_fun_calls():
 def test_set_context():
     """Make sure that context setting works fine."""
     profiler = Profiler()
-    from tests.resources.triangle import (  # pylint: disable=C0415
+    from tests.resources.triangle import (  # noqa: PLC0415
         test_eqiulateral,
         test_isosceles,
     )

@@ -50,7 +50,7 @@ class Profiler:
         """
         self.profiler.disable()
         p = pstats.Stats(self.profiler)
-        for module, _, function in p.stats.keys():
+        for module, _, function in p.stats:
             if module not in self.function_defs and os.path.exists(module):
                 self.update_function_defs(module)
             self.coverage_data.add_lines({module: self.function_defs.get(module, {}).get(function, [])})

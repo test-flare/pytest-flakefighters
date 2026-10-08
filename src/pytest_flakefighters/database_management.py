@@ -5,7 +5,7 @@ This module manages all interaction with the test run database.
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Optional, Union
 
 from sqlalchemy import (
     Boolean,
@@ -41,9 +41,9 @@ class Base(DeclarativeBase):
     :ivar id: Unique autoincrementing ID for the object.
     """
 
-    id: Mapped[int] = Column(Integer, primary_key=True)  # pylint: disable=C0103
+    id: Mapped[int] = Column(Integer, primary_key=True)
     # Explicitly flag that we don't want pytest to collect our Test, TestExecution, etc. classes.
-    __test__ = False  # pylint: disable=C0103
+    __test__ = False
 
     @declared_attr
     def __tablename__(self):
@@ -66,7 +66,7 @@ class Run(Base):
     """
 
     start_time = Column(DateTime)
-    created_at = Column(DateTime, default=func.now())  # pylint: disable=not-callable
+    created_at = Column(DateTime, default=func.now())
     root: Mapped[str] = Column(String)
     # <<<<<<< HEAD
     # tests = relationship("Test", backref="run", cascade="all, delete")
@@ -150,7 +150,7 @@ class Test(Base):
 
 
 @dataclass
-class TestExecution(Base):  # pylint: disable=R0902
+class TestExecution(Base):
     """
     Class to store attributes of a test outcome.
 
@@ -198,7 +198,7 @@ class TestExecution(Base):  # pylint: disable=R0902
 
 
 @dataclass
-class TestException(Base):  # pylint: disable=R0902
+class TestException(Base):
     """
     Class to store information about the exceptions that cause tests to fail.
 
@@ -220,7 +220,7 @@ class TestException(Base):  # pylint: disable=R0902
 
 
 @dataclass
-class TracebackEntry(Base):  # pylint: disable=R0902
+class TracebackEntry(Base):
     """
     Class to store attributes of entries in the stack trace.
 
@@ -241,7 +241,7 @@ class TracebackEntry(Base):  # pylint: disable=R0902
 
 
 @dataclass
-class FlakefighterResult(Base):  # pylint: disable=R0902
+class FlakefighterResult(Base):
     """
     Class to store flakefighter results.
 
@@ -289,9 +289,9 @@ class Database:
     def __init__(
         self,
         url: str,
-        load_max_runs: int = None,
-        store_max_runs: int = None,
-        time_immemorial: Union[timedelta, str] = None,
+        load_max_runs: Optional[int] = None,
+        store_max_runs: Optional[int] = None,
+        time_immemorial: Optional[Union[timedelta, str]] = None,
     ):
         if isinstance(time_immemorial, str) and time_immemorial:
             days, hours, minutes = [int(x) for x in time_immemorial.split(":")]
@@ -329,7 +329,7 @@ class Database:
         with Session(self.engine) as session:
             return session.execute(select(Run).where(Run.commit_sha == target_sha)).scalars().all()
 
-    def load_runs(self, limit: int = None):
+    def load_runs(self, limit: Optional[int] = None):
         """
         Load runs from the database.
 

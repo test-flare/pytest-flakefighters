@@ -219,17 +219,13 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                 <h4>Flakefighter Results</h4>
                                 <div id="ff-{report.nodeid.replace("::", "_")}"></div>
                                 <table style="width:100%"><tbody><tr>"""
-                                + "".join([f"""
+                                + "".join(
+                                    [
+                                        f"""
                                         <td>
-                                        <p><strong>Start time:</strong> {
-                                            execution.start_time
-                                        }</p>
-                                        <p><strong>End time:</strong> {
-                                            execution.end_time
-                                        }</p>
-                                        <p><strong>Outcome:</strong> {
-                                            execution.outcome
-                                        }</p>
+                                        <p><strong>Start time:</strong> {execution.start_time}</p>
+                                        <p><strong>End time:</strong> {execution.end_time}</p>
+                                        <p><strong>Outcome:</strong> {execution.outcome}</p>
                                         <p><strong>Flakefighter Results:</strong></p>
                                         <ul>
                                         {
@@ -246,7 +242,10 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                                         }
                                         </ul>
                                         </td>
-                                        """ for execution in test.executions])
+                                        """
+                                        for execution in test.executions
+                                    ]
+                                )
                                 + "</tr></tbody></table>",
                                 "extension": "html",
                                 "format_type": "html",
@@ -372,9 +371,7 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
         tree.write(xml_path)
 
     @pytest.hookimpl(optionalhook=True)
-    def pytest_html_results_summary(
-        self, prefix: list, summary: list, postfix: list
-    ):  # pylint: disable=unused-argument
+    def pytest_html_results_summary(self, prefix: list, summary: list, postfix: list):  # pylint: disable=unused-argument
         """
         Add the test-level flakefighter results.
         :param prefix: The prefix content. UNUSED.
@@ -388,20 +385,25 @@ class FlakeFighterPlugin:  # pylint: disable=R0902
                 "<thead><tr><td>Test</td><td>Flakefighter results</td></tr></thead>",
                 "<tbody>",
             ]
-            + [f"<tr><td>{nodeid}</td><td>" + "".join([f"""<ul>
+            + [
+                f"<tr><td>{nodeid}</td><td>"
+                + "".join(
+                    [
+                        f"""<ul>
                             {
                             "".join(
                                 [
-                                    "<li><strong>"
-                                    + result["name"]
-                                    + ":</strong> "
-                                    + result["classification"]
-                                    + "</li>"
+                                    "<li><strong>" + result["name"] + ":</strong> " + result["classification"] + "</li>"
                                     for result in report.flakefighter_results
                                 ]
                             )
                         }
-                            </ul>"""]) + "</td></tr>" for nodeid, report in self.test_reports.items()]
+                            </ul>"""
+                    ]
+                )
+                + "</td></tr>"
+                for nodeid, report in self.test_reports.items()
+            ]
             + [
                 "</tbody>",
                 "</table>",

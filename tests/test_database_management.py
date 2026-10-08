@@ -18,9 +18,9 @@ def test_run_saving(pytester, flaky_triangle_repo):
         print("Triangle", file=f)
 
     # run pytest with the following cmd args
-    assert not os.path.exists(
-        os.path.join(flaky_triangle_repo.working_dir, "flakefighters.db")
-    ), "Database file should not exist in advance of running pytest"
+    assert not os.path.exists(os.path.join(flaky_triangle_repo.working_dir, "flakefighters.db")), (
+        "Database file should not exist in advance of running pytest"
+    )
     result = pytester.runpytest(
         os.path.join(flaky_triangle_repo.working_dir, "triangle.py"),
         "-s",
@@ -55,9 +55,9 @@ def test_max_load_runs(pytester, diff_cov_repo):
     """Test that we only load the specified number of runs"""
 
     # run pytest with the following cmd args
-    assert not os.path.exists(
-        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
-    ), "Database file should not exist in advance of running pytest"
+    assert not os.path.exists(os.path.join(diff_cov_repo.working_dir, "flakefighters.db")), (
+        "Database file should not exist in advance of running pytest"
+    )
 
     for _ in range(5):
         pytester.runpytest(
@@ -78,9 +78,9 @@ def test_store_max_runs(pytester, diff_cov_repo):
     """Test that we only load the specified number of runs"""
 
     # run pytest with the following cmd args
-    assert not os.path.exists(
-        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
-    ), "Database file should not exist in advance of running pytest"
+    assert not os.path.exists(os.path.join(diff_cov_repo.working_dir, "flakefighters.db")), (
+        "Database file should not exist in advance of running pytest"
+    )
     for _ in range(5):
         pytester.runpytest(
             os.path.join(diff_cov_repo.working_dir, "app.py"),
@@ -109,9 +109,9 @@ def test_store_max_runs_ini(pytester, diff_cov_repo):
         f.write("[tool.pytest.ini_options.pytest_flakefighters]\nstore_max_runs=4")
 
     # run pytest with the following cmd args
-    assert not os.path.exists(
-        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
-    ), "Database file should not exist in advance of running pytest"
+    assert not os.path.exists(os.path.join(diff_cov_repo.working_dir, "flakefighters.db")), (
+        "Database file should not exist in advance of running pytest"
+    )
     for _ in range(5):
         pytester.runpytest(os.path.join(diff_cov_repo.working_dir, "app.py"), "-s", "--flakefighters")
     db = Database(f"sqlite:///{os.path.join(diff_cov_repo.working_dir, 'flakefighters.db')}")
@@ -132,9 +132,9 @@ def test_time_immemorial(pytester, diff_cov_repo):
     """Test that we only load the specified number of runs"""
 
     # run pytest with the following cmd args
-    assert not os.path.exists(
-        os.path.join(diff_cov_repo.working_dir, "flakefighters.db")
-    ), "Database file should not exist in advance of running pytest"
+    assert not os.path.exists(os.path.join(diff_cov_repo.working_dir, "flakefighters.db")), (
+        "Database file should not exist in advance of running pytest"
+    )
 
     # Run pytest 5 times to fill up the database
     for _ in range(5):

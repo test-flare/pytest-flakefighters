@@ -153,9 +153,9 @@ def test_new_test_preserves_original_results(flaky_reruns_repo):
     )
     diff_cov.flaky_test_live(test_execution)
     expected = FlakefighterResult(name="DiffCov", flaky=True)
-    assert test_execution.flakefighter_results == [
-        expected
-    ], "Expected original run of test_create_or_delete to be flaky"
+    assert test_execution.flakefighter_results == [expected], (
+        "Expected original run of test_create_or_delete to be flaky"
+    )
 
     # Add a new test and check that test_create_or_delete is still flaky
     with open(os.path.join(flaky_reruns_repo.working_dir, "flaky_reruns.py"), "w") as f:
@@ -206,14 +206,14 @@ def test_line_modified_by_target_commit(flaky_reruns_repo):
         lines = len(f.readlines())
 
     expected_lines_changed = {flaky_reruns_py: [23]}
-    assert (
-        diff_cov.lines_changed == expected_lines_changed
-    ), f"Expected lines changed to be {expected_lines_changed} but was {diff_cov.lines_changed}"
+    assert diff_cov.lines_changed == expected_lines_changed, (
+        f"Expected lines changed to be {expected_lines_changed} but was {diff_cov.lines_changed}"
+    )
 
     for line in range(1, lines):
-        assert not diff_cov.line_modified_by_target_commit(
-            flaky_reruns_py, line
-        ), f"Expected line {line} not to be changed"
+        assert not diff_cov.line_modified_by_target_commit(flaky_reruns_py, line), (
+            f"Expected line {line} not to be changed"
+        )
 
     assert diff_cov.line_modified_by_target_commit(flaky_reruns_py, lines), f"Expected line {lines} to be changed"
     assert not diff_cov.line_modified_by_target_commit("spurious.py", 0), "Expected spurious.py not to be changed"

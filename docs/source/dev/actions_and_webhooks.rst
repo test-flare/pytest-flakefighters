@@ -10,9 +10,7 @@ which can be found in the
 
 #.  ``ci-tests-drafts.yaml``, which runs continuous integration (CI) tests on each on each draft pull request.
 
-#.  ``ci-tests.yaml``, which runs continuous integration (CI) tests on each on each pull request.
-
-#.  ``ci-mega-linter.yaml``, which runs linting on each pull request.
+#.  ``ci-tests.yaml``, which runs continuous integration (CI) tests and linting on each on each pull request.
 
 #.  ``publish-to-pypi.yaml``, runs when a new version tag is pushed and publishes that tag version to PyPI.
 

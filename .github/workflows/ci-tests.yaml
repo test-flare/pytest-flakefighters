@@ -45,7 +45,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
-    if: github.event.pull_request.draft == false # Filter out draft PRs
     name: Format check and lint
     runs-on: ubuntu-latest
     steps:

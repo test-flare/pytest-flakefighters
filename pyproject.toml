@@ -34,10 +34,7 @@ TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:Trace
 
 [project.optional-dependencies]
 pg = ["psycopg2>2.9"]
-scipy = [
-  "scipy>=1.11,<1.15; python_version < '3.11'",
-  "scipy>=1.11; python_version >= '3.11'",
-]
+scipy = ["scipy"]
 
 [dependency-groups]
 dev = [

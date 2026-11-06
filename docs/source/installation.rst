@@ -3,7 +3,7 @@ Getting Started
 
 Installation
 -----------------
-* We currently support Python versions 3.10, 3.11, 3.12, and 3.13.
+* We currently support Python versions 3.10, 3.11, 3.12, 3.13, and 3.14.
 
 * The Flakefighters plugin can be installed through the `Python Package Index (PyPI)`_ (recommended for normal use), or directly from source (recommended for contributors).
 

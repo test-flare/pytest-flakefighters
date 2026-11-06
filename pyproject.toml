@@ -34,7 +34,10 @@ TracebackMatching = "pytest_flakefighters.flakefighters.traceback_matching:Trace
 
 [project.optional-dependencies]
 pg = ["psycopg2>2.9"]
-scipy = ["scipy"]
+scipy = [
+  "scipy>=1.11,<1.15; python_version < '3.11'",
+  "scipy>=1.11; python_version >= '3.11'",
+]
 
 [dependency-groups]
 dev = [
@@ -104,12 +107,11 @@ write_to = "src/_version.py"
 
 [tool.tox]
 env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
-requires = ["tox>=4.19"]
-skip_missing_interpreters = false                   # fail if devs don’t have all required Python versions
+requires = ["tox>=4.19", "tox-uv>=1"]
+skip_missing_interpreters = false
 
 # Base configuration for all test environments
 [tool.tox.env_run_base]
-allowlist_externals = ["pytest"]
 commands = [
   [
     "pytest",
@@ -120,7 +122,15 @@ commands = [
     "{posargs:tests}",
   ],
 ]
-deps = ["pytest", "pytest-cov", "pytest-html", "pytest-json-report"]
+deps = [
+  "pytest",
+  "pytest-cov",
+  "pytest-html",
+  "pytest-json-report",
+  "pytest-mock",
+  { replace = "if", condition = "factor['3.10']", then = [
+    "scipy<1.15",
+  ], extend = true },
+]
 description = "Run pytest under {base_python}"
-extras = ["dev", "scipy"]
 usedevelop = true

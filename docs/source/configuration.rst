@@ -33,9 +33,9 @@ Here, :code:`<FlakeFighterClass>` is the class of the flakefighter you wish to c
 
 The default behaviour of the plugin is to run every flakefigher with a specified configuration.
 However, there are two ways to toggle flakefighters on and off.
-Firstly, you can add  :code:`active=false` to the configuration, as for :code:`DeFlaker` in the above example configuration.
-Secondly, you can use the :code:`--active-flakefighters` commandline argument, e.g. :code:`--active-flakefighters DeFlaker CosineSimilarity` would run just the :code:`DeFlaker` and :code:`CosineSimilarity` flakefighers.
-Note that the commandline argument overides the value of :code:`active` specified in the configuration file.
+Firstly, you can add  :code:`active=false` to the configuration, as for :code:`DiffCov` in the above example configuration.
+Secondly, you can use the :code:`--active-flakefighters` commandline argument, e.g. :code:`--active-flakefighters DiffCov CosineSimilarity` would run just the :code:`DiffCov` and :code:`CosineSimilarity` flakefighters.
+Note that the commandline argument overrides the value of :code:`active` specified in the configuration file.
 
 Every flakefighter has a :code:`run_live` option, which can be set to :code:`true` to classify each test execution as flaky immediately after it is run, or :code:`false` to clasify all tests at once at the end, although individual flakefighters may only support one of these.
 Individual flakefighters have their own configurable options.

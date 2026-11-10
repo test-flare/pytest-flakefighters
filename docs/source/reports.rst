@@ -22,9 +22,9 @@ The target path to save JSON report can be changed using the :code:`--json-repor
 Each test :code:`call` will be assigned a :code:`metadata` field that records the execution-level flakefighter results for each (repeated) execution.
 Each test will be assigned a :code:`metadata` field to record the test-level results.
 
-In the example below, :code:`pytest` was called with the :code:`DeFlaker`, :code:`TracebackMatching` (at execution level), and :code:`CoverageIndependence` (at test level) flakefighters.
-On the first execution of :code:`TestFlaky::test_flaky_example`, :code:`DeFlaker` classified the test failure as flaky, but :code:`TracebackMatching` classified it as genuine.
-On the rerun, the outcome of :code:`DeFlaker` did not change, but :code:`TracebackMatching` classified it as flaky.
+In the example below, :code:`pytest` was called with the :code:`DiffCov`, :code:`TracebackMatching` (at execution level), and :code:`CoverageIndependence` (at test level) flakefighters.
+On the first execution of :code:`TestFlaky::test_flaky_example`, :code:`DiffCov` classified the test failure as flaky, but :code:`TracebackMatching` classified it as genuine.
+On the rerun, the outcome of :code:`DiffCov` did not change, but :code:`TracebackMatching` classified it as flaky.
 Finally, :code:`CoverageIndependence` classified the overall test as flaky.
 
 ..  code-block:: ini
@@ -42,12 +42,12 @@ Finally, :code:`CoverageIndependence` classified the overall test as flaky.
         "start_time": "2026-01-19 11:19:06.214221",
         "end_time": "2026-01-19 11:19:06.214703",
         "outcome": failed,
-        "flakefighter_results": {"DeFlaker": "flaky", "TracebackMatching": "genuine"}
+        "flakefighter_results": {"DiffCov": "flaky", "TracebackMatching": "genuine"}
       }, {
         "start_time": "2026-01-19 11:19:06.264956",
         "end_time": "2026-01-19 11:19:06.265155",
         "outcome": failed,
-        "flakefighter_results": {"DeFlaker": "flaky", "TracebackMatching": "flaky"}
+        "flakefighter_results": {"DiffCov": "flaky", "TracebackMatching": "flaky"}
       }
         ]
       }
@@ -75,11 +75,11 @@ The test-level results will be saved in a :code:`<test>` element.
   <testcase classname="test_flaky_reruns.TestFlakyRuns" name="test_pass" time="0.001">
     <flakefighterresults>
       <execution outcome="failed" starttime="2026-01-19T11:44:58.123723" endtime="2026-01-19T11:44:58.124223">
-        <DeFlaker>flaky</DeFlaker>
+        <DiffCov>flaky</DiffCov>
         <TracebackMatching>genuine</TracebackMatching>
       </execution>
       <execution outcome="failed" starttime="2026-01-19T11:44:58.173746" endtime="2026-01-19T11:44:58.173929">
-        <DeFlaker>flaky</DeFlaker>
+        <DiffCov>flaky</DiffCov>
         <TracebackMatching>flaky</TracebackMatching>
       </execution>
       <test>

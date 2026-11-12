@@ -117,7 +117,7 @@ After cloning the repository, create the virtual environment and install all dep
 
 ```bash
 # Sync the lockfile and install the project in editable mode with dev dependencies
-uv sync --extra dev
+uv sync
 ```
 
 This is the recommended workflow because it uses the project's `uv.lock` file and guarantees a reproducible environment.
@@ -130,7 +130,7 @@ uv pip install -e .[dev]
 ```
 
 > [!NOTE]
-> `uv pip install -e .[dev]` does not update `uv.lock`. Use `uv sync --extra dev` when you want the lockfile to stay in sync.
+> `uv pip install -e .[dev]` does not update `uv.lock`. Use `uv sync` when you want the lockfile to stay in sync.
 
 ## Usage
 

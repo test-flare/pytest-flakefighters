@@ -104,7 +104,7 @@ write_to = "src/_version.py"
 
 [tool.tox]
 env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
-requires = ["tox>=4.19", "tox-uv>=1"]
+requires = ["tox>=4.42", "tox-uv>=1"]
 skip_missing_interpreters = false
 
 # Base configuration for all test environments
@@ -126,7 +126,11 @@ deps = [
   "pytest-json-report",
   "pytest-mock",
   { replace = "if", condition = "factor['3.10']", then = [
+    "pytest==7",
     "scipy<1.15",
+  ], extend = true },
+  { replace = "if", condition = "factor['3.11']", then = [
+    "pytest==8",
   ], extend = true },
 ]
 description = "Run pytest under {base_python}"

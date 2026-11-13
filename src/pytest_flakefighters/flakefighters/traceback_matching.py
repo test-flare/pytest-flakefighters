@@ -76,7 +76,8 @@ class TracebackMatching(FlakeFighter):
         """
         return [
             [
-                (os.path.relpath(elem.path, run.root), elem.lineno, elem.colno, elem.statement)
+                # `path` is nullable in the database model, but is always set for a stored traceback entry
+                (os.path.relpath(elem.path, run.root), elem.lineno, elem.colno, elem.statement)  # ty: ignore[no-matching-overload]
                 for elem in execution.exception.traceback
             ]
             for run in runs

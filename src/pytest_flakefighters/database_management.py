@@ -10,7 +10,6 @@ from typing import Optional, Union
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Column,
     DateTime,
     ForeignKey,
     Integer,
@@ -27,6 +26,7 @@ from sqlalchemy.orm import (
     Mapped,
     Session,
     declared_attr,
+    mapped_column,
     relationship,
 )
 
@@ -41,7 +41,7 @@ class Base(DeclarativeBase):
     :ivar id: Unique autoincrementing ID for the object.
     """
 
-    id: Mapped[int] = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     # Explicitly flag that we don't want pytest to collect our Test, TestExecution, etc. classes.
     __test__ = False
 
@@ -65,31 +65,24 @@ class Run(Base):
     :ivar active_flakefighters: The flakefighters that are active on the run.
     """
 
-    start_time = Column(DateTime)
-    created_at = Column(DateTime, default=func.now())
-    root: Mapped[str] = Column(String)
-    # <<<<<<< HEAD
-    # tests = relationship("Test", backref="run", cascade="all, delete")
-    # active_flakefighters = relationship("ActiveFlakeFighter", backref="run", cascade="all, delete")
-    # =======
-    commit_sha: Mapped[str] = Column(String)
-    tests = relationship(
+    start_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=func.now())
+    root: Mapped[Optional[str]] = mapped_column(String)
+    commit_sha: Mapped[Optional[str]] = mapped_column(String)
+    tests: Mapped[list["Test"]] = relationship(
         "Test",
         backref="run",
         lazy="subquery",
         cascade="all, delete",
         passive_deletes=True,
     )
-    active_flakefighters = relationship(
+    active_flakefighters: Mapped[list["ActiveFlakeFighter"]] = relationship(
         "ActiveFlakeFighter",
         backref="run",
         lazy="subquery",
         cascade="all, delete",
         passive_deletes=True,
     )
-
-
-# >>>>>>> main
 
 
 @dataclass
@@ -102,9 +95,9 @@ class ActiveFlakeFighter(Base):
     :ivar params: The parameterss of the flakefighter.
     """
 
-    run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
-    name: Mapped[str] = Column(String)
-    params: Mapped[dict] = Column(PickleType)
+    run_id: Mapped[int] = mapped_column(Integer, ForeignKey("run.id"), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    params: Mapped[Optional[dict]] = mapped_column(PickleType)
 
 
 @dataclass
@@ -124,13 +117,15 @@ class Test(Base):
       Execution-level flakefighter results will be stored inside the individual TestExecution objects
     """
 
-    run_id: Mapped[int] = Column(Integer, ForeignKey("run.id"), nullable=False)
-    fspath: Mapped[str] = Column(String)
-    line_no: Mapped[int] = Column(Integer)
-    name: Mapped[str] = Column(String)
-    skipped: Mapped[bool] = Column(Boolean, default=False)
-    executions = relationship("TestExecution", backref="test", cascade="all, delete", passive_deletes=True)
-    flakefighter_results = relationship(
+    run_id: Mapped[int] = mapped_column(Integer, ForeignKey("run.id"), nullable=False)
+    fspath: Mapped[Optional[str]] = mapped_column(String)
+    line_no: Mapped[Optional[int]] = mapped_column(Integer)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    skipped: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    executions: Mapped[list["TestExecution"]] = relationship(
+        "TestExecution", backref="test", cascade="all, delete", passive_deletes=True
+    )
+    flakefighter_results: Mapped[list["FlakefighterResult"]] = relationship(
         "FlakefighterResult",
         backref="test",
         cascade="all, delete",
@@ -138,7 +133,7 @@ class Test(Base):
     )
 
     @property
-    def flaky(self) -> bool:
+    def flaky(self) -> Optional[bool]:
         """
         Return whether a test (or any of its executions) has been marked as flaky by any flakefighter.
         """
@@ -167,21 +162,21 @@ class TestExecution(Base):
 
     __tablename__ = "test_execution"
 
-    test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=False)
-    outcome: Mapped[str] = Column(String)
-    stdout: Mapped[str] = Column(Text)
-    stderr: Mapped[str] = Column(Text)
-    report: Mapped[str] = Column(Text)
-    start_time: Mapped[datetime] = Column(DateTime(timezone=True))
-    end_time: Mapped[datetime] = Column(DateTime(timezone=True))
-    coverage: Mapped[dict] = Column(PickleType)
-    flakefighter_results = relationship(
+    test_id: Mapped[int] = mapped_column(Integer, ForeignKey("test.id"), nullable=False)
+    outcome: Mapped[Optional[str]] = mapped_column(String)
+    stdout: Mapped[Optional[str]] = mapped_column(Text)
+    stderr: Mapped[Optional[str]] = mapped_column(Text)
+    report: Mapped[Optional[str]] = mapped_column(Text)
+    start_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    end_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    coverage: Mapped[Optional[dict]] = mapped_column(PickleType)
+    flakefighter_results: Mapped[list["FlakefighterResult"]] = relationship(
         "FlakefighterResult",
         backref="test_execution",
         cascade="all, delete",
         passive_deletes=True,
     )
-    exception = relationship(
+    exception: Mapped[Optional["TestException"]] = relationship(
         "TestException",
         uselist=False,
         backref="test_execution",
@@ -209,9 +204,9 @@ class TestException(Base):
 
     __tablename__ = "test_exception"
 
-    execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=False)
-    name: Mapped[str] = Column(String)
-    traceback = relationship(
+    execution_id: Mapped[int] = mapped_column(Integer, ForeignKey("test_execution.id"), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    traceback: Mapped[list["TracebackEntry"]] = relationship(
         "TracebackEntry",
         backref="exception",
         cascade="all, delete",
@@ -232,12 +227,12 @@ class TracebackEntry(Base):
     :ivar source: The surrounding source code.
     """
 
-    exception_id: Mapped[int] = Column(Integer, ForeignKey("test_exception.id"), nullable=False)
-    path: Mapped[str] = Column(String)
-    lineno: Mapped[int] = Column(Integer)
-    colno: Mapped[int] = Column(Integer)
-    statement: Mapped[str] = Column(String)
-    source: Mapped[str] = Column(Text)
+    exception_id: Mapped[int] = mapped_column(Integer, ForeignKey("test_exception.id"), nullable=False)
+    path: Mapped[Optional[str]] = mapped_column(String)
+    lineno: Mapped[Optional[int]] = mapped_column(Integer)
+    colno: Mapped[Optional[int]] = mapped_column(Integer)
+    statement: Mapped[Optional[str]] = mapped_column(String)
+    source: Mapped[Optional[str]] = mapped_column(Text)
 
 
 @dataclass
@@ -253,10 +248,10 @@ class FlakefighterResult(Base):
 
     __tablename__ = "flakefighter_result"
 
-    test_execution_id: Mapped[int] = Column(Integer, ForeignKey("test_execution.id"), nullable=True)
-    test_id: Mapped[int] = Column(Integer, ForeignKey("test.id"), nullable=True)
-    name: Mapped[str] = Column(String)
-    flaky: Mapped[bool] = Column(Boolean)
+    test_execution_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("test_execution.id"), nullable=True)
+    test_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("test.id"), nullable=True)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    flaky: Mapped[Optional[bool]] = mapped_column(Boolean)
 
     __table_args__ = (
         CheckConstraint(
@@ -293,9 +288,12 @@ class Database:
         store_max_runs: Optional[int] = None,
         time_immemorial: Optional[Union[timedelta, str]] = None,
     ):
-        if isinstance(time_immemorial, str) and time_immemorial:
-            days, hours, minutes = [int(x) for x in time_immemorial.split(":")]
-            time_immemorial = timedelta(days=days, hours=hours, minutes=minutes)
+        if isinstance(time_immemorial, str):
+            if time_immemorial:
+                days, hours, minutes = [int(x) for x in time_immemorial.split(":")]
+                time_immemorial = timedelta(days=days, hours=hours, minutes=minutes)
+            else:
+                time_immemorial = None
 
         self.engine = create_engine(url)
         self.session = Session(self.engine)
@@ -327,7 +325,7 @@ class Database:
         :returns: List of pytest runs with DiffCov flakefighter active with the target_sha.
         """
         with Session(self.engine) as session:
-            return session.execute(select(Run).where(Run.commit_sha == target_sha)).scalars().all()
+            return list(session.execute(select(Run).where(Run.commit_sha == target_sha)).scalars().all())
 
     def load_runs(self, limit: Optional[int] = None):
         """

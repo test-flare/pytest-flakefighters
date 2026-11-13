@@ -79,7 +79,7 @@ class CoverageIndependence(FlakeFighter):
             for execution in test.executions:
                 coverage.append(
                     {"test": test, "execution": execution}
-                    | {f"{file}:{line}": True for file in execution.coverage for line in execution.coverage[file]}
+                    | {f"{file}:{line}": True for file, lines in (execution.coverage or {}).items() for line in lines}
                 )
 
         # Can't compute the pairwise distance of a single execution
@@ -92,7 +92,8 @@ class CoverageIndependence(FlakeFighter):
         )
         # Calculate the distance between each pair of test executions
         raw_coverage = coverage.drop(["test", "execution"], axis=1).to_numpy()
-        distances = pdist(raw_coverage, metric=self.metric)
+        # `metric` is a user-configured string, which SciPy validates at runtime
+        distances = pdist(raw_coverage, metric=self.metric)  # ty: ignore[no-matching-overload]
         # Assign each test execution to a cluster
         coverage["cluster"] = fcluster(
             linkage(distances, method=self.linkage_method), t=self.threshold, criterion="distance"

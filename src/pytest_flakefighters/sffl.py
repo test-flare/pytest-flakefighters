@@ -4,6 +4,7 @@ suspiciousness score of code statements based on how likely they are to be the c
 """
 
 from collections import defaultdict
+from collections.abc import Iterable, Mapping
 from math import sqrt
 
 import pandas as pd
@@ -21,13 +22,13 @@ def total_coverage(root: str, test: Test) -> dict[str, set[int]]:
     coverage = {}
     reduce = set.intersection if test.flaky else set.union
     for execution in test.executions:
-        for file, lines in execution.coverage.items():
+        for file, lines in (execution.coverage or {}).items():
             if file.startswith(root):
                 coverage[file] = coverage.get(file, []) + [set(lines)]
     return {file: reduce(*lines) for file, lines in coverage.items()}
 
 
-def update_covered(covered: dict[tuple[str, int], int], coverage: dict[str, list[int]]):
+def update_covered(covered: dict[tuple[str, int], int], coverage: Mapping[str, Iterable[int]]):
     """
     Update the counts of lines covered by flaky/stable tests.
     :param covered: Dictionary mapping (filename, line) to number of tests covered.
@@ -132,7 +133,7 @@ class SFFL:
         all_covered_lines = {}
         for test in tests:
             for execution in test.executions:
-                for file, lines in execution.coverage.items():
+                for file, lines in (execution.coverage or {}).items():
                     if file.startswith(self.root) and (self.include_test_code or file != test.fspath):
                         all_covered_lines[file] = set.union(all_covered_lines.get(file, set()), lines)
             if test.flaky:

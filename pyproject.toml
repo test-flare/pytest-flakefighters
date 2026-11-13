@@ -52,6 +52,7 @@ dev = [
   "pytest-mock",
   "taskipy>=1.14.1",
   "ruff>=0.16.10",
+  "ty==0.0.101",
 ]
 
 [tool.uv]
@@ -109,6 +110,7 @@ format = "ruff format"
 format-check = "ruff format --check"
 lint = "ruff check"
 lint-fix = "ruff check --fix"
+typecheck = "ty check"
 test = "pytest -p no:flakefighters --cov=src --cov-report=xml"
 
 [tool.setuptools_scm]
@@ -136,3 +138,6 @@ deps = ["pytest", "pytest-cov", "pytest-html", "pytest-json-report"]
 description = "Run pytest under {base_python}"
 extras = ["dev", "scipy"]
 usedevelop = true
+
+[tool.ty.src]
+include = ["src"]

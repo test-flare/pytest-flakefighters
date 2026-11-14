@@ -135,7 +135,7 @@ Yes! pytest-flakefighters can be combined with other flaky test plugins:
    :maxdepth: 2
 
    Source code <https://github.com/test-flare/pytest-flakefighters/>
-   Documentation <https://causal-testing-framework.readthedocs.io/en/latest/>
+   Documentation <https://pytest-flakefighters.readthedocs.io/en/latest/>
    PyPI <https://pypi.org/project/pytest-flakefighters/>
    TestFLARE Homepage <https://test-flare.github.io/>
 

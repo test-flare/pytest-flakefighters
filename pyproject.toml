@@ -15,14 +15,13 @@ dependencies = [
   "scikit-learn>1",
   "sqlalchemy>=2",
   "unidiff>=0.7.5",
-  "importlib_metadata",
 ]
 description = "Pytest plugin implementing flaky test failure detection and classification."
 dynamic = ["version"]
 license-files = ["LICENSE"]
 name = "pytest-flakefighters"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [project.entry-points.pytest11]
 flakefighters = "pytest_flakefighters.main"

@@ -129,7 +129,7 @@ def test_previous_runs(flaky_reruns_repo, previous_outcome, current_outcome):
         root=flaky_reruns_repo.working_dir,
     )
     diff_cov.flaky_test_live(execution)
-    [outcome] = execution.flakefighter_results
+    [outcome] = execution.flakefighter_results  # pylint: disable=W0632
     assert outcome.flaky == (previous_outcome != current_outcome)
 
 

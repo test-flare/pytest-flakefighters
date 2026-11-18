@@ -37,9 +37,27 @@ jobs:
         if: matrix.pytest-version
         run: uv pip install "pytest${{ matrix.pytest-version }}"
       - name: Test with pytest
-        run: uv run --no-sync pytest -p no:flakefighters --cov=src --cov-report=xml
+        run: uv run --no-sync task test
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  lint:
+    if: github.event.pull_request.draft == false # Filter out draft PRs
+    name: Format check and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync
+      - name: Check formatting
+        run: uv run --no-sync task format-check
+      - name: Lint
+        run: uv run --no-sync task lint

@@ -10,6 +10,7 @@ dependencies = [
   "dotenv>=0.9.9",
   "nltk>=3.9",
   "pandas>=2.3",
+  "pydantic>=2",
   "pytest>=7",
   "pyyaml>=5",
   "scikit-learn>1",

@@ -29,6 +29,17 @@ def test_run_saving(pytester, flaky_triangle_repo):
     )
 
     result.assert_outcomes(failed=2, skipped=1)
+    
+    assert os.path.exists(
+    os.path.join(flaky_triangle_repo.working_dir, "flakefighters.json")
+    ), "JSON report should be created when a run is saved"
+    
+    assert os.path.exists(
+        os.path.join(
+            flaky_triangle_repo.working_dir,
+            "flakefighters.schema.json",
+            )
+        ), "JSON Schema should be created when a run is saved"
 
     with Database(
         f"sqlite:///{os.path.join(flaky_triangle_repo.working_dir, 'flakefighters.db')}"
